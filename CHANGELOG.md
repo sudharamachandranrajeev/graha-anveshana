@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+Works for England now, not just Northern Ireland.
+
+- Fixed: house prices were missing from every England area report (the price index answers a month
+  with no data as a word, not a record).
+- Searches: open Rightmove, OnTheMarket and OpenRent searches for any town or postcode. Zoopla is
+  left out because its terms forbid links into its pages. The portals do not let apps read their
+  adverts, so nothing is scraped.
+- Add a home from a Rightmove, Zoopla, OnTheMarket or OpenRent link: the link is kept and you type
+  the details. The same advert is never added twice.
+- Is it fair? On a home's page: compare the rent with the ONS average and with housing benefit
+  rates, or the price with recent sales on the street and the area average. Lets also show the most
+  you can be asked to pay before moving in.
+- Check advert wording: flags rent bidding, refusing benefits or children, banned fees, too much
+  rent in advance, deposits over the legal limit, old-style tenancy wording and scam signs.
+- Area reports: average rent, rent against price, housing benefit rates, selective licensing and
+  small-HMO notes for Leeds, Wakefield, Doncaster and Rotherham, live flood alerts, and council
+  lettings schemes. Saved areas compare rent and yield.
+- Hunt: compare shortlisted homes side by side; enquiries with no reply for four days are flagged.
+- Viewings: a checklist of what to look for; ticked problems join the notes.
+- Lettings: Renters' Rights Act checks (information sheet, rental database, right to rent), rent
+  rise dates, and a copyable rent record for your tax return.
+- Tests pass on Windows again.
+
 ## 0.4.1
 
 - Postcode lookups work again: any postcode with a space ("BT74 7BA") was sent double-encoded

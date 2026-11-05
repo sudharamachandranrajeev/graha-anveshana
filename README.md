@@ -35,13 +35,16 @@ not advice.
 ## ✨ What it does
 
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
-  enquired, viewing, applied, agreed. Add one from a PropertyPal link or type it in.
+  enquired, viewing, applied, agreed. Add one from a PropertyPal link, an advert link from
+  Rightmove, Zoopla, OnTheMarket or OpenRent, or type it in.
 - 📞 **Contact agents in one tap** – call, text, a chat app or e-mail. Each contact is logged, and a
   ready-made first enquiry carries your details.
 - 🔔 **Alerts on your phone** (optional) – your saved searches run on your own free cloud helper,
   Brahma Watch. New homes, price drops and "let" or "sold" notices reach your phone.
 - 🧮 **Is it worth it?** – sums for buy-to-let, buying your own home and small developments, with
   current UK purchase tax, mortgage stress tests and rent you need to break even.
+- ⚖️ **Is it fair?** – rent or price against the area, housing benefit rates and recent street
+  sales; advert wording checked for banned fees, rent bidding and scam signs (England).
 - 🗺️ **Know the area** – type any UK postcode for house prices, street crime and recent sales,
   plus links for flood risk, energy ratings, planning and broadband.
 - 📋 **Lettings made simple** – tenancies, rent due and paid, deposits, and landlord safety checks
@@ -153,7 +156,9 @@ The app opens on **Hunt**. Every screen works empty, so there is nothing to fill
    go into enquiries you send.
 2. **Set a home point**: **Settings → Home point → Set**, then type a postcode. Distances are
    measured from here.
-3. **Add a home**: on **Hunt**, tap **Add** and paste a PropertyPal link, or type the home in.
+3. **Add a home**: on **Hunt**, tap **Add** and paste an advert link, or type the home in. Rightmove, Zoopla, OnTheMarket and OpenRent do not allow
+   apps to read their adverts, so for those the app keeps the link and you type the details; the
+   **Searches** page opens their own search pages for any town.
 4. **Contact the agent** from the home's page. The home moves to the next stage by itself.
 
 > [!NOTE]
