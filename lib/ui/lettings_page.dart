@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
+import '../domain/bank_import.dart';
 import '../domain/lettings.dart';
 import '../domain/pipeline.dart';
 import 'common.dart';
@@ -251,6 +252,11 @@ class _TenancyCard extends ConsumerWidget {
                 icon: const Icon(Icons.payments_outlined),
                 label: Text(landlord ? 'Record rent received' : 'Record rent paid'),
               ),
+              TextButton.icon(
+                onPressed: () => _importFromBank(context, ref),
+                icon: const Icon(Icons.account_balance_outlined),
+                label: const Text('Import from bank'),
+              ),
               if (payments.isNotEmpty)
                 TextButton.icon(
                   onPressed: () => copyText(
@@ -322,6 +328,110 @@ class _TenancyCard extends ConsumerWidget {
               ),
             ),
             actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Paste a bank statement CSV; the rent lines it finds are offered ticked.
+  Future<void> _importFromBank(BuildContext context, WidgetRef ref) async {
+    final text = TextEditingController();
+    final landlord = t.role == 'landlord';
+    final skip = <BankLine>{};
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final parsed = text.text.trim().isEmpty ? null : parseStatement(text.text);
+          final found = parsed == null
+              ? const <BankLine>[]
+              : rentLines(
+                  parsed.lines,
+                  received: landlord,
+                  rent: t.rent,
+                  start: t.start,
+                  end: t.end,
+                  otherParty: t.otherParty,
+                  recorded: [for (final x in payments) (date: x.date, amount: x.amount)],
+                );
+          final chosen = [
+            for (final l in found)
+              if (!skip.contains(l)) l,
+          ];
+          return AlertDialog(
+            title: const Text('Import rent from a bank statement'),
+            scrollable: true,
+            content: SizedBox(
+              width: 560,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Download your statement from online banking as CSV, open it, copy everything and paste '
+                    'it here. It stays on this device. Lines for ${gbp(t.rent)}'
+                    '${t.otherParty.isEmpty ? '' : ' or naming ${t.otherParty}'} '
+                    '${landlord ? 'paid in' : 'paid out'} since ${niceDate(t.start)} are picked out.',
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: text,
+                    minLines: 4,
+                    maxLines: 8,
+                    autofocus: true,
+                    onChanged: (_) => setState(skip.clear),
+                    decoration: const InputDecoration(labelText: 'Statement CSV'),
+                  ),
+                  const SizedBox(height: 12),
+                  if (parsed?.error != null)
+                    StatusLabel(Status.warning, parsed!.error!)
+                  else if (parsed != null && found.isEmpty)
+                    Text(
+                      '${parsed.lines.length} lines read. None look like this rent, or all are already recorded.',
+                    )
+                  else
+                    for (final l in found)
+                      CheckboxListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: !skip.contains(l),
+                        onChanged: (v) => setState(() => v == true ? skip.remove(l) : skip.add(l)),
+                        title: Text('${niceDate(l.date)} · £${(l.amount.abs() / 100).toStringAsFixed(2)}'),
+                        subtitle: l.text.isEmpty
+                            ? null
+                            : Text(l.text, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: chosen.isEmpty
+                    ? null
+                    : () async {
+                        await ref.mutate((s) async {
+                          for (final l in chosen) {
+                            final id = newId();
+                            await s.book.save(
+                              s.db.rentPayments,
+                              RentPaymentsCompanion.insert(
+                                id: id,
+                                tenancyId: t.id,
+                                date: l.date,
+                                amount: (l.amount.abs() / 100).round(),
+                                note: const Value('From bank statement'),
+                              ),
+                              id,
+                            );
+                          }
+                        });
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                child: Text('Record ${chosen.length}'),
+              ),
+            ],
           );
         },
       ),

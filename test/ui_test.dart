@@ -289,4 +289,23 @@ void main() {
     expect(find.text('Gas safety certificate'), findsOneWidget);
     await app.close();
   });
+
+  testWidgets('rent is imported from a pasted bank statement', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    await app.go('Lettings');
+    await app.tap(find.byType(ExpansionTile).first);
+    await app.tapText('Import from bank');
+    await app.enter(
+      'Statement CSV',
+      'Date,Description,Amount\n01/02/2026,RENT FEB,700.00\n02/02/2026,SHOP,-12.00\n01/03/2026,RENT MAR,700.00\n',
+    );
+    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+    await app.tap(find.byType(CheckboxListTile).last);
+    await app.tapText('Record 1');
+    final paid = (await tester.runAsync(() => app.session.db.select(app.session.db.rentPayments).get()))!;
+    expect([for (final p in paid) (p.date, p.amount)], [('2026-02-01', 700)]);
+    await app.close();
+  });
 }
