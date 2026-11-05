@@ -158,6 +158,22 @@ void main() {
       expect(daysWithoutReply([m('note', 'out', '2026-10-01T09:00')], '2026-11-06'), isNull);
       expect(daysWithoutReply(const [], '2026-11-06'), isNull);
     });
+
+    test('the rent record is a safe CSV, oldest first', () {
+      final csv = rentRecordCsv(
+        address: '1 High St, Leeds',
+        tenant: '=HYPERLINK("x")',
+        payments: [
+          (date: '2026-02-01', amount: 650, note: 'Feb'),
+          (date: '2026-01-01', amount: 650, note: 'say "hi"'),
+        ],
+      );
+      expect(csv.split('\n'), [
+        'Date,Property,Tenant,Amount (GBP),Note',
+        '2026-01-01,"1 High St, Leeds","\'=HYPERLINK(""x"")",650,"say ""hi"""',
+        '2026-02-01,"1 High St, Leeds","\'=HYPERLINK(""x"")",650,Feb',
+      ]);
+    });
   });
 
   group('lettings', () {

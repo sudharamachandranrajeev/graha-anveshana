@@ -251,6 +251,20 @@ class _TenancyCard extends ConsumerWidget {
                 icon: const Icon(Icons.payments_outlined),
                 label: Text(landlord ? 'Record rent received' : 'Record rent paid'),
               ),
+              if (payments.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () => copyText(
+                    context,
+                    rentRecordCsv(
+                      address: p?.address ?? '',
+                      tenant: t.otherParty,
+                      payments: [for (final x in payments) (date: x.date, amount: x.amount, note: x.note)],
+                    ),
+                    what: 'Rent record copied. Paste it into a spreadsheet.',
+                  ),
+                  icon: const Icon(Icons.copy_all_outlined),
+                  label: const Text('Copy rent record'),
+                ),
               if (landlord)
                 TextButton.icon(
                   onPressed: () => _rentIncrease(context),

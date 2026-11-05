@@ -118,3 +118,23 @@ String earliestRentIncrease({required String noticeServed, required String lastI
   final byNotice = addMonths(noticeServed, 2), byYear = addMonths(lastIncreaseOrStart, 12);
   return byNotice.compareTo(byYear) >= 0 ? byNotice : byYear;
 }
+
+/// Rent received as CSV (date, property, tenant, amount, note), oldest first,
+/// for a tax return or an accountant. Cells that start with = + - @ are
+/// prefixed so a spreadsheet cannot run them as formulas.
+String rentRecordCsv({
+  required String address,
+  required String tenant,
+  required Iterable<({String date, int amount, String note})> payments,
+}) {
+  String cell(String v) {
+    final safe = RegExp(r'^[=+\-@\t\r]').hasMatch(v) ? "'$v" : v;
+    return RegExp(r'[",\n\r]').hasMatch(safe) ? '"${safe.replaceAll('"', '""')}"' : safe;
+  }
+
+  final rows = [...payments]..sort((a, b) => a.date.compareTo(b.date));
+  return [
+    'Date,Property,Tenant,Amount (GBP),Note',
+    for (final r in rows) [r.date, cell(address), cell(tenant), r.amount, cell(r.note)].join(','),
+  ].join('\n');
+}
