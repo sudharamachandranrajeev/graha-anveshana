@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
 - Lettings: import rent from your bank. Paste a statement downloaded as CSV; the app finds the lines
   for the rent or naming the tenant, skips ones already recorded, and records the ones you tick.
