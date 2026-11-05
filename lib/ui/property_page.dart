@@ -246,6 +246,12 @@ class PropertyPage extends ConsumerWidget {
                 icon: const Icon(Icons.insights_outlined),
                 label: const Text('Area report'),
               ),
+            if (kind == PropertyKind.rent)
+              OutlinedButton.icon(
+                onPressed: () => checkAdvertWording(context, rent: p.price),
+                icon: const Icon(Icons.rule),
+                label: const Text('Check advert wording'),
+              ),
             if (kind != PropertyKind.rent && p.price != null)
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).push(

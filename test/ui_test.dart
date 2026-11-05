@@ -141,6 +141,18 @@ void main() {
     await app.close();
   });
 
+  testWidgets('advert wording is checked against the England rules', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
+    await app.tapText('Check advert wording');
+    await app.enter('Advert text', 'Best offers over £700. No DSS.');
+    expect(find.text('Rent bidding'), findsOneWidget);
+    expect(find.text('Refuses tenants on benefits'), findsOneWidget);
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);

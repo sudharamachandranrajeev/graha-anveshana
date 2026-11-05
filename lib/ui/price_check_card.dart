@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database.dart';
+import '../domain/advert_check.dart';
 import '../domain/pipeline.dart';
 import '../domain/price_check.dart';
 import '../domain/research.dart';
@@ -133,4 +134,64 @@ class _PriceCheckCardState extends ConsumerState<PriceCheckCard> {
     Verdict.below => Status.info,
     Verdict.info => Status.info,
   };
+}
+
+/// Paste an advert's text to see which wording is banned in England or
+/// looks like a scam.
+Future<void> checkAdvertWording(BuildContext context, {int? rent}) async {
+  final text = TextEditingController();
+  await showDialog<void>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        final flags = checkAdvertText(text.text, monthlyRent: rent);
+        return AlertDialog(
+          title: const Text('Check the advert wording'),
+          scrollable: true,
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text("Paste the advert's description, including any fees and deposit it names."),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: text,
+                  minLines: 5,
+                  maxLines: 10,
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(labelText: 'Advert text'),
+                ),
+                const SizedBox(height: 12),
+                if (text.text.trim().isEmpty)
+                  const SizedBox.shrink()
+                else if (flags.isEmpty)
+                  const StatusLabel(Status.good, 'Nothing flagged. That is not proof an advert is genuine.')
+                else
+                  for (final f in flags)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          StatusLabel(f.kind == FlagKind.outdated ? Status.info : Status.warning, f.title),
+                          Text(f.why, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ),
+                    ),
+                const SizedBox(height: 8),
+                Text(
+                  'Guidance for England, not legal advice. Check gov.uk or Shelter before you act.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        );
+      },
+    ),
+  );
 }
