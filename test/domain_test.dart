@@ -334,6 +334,33 @@ void main() {
       expect(AreaReport.fromJson(jsonDecode(jsonEncode(r.toJson()))).toJson(), r.toJson());
     });
 
+    test('flood warnings keep only those in force, most severe first', () async {
+      Uri? asked;
+      final client = MockClient((req) async {
+        asked = req.url;
+        return http.Response(
+          jsonEncode({
+            'items': [
+              {'description': 'River Aire at Leeds', 'severity': 'Flood alert', 'severityLevel': 3},
+              {'description': 'Old one', 'severity': 'Warning no longer in force', 'severityLevel': 4},
+              {
+                'description': 'River Calder',
+                'severity': 'Flood warning',
+                'severityLevel': 2,
+                'floodArea': {'county': 'West Yorkshire'},
+              },
+            ],
+          }),
+          200,
+        );
+      });
+      final f = await Research(client: client).floods(53.8, -1.55);
+      expect(asked!.queryParameters, {'lat': '53.8', 'long': '-1.55', 'dist': '5'});
+      expect(f.map((x) => x.area), ['West Yorkshire River Calder', 'River Aire at Leeds']);
+      expect(f.first.level, 2);
+      expect(FloodWarning.fromJson(f.first.toJson()).area, f.first.area);
+    });
+
     test('street sales ask for the street and town, newest first', () async {
       Uri? asked;
       final client = MockClient((req) async {

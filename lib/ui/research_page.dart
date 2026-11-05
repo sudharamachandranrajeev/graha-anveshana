@@ -401,6 +401,23 @@ class _ReportView extends StatelessWidget {
             for (final e in crimes.take(8))
               FigureRow('   ${e.key[0].toUpperCase()}${e.key.substring(1)}', '${e.value}'),
           ],
+          if (r.floods case final floods?) ...[
+            const Divider(height: 24),
+            const Eyebrow('Flood warnings today, within 5 km'),
+            if (floods.isEmpty)
+              const Text(
+                'None in force. These are warnings in force today, not the long-term risk: see the link below.',
+              )
+            else
+              for (final f in floods)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: StatusLabel(
+                    f.level == 3 ? Status.warning : Status.critical,
+                    '${f.severity}: ${f.area}',
+                  ),
+                ),
+          ],
           ..._renting(context),
           for (final n in r.notes)
             Padding(padding: const EdgeInsets.only(top: 8), child: StatusLabel(Status.info, n)),

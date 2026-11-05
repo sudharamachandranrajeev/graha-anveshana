@@ -125,6 +125,20 @@ class Sale {
   );
 }
 
+/// A live flood alert or warning from the Environment Agency (England).
+class FloodWarning {
+  const FloodWarning({required this.area, required this.severity, required this.level});
+  final String area, severity;
+
+  /// 1 severe warning, 2 warning, 3 alert.
+  final int level;
+
+  Map<String, Object?> toJson() => {'area': area, 'severity': severity, 'level': level};
+
+  factory FloodWarning.fromJson(Map<String, Object?> j) =>
+      FloodWarning(area: '${j['area']}', severity: '${j['severity']}', level: (j['level'] as num).toInt());
+}
+
 /// What one area report holds. Saved as JSON with the area.
 class AreaReport {
   const AreaReport({
@@ -134,6 +148,7 @@ class AreaReport {
     this.crimeMonth,
     this.crimes = const {},
     this.sales = const [],
+    this.floods,
     this.notes = const [],
   });
 
@@ -147,6 +162,10 @@ class AreaReport {
   final Map<String, int> crimes;
   final List<Sale> sales;
 
+  /// Flood alerts in force within 5 km right now; null when not checked
+  /// (outside England, or the service did not answer).
+  final List<FloodWarning>? floods;
+
   /// What could not be fetched, and why.
   final List<String> notes;
 
@@ -159,6 +178,7 @@ class AreaReport {
     'crimeMonth': crimeMonth,
     'crimes': crimes,
     'sales': [for (final s in sales) s.toJson()],
+    'floods': floods == null ? null : [for (final f in floods!) f.toJson()],
     'notes': notes,
   };
 
@@ -169,6 +189,9 @@ class AreaReport {
     crimeMonth: j['crimeMonth'] as String?,
     crimes: {for (final e in ((j['crimes'] as Map?) ?? {}).entries) '${e.key}': (e.value as num).toInt()},
     sales: [for (final s in (j['sales'] as List?) ?? const []) Sale.fromJson((s as Map).cast())],
+    floods: j['floods'] is List
+        ? [for (final f in j['floods'] as List) FloodWarning.fromJson((f as Map).cast())]
+        : null,
     notes: [for (final n in (j['notes'] as List?) ?? const []) '$n'],
   );
 }
@@ -282,6 +305,27 @@ class Research {
     return (month: month, counts: counts);
   }
 
+  /// Flood alerts and warnings in force within [km] of a point (England; the
+  /// Environment Agency, free, no key). Warnings no longer in force are left out.
+  Future<List<FloodWarning>> floods(double lat, double lon, {int km = 5}) async {
+    final body = await _get(
+      Uri.https('environment.data.gov.uk', '/flood-monitoring/id/floods', {
+        'lat': '$lat',
+        'long': '$lon',
+        'dist': '$km',
+      }),
+    );
+    return [
+      for (final i in (((body as Map?)?['items'] as List?) ?? const []).cast<Map>())
+        if (num.tryParse('${i['severityLevel']}') case final l? when l >= 1 && l <= 3)
+          FloodWarning(
+            area: '${(i['floodArea'] as Map?)?['county'] ?? ''} ${i['description'] ?? ''}'.trim(),
+            severity: '${i['severity'] ?? ''}',
+            level: l.toInt(),
+          ),
+    ]..sort((a, b) => a.level.compareTo(b.level));
+  }
+
   /// Recent sales in a postcode from Price Paid, newest first.
   Future<List<Sale>> sales(String postcode) =>
       _sales({'propertyAddress.postcode': postcode.toUpperCase(), '_pageSize': '50'});
@@ -350,6 +394,9 @@ class Research {
     final sold = p.nation == Nation.england || p.nation == Nation.wales
         ? await attempt('Sold prices', () => sales(p.postcode))
         : null;
+    final alerts = p.nation == Nation.england
+        ? await attempt('Flood warnings', () => floods(p.lat, p.lon))
+        : null;
     if (p.nation == Nation.scotland) notes.add('Crime: Police Scotland does not publish street-level data');
     if (p.nation == Nation.northernIreland || p.nation == Nation.scotland) {
       notes.add('Sold prices: Price Paid covers England and Wales only. See the links for $national.');
@@ -361,6 +408,7 @@ class Research {
       crimeMonth: crimes?.month,
       crimes: crimes?.counts ?? const {},
       sales: sold ?? const [],
+      floods: alerts,
       notes: notes,
     );
   }
