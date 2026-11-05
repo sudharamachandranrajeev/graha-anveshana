@@ -122,6 +122,7 @@ class _PortalsCardState extends ConsumerState<PortalsCard> {
                 width: 140,
                 child: DropdownButtonFormField<double>(
                   initialValue: radius,
+                  isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Within'),
                   items: [
                     for (final r in portalRadii)

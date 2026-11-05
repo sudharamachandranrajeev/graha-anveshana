@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/listing.dart';
+import '../domain/local_rules.dart';
 import '../domain/research.dart';
 import '../domain/tax.dart';
 import 'common.dart';
@@ -286,6 +287,54 @@ class _ReportView extends StatelessWidget {
   final AreaReport r;
   final VoidCallback onSave;
 
+  /// Rents, benefit rates and letting rules for the council area, where the
+  /// app has them (see domain/local_rules.dart).
+  List<Widget> _renting(BuildContext context) {
+    final district = r.place.district;
+    final rent = rentFor(district, null).average;
+    final byBeds = [for (var b = 1; b <= 4; b++) rentFor(district, b).forBeds];
+    final lha = lhaFor(district);
+    final notes = localNotes(r.place);
+    if (rent == null && lha == null && notes.isEmpty) return const [];
+    final price = r.prices?.average;
+    return [
+      const Divider(height: 24),
+      const Eyebrow('Renting here'),
+      if (rent != null) FigureRow('Average private rent a month (ONS, Sep 2026)', gbp(rent)),
+      for (var b = 0; b < 4; b++)
+        if (byBeds[b] != null) FigureRow('   ${b + 1} bed${b == 3 ? 's or more' : ''}', gbp(byBeds[b]!)),
+      if (rent != null && price != null)
+        FigureRow(
+          'Average rent against average price',
+          '${grossYield(rent, price).toStringAsFixed(1)}% a year',
+        ),
+      if (lha != null) ...[
+        FigureRow('Housing benefit rate, ${lha.area} (2026-27)', ''),
+        FigureRow('   1 bed', gbp(lha.b1)),
+        FigureRow('   2 beds', gbp(lha.b2)),
+        FigureRow('   3 beds', gbp(lha.b3)),
+        FigureRow('   4 beds', gbp(lha.b4)),
+      ],
+      for (final n in notes)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: StatusLabel(n.concern == Concern.caution ? Status.warning : Status.info, n.text),
+              ),
+              IconButton(
+                tooltip: 'Open the council page',
+                icon: const Icon(Icons.open_in_new, size: 18),
+                onPressed: () => openUri(context, n.url),
+              ),
+            ],
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = r.place;
@@ -338,6 +387,7 @@ class _ReportView extends StatelessWidget {
             for (final e in crimes.take(8))
               FigureRow('   ${e.key[0].toUpperCase()}${e.key.substring(1)}', '${e.value}'),
           ],
+          ..._renting(context),
           for (final n in r.notes)
             Padding(padding: const EdgeInsets.only(top: 8), child: StatusLabel(Status.info, n)),
           const Divider(height: 24),

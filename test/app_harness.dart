@@ -31,7 +31,10 @@ class AppHarness {
   Future<void> run() async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: anveshanaOverrides(session),
+        overrides: [
+          ...anveshanaOverrides(session),
+          deviceFactsProvider.overrideWith((ref) async => const DeviceFacts()),
+        ],
         retry: (_, _) => null,
         child: const AnveshanaApp(),
       ),

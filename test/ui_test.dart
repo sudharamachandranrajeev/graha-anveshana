@@ -105,6 +105,42 @@ void main() {
     await app.close();
   });
 
+  testWidgets('a pasted Rightmove link is saved as a property, once', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    for (final again in [false, true]) {
+      await app.tapText('Add');
+      await app.tapText('From a link');
+      await app.enter('Link', 'https://www.rightmove.co.uk/properties/123456789#/?channel=RES_LET');
+      await app.tapText('Add');
+      expect(find.text('New property'), findsOneWidget);
+      await app.enter('Address', '5 High Street, Pontefract WF8 1AA');
+      await app.tapText('Save');
+      expect(find.textContaining('already in your list'), again ? findsOneWidget : findsNothing);
+      if (again) await app.tapText('Cancel');
+    }
+    final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!;
+    expect(rows.single.source, 'rightmove');
+    expect(rows.single.sourceId, '123456789');
+    expect(rows.single.url, 'https://www.rightmove.co.uk/properties/123456789');
+    await app.close();
+  });
+
+  testWidgets('the Searches page opens portal searches for a town', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Searches');
+    expect(find.text('Type a town or postcode to open the searches.'), findsOneWidget);
+    await app.enter('Town or postcode', 'Doncaster');
+    expect(find.text('Rightmove'), findsOneWidget);
+    expect(find.text('OnTheMarket'), findsOneWidget);
+    expect(find.text('OpenRent'), findsOneWidget);
+    expect(find.text('Zoopla'), findsNothing);
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
