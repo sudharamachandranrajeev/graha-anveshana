@@ -44,6 +44,20 @@ class _PriceCheckCardState extends ConsumerState<PriceCheckCard> {
         final problems = <String>[];
         try {
           sales = await research.sales(place.postcode);
+          // A postcode holds few homes: widen to the street when too few are comparable.
+          final first = sales.firstOrNull;
+          final today = ref.read(todayProvider);
+          if (first != null &&
+              first.street.isNotEmpty &&
+              comparableSales(sales, today, p.style).sales.length < minComparableSales) {
+            final street = await research.salesOnStreet(first.street, first.town);
+            final seen = {for (final s in sales) '${s.date}|${s.price}|${s.address}'};
+            sales = [
+              ...sales,
+              for (final s in street)
+                if (!seen.contains('${s.date}|${s.price}|${s.address}')) s,
+            ];
+          }
         } catch (e) {
           problems.add('Sold prices: ${describeError(e)}');
         }

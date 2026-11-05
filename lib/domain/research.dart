@@ -97,8 +97,10 @@ class Sale {
     required this.address,
     this.type = '',
     this.newBuild = false,
+    this.street = '',
+    this.town = '',
   });
-  final String date, address, type;
+  final String date, address, type, street, town;
   final int price;
   final bool newBuild;
 
@@ -108,6 +110,8 @@ class Sale {
     'address': address,
     'type': type,
     'newBuild': newBuild,
+    'street': street,
+    'town': town,
   };
 
   factory Sale.fromJson(Map<String, Object?> j) => Sale(
@@ -116,6 +120,8 @@ class Sale {
     address: '${j['address']}',
     type: '${j['type'] ?? ''}',
     newBuild: j['newBuild'] == true,
+    street: '${j['street'] ?? ''}',
+    town: '${j['town'] ?? ''}',
   );
 }
 
@@ -241,8 +247,9 @@ class Research {
       final body = await _get(
         Uri.https('landregistry.data.gov.uk', '/data/ukhpi/region/$slug/month/$ym.json'),
       );
-      final t = ((body as Map?)?['result'] as Map?)?['primaryTopic'] as Map?;
-      if (t != null && t['averagePrice'] is num) {
+      // A month with no data answers "elda:missingEndpoint", a string.
+      final t = (((body as Map?)?['result'] as Map?)?['primaryTopic']);
+      if (t is Map && t['averagePrice'] is num) {
         return PriceIndex(
           region: region,
           month: ym,
@@ -276,12 +283,21 @@ class Research {
   }
 
   /// Recent sales in a postcode from Price Paid, newest first.
-  Future<List<Sale>> sales(String postcode) async {
+  Future<List<Sale>> sales(String postcode) =>
+      _sales({'propertyAddress.postcode': postcode.toUpperCase(), '_pageSize': '50'});
+
+  /// Sales on one street from Price Paid, newest first: a postcode holds
+  /// only about fifteen homes, too few to compare a price with.
+  Future<List<Sale>> salesOnStreet(String street, String town) => _sales({
+    'propertyAddress.street': street.toUpperCase(),
+    'propertyAddress.town': town.toUpperCase(),
+    '_pageSize': '100',
+    '_sort': '-transactionDate',
+  });
+
+  Future<List<Sale>> _sales(Map<String, String> query) async {
     final body = await _get(
-      Uri.https('landregistry.data.gov.uk', '/data/ppi/transaction-record.json', {
-        'propertyAddress.postcode': postcode.toUpperCase(),
-        '_pageSize': '50',
-      }),
+      Uri.https('landregistry.data.gov.uk', '/data/ppi/transaction-record.json', query),
     );
     final items = (((body as Map?)?['result'] as Map?)?['items'] as List?) ?? const [];
     String label(Object? o) => switch (o) {
@@ -300,6 +316,8 @@ class Research {
           ].join(', '),
           type: label(i['propertyType']),
           newBuild: i['newBuild'] == true,
+          street: '${(i['propertyAddress'] as Map?)?['street'] ?? ''}',
+          town: '${(i['propertyAddress'] as Map?)?['town'] ?? ''}',
         ),
     ]..sort((a, b) => b.date.compareTo(a.date));
     return out;

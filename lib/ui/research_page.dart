@@ -197,6 +197,9 @@ class _ResearchPageState extends ConsumerState<ResearchPage> {
     );
   }
 
+  /// The ONS average rent where the app has it for the area's council.
+  int? _rentOf(AreaReport rep) => rentFor(rep.place.district, null).average;
+
   Widget _savedAreas() => AsyncView(
     ref.watch(areasProvider),
     builder: (areas) {
@@ -213,6 +216,8 @@ class _ResearchPageState extends ConsumerState<ResearchPage> {
               DataColumn(label: Text('Area')),
               DataColumn(label: Text('Average price'), numeric: true),
               DataColumn(label: Text('A year'), numeric: true),
+              DataColumn(label: Text('Average rent'), numeric: true),
+              DataColumn(label: Text('Rent against price'), numeric: true),
               DataColumn(label: Text('Crimes a month'), numeric: true),
               DataColumn(label: Text('')),
             ],
@@ -232,6 +237,15 @@ class _ResearchPageState extends ConsumerState<ResearchPage> {
                         rep.prices?.annualChange == null
                             ? '–'
                             : '${rep.prices!.annualChange!.toStringAsFixed(1)}%',
+                        style: tabular,
+                      ),
+                    ),
+                    DataCell(Text(_rentOf(rep) == null ? '–' : gbp(_rentOf(rep)!), style: tabular)),
+                    DataCell(
+                      Text(
+                        _rentOf(rep) == null || rep.prices == null
+                            ? '–'
+                            : '${grossYield(_rentOf(rep)!, rep.prices!.average).toStringAsFixed(1)}%',
                         style: tabular,
                       ),
                     ),

@@ -43,8 +43,10 @@ void main() {
       byType: {'Terraced': 135000},
     );
     final l = priceCheck(price: 135000, style: 'Terraced house', today: '2026-11-05', sales: [], index: idx);
-    expect(l.single.verdict, Verdict.inLine);
-    expect(l.single.label, contains('terraced average'));
+    expect(l.last.verdict, Verdict.inLine);
+    expect(l.last.label, contains('terraced average'));
+    expect(l.first.value, '0', reason: 'no sales is said, not hidden');
+    expect(l.first.verdict, Verdict.info);
   });
 
   test('move-in costs follow the five-week deposit cap', () {

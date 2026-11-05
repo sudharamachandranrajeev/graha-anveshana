@@ -12,6 +12,9 @@ class CheckLine {
 
 const _band = 5.0;
 
+/// Fewest sales that make a fair comparison.
+const minComparableSales = 3;
+
 Verdict _compare(num asking, num benchmark) {
   if (benchmark <= 0) return Verdict.info;
   final pct = (asking - benchmark) / benchmark * 100;
@@ -103,11 +106,19 @@ List<CheckLine> priceCheck({
 }) {
   final lines = <CheckLine>[];
   final c = comparableSales(sales, today, style);
-  if (c.sales.isNotEmpty) {
+  if (c.sales.length < minComparableSales) {
+    lines.add(
+      CheckLine(
+        'Sales on this street or postcode in 3 years',
+        '${c.sales.length}',
+        note: 'Too few to compare with. Look at sold prices on nearby streets.',
+      ),
+    );
+  } else {
     final m = median([for (final s in c.sales) s.price]);
     lines.add(
       CheckLine(
-        'Against ${c.sales.length} ${c.sameType ? 'similar ' : ''}sales here in 3 years (median $m)',
+        'Against ${c.sales.length} ${c.sameType ? 'similar ' : ''}sales nearby in 3 years (median $m)',
         _pct(price, m),
         verdict: _compare(price, m),
         note: c.sameType ? '' : 'Mixed types, so a flat and a detached house count together.',

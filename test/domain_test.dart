@@ -289,8 +289,11 @@ void main() {
           );
         }
         if (path.contains('/ukhpi/')) {
-          // Only July has data; later months are empty, as before publication.
-          if (!path.endsWith('2026-07.json')) return http.Response('{"result":{}}', 200);
+          // Only July has data. Later months answer as the real API does before
+          // publication: primaryTopic is the string "elda:missingEndpoint".
+          if (!path.endsWith('2026-07.json')) {
+            return http.Response('{"result":{"primaryTopic":"elda:missingEndpoint"}}', 200);
+          }
           return http.Response(
             jsonEncode({
               'result': {
@@ -329,6 +332,43 @@ void main() {
       expect(asked.any((u) => u.contains('fermanagh-and-omagh/month/2026-07')), isTrue);
       expect(asked.any((u) => u.contains('/ppi/')), isFalse, reason: 'no Price Paid for NI');
       expect(AreaReport.fromJson(jsonDecode(jsonEncode(r.toJson()))).toJson(), r.toJson());
+    });
+
+    test('street sales ask for the street and town, newest first', () async {
+      Uri? asked;
+      final client = MockClient((req) async {
+        asked = req.url;
+        return http.Response(
+          jsonEncode({
+            'result': {
+              'items': [
+                {
+                  'transactionDate': 'Tue, 29 May 2018',
+                  'pricePaid': 100000,
+                  'propertyAddress': {'paon': '3', 'street': 'ALMA ROAD', 'town': 'LEEDS'},
+                  'propertyType': [
+                    {'_value': 'terraced'},
+                  ],
+                },
+                {
+                  'transactionDate': 'Thu, 28 Aug 2025',
+                  'pricePaid': 120000,
+                  'propertyAddress': {'paon': '5', 'street': 'ALMA ROAD', 'town': 'LEEDS'},
+                  'propertyType': [
+                    {'_value': 'terraced'},
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+        );
+      });
+      final sales = await Research(client: client).salesOnStreet('Alma Road', 'Leeds');
+      expect(asked!.queryParameters['propertyAddress.street'], 'ALMA ROAD');
+      expect(asked!.queryParameters['propertyAddress.town'], 'LEEDS');
+      expect(sales.map((s) => s.date), ['2025-08-28', '2018-05-29']);
+      expect((sales.first.street, sales.first.town), ('ALMA ROAD', 'LEEDS'));
     });
 
     test('sold prices in England, newest first', () async {
