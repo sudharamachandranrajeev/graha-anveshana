@@ -323,6 +323,7 @@ void main() {
     await app.tapText('Record 1');
     final paid = (await tester.runAsync(() => app.session.db.select(app.session.db.rentPayments).get()))!;
     expect([for (final p in paid) (p.date, p.amount)], [('2026-02-01', 700)]);
+    expect(find.text('Rent for tax returns'), findsOneWidget);
     await app.close();
   });
 }

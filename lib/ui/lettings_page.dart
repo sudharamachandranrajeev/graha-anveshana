@@ -37,6 +37,16 @@ class LettingsPage extends ConsumerWidget {
       );
       return sum + (b > 0 ? b : 0);
     });
+    // Rent received as landlord, for the tax-quarter totals.
+    final landlordOf = {
+      for (final t in tenancies)
+        if (t.role == 'landlord') t.id: byId[t.propertyId]?.address ?? 'Property removed',
+    };
+    final received = [
+      for (final p in payments)
+        if (landlordOf[p.tenancyId] case final address?) (date: p.date, property: address, amount: p.amount),
+    ];
+    final thisYear = taxQuarter(day).taxYear;
     final open = checks.where((c) => c.done == null).toList();
     final overdue = open.where((c) => c.due.compareTo(day) < 0).length;
     final soon = open.where((c) => c.due.compareTo(addDays(day, 30)) <= 0).length;
@@ -112,6 +122,40 @@ class LettingsPage extends ConsumerWidget {
                   ],
                 ),
         ),
+        if (received.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SectionCard(
+            title: 'Rent for tax returns',
+            trailing: TextButton.icon(
+              onPressed: () => copyText(
+                context,
+                rentByQuarterCsv(received),
+                what: 'Rent by tax quarter copied. Paste it into a spreadsheet or your tax software.',
+              ),
+              icon: const Icon(Icons.copy_all_outlined),
+              label: const Text('Copy by quarter'),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var q = 1; q <= 4; q++)
+                  FigureRow(
+                    '${taxYearLabel(thisYear)} Q$q (to ${niceDate(taxQuarterDates(thisYear, q).to)})',
+                    gbp(
+                      received
+                          .where((r) => taxQuarter(r.date) == (taxYear: thisYear, quarter: q))
+                          .fold(0, (a, r) => a + r.amount),
+                    ),
+                  ),
+                Text(
+                  'Rent recorded as received, by Making Tax Digital quarter. Expenses are not kept here. '
+                  'The app does not send anything to HMRC.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         SectionCard(
           title: 'Landlord checks',

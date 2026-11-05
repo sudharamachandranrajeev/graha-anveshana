@@ -174,6 +174,33 @@ void main() {
         '2026-02-01,"1 High St, Leeds","\'=HYPERLINK(""x"")",650,Feb',
       ]);
     });
+
+    test('tax quarters run from 6 April', () {
+      expect(taxQuarter('2026-04-05'), (taxYear: 2025, quarter: 4));
+      expect(taxQuarter('2026-04-06'), (taxYear: 2026, quarter: 1));
+      expect(taxQuarter('2026-07-05'), (taxYear: 2026, quarter: 1));
+      expect(taxQuarter('2026-07-06'), (taxYear: 2026, quarter: 2));
+      expect(taxQuarter('2026-10-06'), (taxYear: 2026, quarter: 3));
+      expect(taxQuarter('2027-01-05'), (taxYear: 2026, quarter: 3));
+      expect(taxQuarter('2027-01-06'), (taxYear: 2026, quarter: 4));
+      expect(taxQuarterDates(2026, 4), (from: '2027-01-06', to: '2027-04-05'));
+      expect(taxYearLabel(2099), '2099-00');
+    });
+
+    test('rent by tax quarter adds up per property', () {
+      final csv = rentByQuarterCsv([
+        (date: '2026-05-01', property: 'B Flat', amount: 500),
+        (date: '2026-04-06', property: 'A House, Leeds', amount: 700),
+        (date: '2026-05-06', property: 'A House, Leeds', amount: 700),
+        (date: '2026-04-01', property: 'A House, Leeds', amount: 700),
+      ]);
+      expect(csv.split('\n'), [
+        'Tax year,Quarter,From,To,Property,Rent received (GBP)',
+        '2025-26,Q4,2026-01-06,2026-04-05,"A House, Leeds",700',
+        '2026-27,Q1,2026-04-06,2026-07-05,"A House, Leeds",1400',
+        '2026-27,Q1,2026-04-06,2026-07-05,B Flat,500',
+      ]);
+    });
   });
 
   group('lettings', () {

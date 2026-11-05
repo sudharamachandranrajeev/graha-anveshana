@@ -119,22 +119,77 @@ String earliestRentIncrease({required String noticeServed, required String lastI
   return byNotice.compareTo(byYear) >= 0 ? byNotice : byYear;
 }
 
+/// A CSV cell. Cells that start with = + - @ are prefixed so a spreadsheet
+/// cannot run them as formulas.
+String _cell(String v) {
+  final safe = RegExp(r'^[=+\-@\t\r]').hasMatch(v) ? "'$v" : v;
+  return RegExp(r'[",\n\r]').hasMatch(safe) ? '"${safe.replaceAll('"', '""')}"' : safe;
+}
+
 /// Rent received as CSV (date, property, tenant, amount, note), oldest first,
-/// for a tax return or an accountant. Cells that start with = + - @ are
-/// prefixed so a spreadsheet cannot run them as formulas.
+/// for a tax return or an accountant.
 String rentRecordCsv({
   required String address,
   required String tenant,
   required Iterable<({String date, int amount, String note})> payments,
 }) {
-  String cell(String v) {
-    final safe = RegExp(r'^[=+\-@\t\r]').hasMatch(v) ? "'$v" : v;
-    return RegExp(r'[",\n\r]').hasMatch(safe) ? '"${safe.replaceAll('"', '""')}"' : safe;
-  }
-
   final rows = [...payments]..sort((a, b) => a.date.compareTo(b.date));
   return [
     'Date,Property,Tenant,Amount (GBP),Note',
-    for (final r in rows) [r.date, cell(address), cell(tenant), r.amount, cell(r.note)].join(','),
+    for (final r in rows) [r.date, _cell(address), _cell(tenant), r.amount, _cell(r.note)].join(','),
+  ].join('\n');
+}
+
+/// The UK tax quarter a date (yyyy-MM-dd) falls in. The tax year runs from
+/// 6 April; Making Tax Digital's standard quarters end on 5 July, 5 October,
+/// 5 January and 5 April. [taxYear] is the year it starts, so 2026 means
+/// 2026-27.
+({int taxYear, int quarter}) taxQuarter(String date) {
+  final y = int.parse(date.substring(0, 4)), md = date.substring(5, 10);
+  if (md.compareTo('04-06') >= 0 && md.compareTo('07-05') <= 0) return (taxYear: y, quarter: 1);
+  if (md.compareTo('07-06') >= 0 && md.compareTo('10-05') <= 0) return (taxYear: y, quarter: 2);
+  if (md.compareTo('10-06') >= 0) return (taxYear: y, quarter: 3);
+  if (md.compareTo('01-05') <= 0) return (taxYear: y - 1, quarter: 3);
+  return (taxYear: y - 1, quarter: 4);
+}
+
+/// First and last day (yyyy-MM-dd) of a tax quarter.
+({String from, String to}) taxQuarterDates(int taxYear, int quarter) => switch (quarter) {
+  1 => (from: '$taxYear-04-06', to: '$taxYear-07-05'),
+  2 => (from: '$taxYear-07-06', to: '$taxYear-10-05'),
+  3 => (from: '$taxYear-10-06', to: '${taxYear + 1}-01-05'),
+  _ => (from: '${taxYear + 1}-01-06', to: '${taxYear + 1}-04-05'),
+};
+
+/// "2026-27".
+String taxYearLabel(int taxYear) => '$taxYear-${((taxYear + 1) % 100).toString().padLeft(2, '0')}';
+
+/// Rent received per tax quarter and property, oldest first, as CSV for
+/// whatever Making Tax Digital software or accountant files the return.
+/// The app keeps no expenses, so this is the income side only.
+String rentByQuarterCsv(Iterable<({String date, String property, int amount})> payments) {
+  final totals = <({int taxYear, int quarter, String property}), int>{};
+  for (final p in payments) {
+    final q = taxQuarter(p.date);
+    final key = (taxYear: q.taxYear, quarter: q.quarter, property: p.property);
+    totals[key] = (totals[key] ?? 0) + p.amount;
+  }
+  final keys = totals.keys.toList()
+    ..sort(
+      (a, b) => a.taxYear != b.taxYear
+          ? a.taxYear.compareTo(b.taxYear)
+          : (a.quarter != b.quarter ? a.quarter.compareTo(b.quarter) : a.property.compareTo(b.property)),
+    );
+  return [
+    'Tax year,Quarter,From,To,Property,Rent received (GBP)',
+    for (final k in keys)
+      [
+        taxYearLabel(k.taxYear),
+        'Q${k.quarter}',
+        taxQuarterDates(k.taxYear, k.quarter).from,
+        taxQuarterDates(k.taxYear, k.quarter).to,
+        _cell(k.property),
+        totals[k],
+      ].join(','),
   ].join('\n');
 }
