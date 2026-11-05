@@ -168,6 +168,7 @@ void main() {
               stage: Value(Stage.shortlisted.id),
               price: Value(price),
               added: '2026-11-01',
+              meta: Value(i == 1 ? '{"councilTax": 120, "bills": 150}' : '{}'),
             ),
             id,
           );
@@ -180,6 +181,8 @@ void main() {
     expect(find.text('2 homes, cheapest first'), findsOneWidget);
     expect(find.text('£600'), findsWidgets);
     expect(find.text('Needed on the day'), findsOneWidget);
+    expect(find.text('£920'), findsOneWidget); // 650 + 120 + 150
+    expect(find.text('All in a month'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await app.close();
   });

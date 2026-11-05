@@ -9,6 +9,7 @@ import '../domain/hunt_filter.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import '../domain/portals.dart';
+import '../domain/running_costs.dart';
 import 'common.dart';
 import 'compare_page.dart';
 import 'look.dart';
@@ -324,6 +325,9 @@ Future<void> editProperty(
   final beds = TextEditingController(text: p?.beds?.toString());
   final style = TextEditingController(text: p?.style);
   final url = TextEditingController(text: p?.url ?? advert?.url.toString());
+  final costs = p == null ? null : runningCosts(p);
+  final councilTax = TextEditingController(text: costs?.councilTax?.toString());
+  final bills = TextEditingController(text: costs?.bills?.toString());
   var k = p == null ? kind : PropertyKind.of(p.kind);
   return showFormDialog(
     context,
@@ -341,6 +345,22 @@ Future<void> editProperty(
       Field(beds, 'Bedrooms', number: true, helper: '0 for a studio'),
       Field(style, 'Type', hint: 'Apartment, terrace, semi-detached…'),
       Field(url, 'Advert link'),
+      if (k != PropertyKind.owned) ...[
+        Field(
+          councilTax,
+          'Council tax a month',
+          number: true,
+          prefix: '£',
+          helper: "The band's yearly charge on the council's site, divided by 12",
+        ),
+        Field(
+          bills,
+          'Bills a month',
+          number: true,
+          prefix: '£',
+          helper: 'Energy, water, broadband: your guess',
+        ),
+      ],
     ],
     onSave: () async {
       if (address.text.trim().isEmpty) return 'Enter the address.';
@@ -366,6 +386,9 @@ Future<void> editProperty(
             source: p == null && advert != null ? Value(advert.portal.name) : const Value.absent(),
             sourceId: p == null && advert != null ? Value(advert.id) : const Value.absent(),
             added: Value(p?.added ?? today()),
+            meta: Value(
+              withRunningCosts(p?.meta ?? '{}', councilTax: intIn(councilTax), bills: intIn(bills)),
+            ),
           ),
           id,
         );

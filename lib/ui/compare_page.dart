@@ -6,6 +6,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/pipeline.dart';
 import '../domain/price_check.dart';
+import '../domain/running_costs.dart';
 import 'common.dart';
 import 'look.dart';
 import 'property_page.dart';
@@ -33,6 +34,9 @@ class ComparePage extends ConsumerWidget {
 
     final facts = <(String, String Function(Property))>[
       (rent ? 'Rent a month' : 'Price', (p) => p.price == null ? '–' : gbp(p.price!)),
+      ('Council tax a month', (p) => _money(runningCosts(p).councilTax)),
+      ('Bills a month', (p) => _money(runningCosts(p).bills)),
+      if (rent) ('All in a month', (p) => _money(allInMonthly(p))),
       if (rent) ('Needed on the day', (p) => p.price == null ? '–' : gbp(moveInCosts(p.price!).total)),
       ('Stage', (p) => Stage.of(p.stage).label(kind)),
       ('Bedrooms', (p) => p.beds == null ? '–' : (p.beds == 0 ? 'Studio' : '${p.beds}')),
@@ -106,3 +110,5 @@ class ComparePage extends ConsumerWidget {
     );
   }
 }
+
+String _money(int? v) => v == null ? '–' : gbp(v);
