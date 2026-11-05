@@ -2573,6 +2573,16 @@ class $SearchesTable extends Searches with TableInfo<$SearchesTable, Search> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('propertypal'),
+  );
   static const VerificationMeta _pathMeta = const VerificationMeta('path');
   @override
   late final GeneratedColumn<String> path = GeneratedColumn<String>(
@@ -2581,6 +2591,26 @@ class $SearchesTable extends Searches with TableInfo<$SearchesTable, Search> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _keywordsMeta = const VerificationMeta('keywords');
+  @override
+  late final GeneratedColumn<String> keywords = GeneratedColumn<String>(
+    'keywords',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
   );
   static const VerificationMeta _maxPriceMeta = const VerificationMeta('maxPrice');
   @override
@@ -2674,7 +2704,10 @@ class $SearchesTable extends Searches with TableInfo<$SearchesTable, Search> {
     hlc,
     deleted,
     name,
+    source,
     path,
+    kind,
+    keywords,
     maxPrice,
     minBeds,
     maxBeds,
@@ -2710,10 +2743,19 @@ class $SearchesTable extends Searches with TableInfo<$SearchesTable, Search> {
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta, source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    }
     if (data.containsKey('path')) {
       context.handle(_pathMeta, path.isAcceptableOrUnknown(data['path']!, _pathMeta));
     } else if (isInserting) {
       context.missing(_pathMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(_kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    }
+    if (data.containsKey('keywords')) {
+      context.handle(_keywordsMeta, keywords.isAcceptableOrUnknown(data['keywords']!, _keywordsMeta));
     }
     if (data.containsKey('max_price')) {
       context.handle(_maxPriceMeta, maxPrice.isAcceptableOrUnknown(data['max_price']!, _maxPriceMeta));
@@ -2761,7 +2803,10 @@ class $SearchesTable extends Searches with TableInfo<$SearchesTable, Search> {
       hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
       deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
       name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      source: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}source'])!,
       path: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}path'])!,
+      kind: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      keywords: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}keywords'])!,
       maxPrice: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}max_price']),
       minBeds: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}min_beds']),
       maxBeds: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}max_beds']),
@@ -2792,8 +2837,19 @@ class Search extends DataClass implements Insertable<Search> {
   final bool deleted;
   final String name;
 
-  /// PropertyPal search path, e.g. /property-to-rent/enniskillen.
+  /// propertypal: Watch reads a PropertyPal search. email: Watch reads the
+  /// portal alert emails forwarded to it (England).
+  final String source;
+
+  /// PropertyPal search path, e.g. /property-to-rent/enniskillen. Empty for email.
   final String path;
+
+  /// Email searches: rent | buy.
+  final String kind;
+
+  /// Email searches: words the advert must mention, comma separated; a word
+  /// starting with "-" must not appear.
+  final String keywords;
   final int? maxPrice;
   final int? minBeds;
   final int? maxBeds;
@@ -2808,7 +2864,10 @@ class Search extends DataClass implements Insertable<Search> {
     required this.hlc,
     required this.deleted,
     required this.name,
+    required this.source,
     required this.path,
+    required this.kind,
+    required this.keywords,
     this.maxPrice,
     this.minBeds,
     this.maxBeds,
@@ -2826,7 +2885,10 @@ class Search extends DataClass implements Insertable<Search> {
     map['hlc'] = Variable<String>(hlc);
     map['deleted'] = Variable<bool>(deleted);
     map['name'] = Variable<String>(name);
+    map['source'] = Variable<String>(source);
     map['path'] = Variable<String>(path);
+    map['kind'] = Variable<String>(kind);
+    map['keywords'] = Variable<String>(keywords);
     if (!nullToAbsent || maxPrice != null) {
       map['max_price'] = Variable<int>(maxPrice);
     }
@@ -2857,7 +2919,10 @@ class Search extends DataClass implements Insertable<Search> {
       hlc: Value(hlc),
       deleted: Value(deleted),
       name: Value(name),
+      source: Value(source),
       path: Value(path),
+      kind: Value(kind),
+      keywords: Value(keywords),
       maxPrice: maxPrice == null && nullToAbsent ? const Value.absent() : Value(maxPrice),
       minBeds: minBeds == null && nullToAbsent ? const Value.absent() : Value(minBeds),
       maxBeds: maxBeds == null && nullToAbsent ? const Value.absent() : Value(maxBeds),
@@ -2877,7 +2942,10 @@ class Search extends DataClass implements Insertable<Search> {
       hlc: serializer.fromJson<String>(json['hlc']),
       deleted: serializer.fromJson<bool>(json['deleted']),
       name: serializer.fromJson<String>(json['name']),
+      source: serializer.fromJson<String>(json['source']),
       path: serializer.fromJson<String>(json['path']),
+      kind: serializer.fromJson<String>(json['kind']),
+      keywords: serializer.fromJson<String>(json['keywords']),
       maxPrice: serializer.fromJson<int?>(json['maxPrice']),
       minBeds: serializer.fromJson<int?>(json['minBeds']),
       maxBeds: serializer.fromJson<int?>(json['maxBeds']),
@@ -2897,7 +2965,10 @@ class Search extends DataClass implements Insertable<Search> {
       'hlc': serializer.toJson<String>(hlc),
       'deleted': serializer.toJson<bool>(deleted),
       'name': serializer.toJson<String>(name),
+      'source': serializer.toJson<String>(source),
       'path': serializer.toJson<String>(path),
+      'kind': serializer.toJson<String>(kind),
+      'keywords': serializer.toJson<String>(keywords),
       'maxPrice': serializer.toJson<int?>(maxPrice),
       'minBeds': serializer.toJson<int?>(minBeds),
       'maxBeds': serializer.toJson<int?>(maxBeds),
@@ -2915,7 +2986,10 @@ class Search extends DataClass implements Insertable<Search> {
     String? hlc,
     bool? deleted,
     String? name,
+    String? source,
     String? path,
+    String? kind,
+    String? keywords,
     Value<int?> maxPrice = const Value.absent(),
     Value<int?> minBeds = const Value.absent(),
     Value<int?> maxBeds = const Value.absent(),
@@ -2930,7 +3004,10 @@ class Search extends DataClass implements Insertable<Search> {
     hlc: hlc ?? this.hlc,
     deleted: deleted ?? this.deleted,
     name: name ?? this.name,
+    source: source ?? this.source,
     path: path ?? this.path,
+    kind: kind ?? this.kind,
+    keywords: keywords ?? this.keywords,
     maxPrice: maxPrice.present ? maxPrice.value : this.maxPrice,
     minBeds: minBeds.present ? minBeds.value : this.minBeds,
     maxBeds: maxBeds.present ? maxBeds.value : this.maxBeds,
@@ -2947,7 +3024,10 @@ class Search extends DataClass implements Insertable<Search> {
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deleted: data.deleted.present ? data.deleted.value : this.deleted,
       name: data.name.present ? data.name.value : this.name,
+      source: data.source.present ? data.source.value : this.source,
       path: data.path.present ? data.path.value : this.path,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      keywords: data.keywords.present ? data.keywords.value : this.keywords,
       maxPrice: data.maxPrice.present ? data.maxPrice.value : this.maxPrice,
       minBeds: data.minBeds.present ? data.minBeds.value : this.minBeds,
       maxBeds: data.maxBeds.present ? data.maxBeds.value : this.maxBeds,
@@ -2967,7 +3047,10 @@ class Search extends DataClass implements Insertable<Search> {
           ..write('hlc: $hlc, ')
           ..write('deleted: $deleted, ')
           ..write('name: $name, ')
+          ..write('source: $source, ')
           ..write('path: $path, ')
+          ..write('kind: $kind, ')
+          ..write('keywords: $keywords, ')
           ..write('maxPrice: $maxPrice, ')
           ..write('minBeds: $minBeds, ')
           ..write('maxBeds: $maxBeds, ')
@@ -2987,7 +3070,10 @@ class Search extends DataClass implements Insertable<Search> {
     hlc,
     deleted,
     name,
+    source,
     path,
+    kind,
+    keywords,
     maxPrice,
     minBeds,
     maxBeds,
@@ -3006,7 +3092,10 @@ class Search extends DataClass implements Insertable<Search> {
           other.hlc == this.hlc &&
           other.deleted == this.deleted &&
           other.name == this.name &&
+          other.source == this.source &&
           other.path == this.path &&
+          other.kind == this.kind &&
+          other.keywords == this.keywords &&
           other.maxPrice == this.maxPrice &&
           other.minBeds == this.minBeds &&
           other.maxBeds == this.maxBeds &&
@@ -3023,7 +3112,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
   final Value<String> hlc;
   final Value<bool> deleted;
   final Value<String> name;
+  final Value<String> source;
   final Value<String> path;
+  final Value<String> kind;
+  final Value<String> keywords;
   final Value<int?> maxPrice;
   final Value<int?> minBeds;
   final Value<int?> maxBeds;
@@ -3039,7 +3131,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
     this.hlc = const Value.absent(),
     this.deleted = const Value.absent(),
     this.name = const Value.absent(),
+    this.source = const Value.absent(),
     this.path = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.keywords = const Value.absent(),
     this.maxPrice = const Value.absent(),
     this.minBeds = const Value.absent(),
     this.maxBeds = const Value.absent(),
@@ -3056,7 +3151,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
     this.hlc = const Value.absent(),
     this.deleted = const Value.absent(),
     required String name,
+    this.source = const Value.absent(),
     required String path,
+    this.kind = const Value.absent(),
+    this.keywords = const Value.absent(),
     this.maxPrice = const Value.absent(),
     this.minBeds = const Value.absent(),
     this.maxBeds = const Value.absent(),
@@ -3075,7 +3173,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
     Expression<String>? hlc,
     Expression<bool>? deleted,
     Expression<String>? name,
+    Expression<String>? source,
     Expression<String>? path,
+    Expression<String>? kind,
+    Expression<String>? keywords,
     Expression<int>? maxPrice,
     Expression<int>? minBeds,
     Expression<int>? maxBeds,
@@ -3092,7 +3193,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
       if (hlc != null) 'hlc': hlc,
       if (deleted != null) 'deleted': deleted,
       if (name != null) 'name': name,
+      if (source != null) 'source': source,
       if (path != null) 'path': path,
+      if (kind != null) 'kind': kind,
+      if (keywords != null) 'keywords': keywords,
       if (maxPrice != null) 'max_price': maxPrice,
       if (minBeds != null) 'min_beds': minBeds,
       if (maxBeds != null) 'max_beds': maxBeds,
@@ -3111,7 +3215,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
     Value<String>? hlc,
     Value<bool>? deleted,
     Value<String>? name,
+    Value<String>? source,
     Value<String>? path,
+    Value<String>? kind,
+    Value<String>? keywords,
     Value<int?>? maxPrice,
     Value<int?>? minBeds,
     Value<int?>? maxBeds,
@@ -3128,7 +3235,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
       hlc: hlc ?? this.hlc,
       deleted: deleted ?? this.deleted,
       name: name ?? this.name,
+      source: source ?? this.source,
       path: path ?? this.path,
+      kind: kind ?? this.kind,
+      keywords: keywords ?? this.keywords,
       maxPrice: maxPrice ?? this.maxPrice,
       minBeds: minBeds ?? this.minBeds,
       maxBeds: maxBeds ?? this.maxBeds,
@@ -3157,8 +3267,17 @@ class SearchesCompanion extends UpdateCompanion<Search> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (path.present) {
       map['path'] = Variable<String>(path.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (keywords.present) {
+      map['keywords'] = Variable<String>(keywords.value);
     }
     if (maxPrice.present) {
       map['max_price'] = Variable<int>(maxPrice.value);
@@ -3200,7 +3319,10 @@ class SearchesCompanion extends UpdateCompanion<Search> {
           ..write('hlc: $hlc, ')
           ..write('deleted: $deleted, ')
           ..write('name: $name, ')
+          ..write('source: $source, ')
           ..write('path: $path, ')
+          ..write('kind: $kind, ')
+          ..write('keywords: $keywords, ')
           ..write('maxPrice: $maxPrice, ')
           ..write('minBeds: $minBeds, ')
           ..write('maxBeds: $maxBeds, ')
@@ -7687,7 +7809,10 @@ typedef $$SearchesTableCreateCompanionBuilder = SearchesCompanion Function({
   Value<String> hlc,
   Value<bool> deleted,
   required String name,
+  Value<String> source,
   required String path,
+  Value<String> kind,
+  Value<String> keywords,
   Value<int?> maxPrice,
   Value<int?> minBeds,
   Value<int?> maxBeds,
@@ -7704,7 +7829,10 @@ typedef $$SearchesTableUpdateCompanionBuilder = SearchesCompanion Function({
   Value<String> hlc,
   Value<bool> deleted,
   Value<String> name,
+  Value<String> source,
   Value<String> path,
+  Value<String> kind,
+  Value<String> keywords,
   Value<int?> maxPrice,
   Value<int?> minBeds,
   Value<int?> maxBeds,
@@ -7737,8 +7865,17 @@ class $$SearchesTableFilterComposer extends Composer<_$AppDatabase, $SearchesTab
   ColumnFilters<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get path =>
       $composableBuilder(column: $table.path, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get keywords =>
+      $composableBuilder(column: $table.keywords, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get maxPrice =>
       $composableBuilder(column: $table.maxPrice, builder: (column) => ColumnFilters(column));
@@ -7788,8 +7925,17 @@ class $$SearchesTableOrderingComposer extends Composer<_$AppDatabase, $SearchesT
   ColumnOrderings<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get path =>
       $composableBuilder(column: $table.path, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get keywords =>
+      $composableBuilder(column: $table.keywords, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get maxPrice =>
       $composableBuilder(column: $table.maxPrice, builder: (column) => ColumnOrderings(column));
@@ -7836,7 +7982,15 @@ class $$SearchesTableAnnotationComposer extends Composer<_$AppDatabase, $Searche
 
   GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
   GeneratedColumn<String> get path => $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<String> get kind => $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get keywords =>
+      $composableBuilder(column: $table.keywords, builder: (column) => column);
 
   GeneratedColumn<int> get maxPrice =>
       $composableBuilder(column: $table.maxPrice, builder: (column) => column);
@@ -7892,7 +8046,10 @@ class $$SearchesTableTableManager
                 Value<String> hlc = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String> source = const Value.absent(),
                 Value<String> path = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> keywords = const Value.absent(),
                 Value<int?> maxPrice = const Value.absent(),
                 Value<int?> minBeds = const Value.absent(),
                 Value<int?> maxBeds = const Value.absent(),
@@ -7908,7 +8065,10 @@ class $$SearchesTableTableManager
                 hlc: hlc,
                 deleted: deleted,
                 name: name,
+                source: source,
                 path: path,
+                kind: kind,
+                keywords: keywords,
                 maxPrice: maxPrice,
                 minBeds: minBeds,
                 maxBeds: maxBeds,
@@ -7926,7 +8086,10 @@ class $$SearchesTableTableManager
                 Value<String> hlc = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
                 required String name,
+                Value<String> source = const Value.absent(),
                 required String path,
+                Value<String> kind = const Value.absent(),
+                Value<String> keywords = const Value.absent(),
                 Value<int?> maxPrice = const Value.absent(),
                 Value<int?> minBeds = const Value.absent(),
                 Value<int?> maxBeds = const Value.absent(),
@@ -7942,7 +8105,10 @@ class $$SearchesTableTableManager
                 hlc: hlc,
                 deleted: deleted,
                 name: name,
+                source: source,
                 path: path,
+                kind: kind,
+                keywords: keywords,
                 maxPrice: maxPrice,
                 minBeds: minBeds,
                 maxBeds: maxBeds,

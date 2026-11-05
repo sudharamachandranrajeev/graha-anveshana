@@ -113,8 +113,10 @@ List<Listing> parsePropertyPalPage(String html) {
 
 /// A listing as Brahma Watch sends it (see watch/src/propertypal.ts).
 Listing listingFromWatch(Map<String, Object?> j) => Listing(
-  source: 'propertypal',
-  sourceId: '${j['id']}',
+  // Alert-email adverts carry their portal (rightmove, zoopla, ...) and its
+  // advert id, so they match the same advert pasted from that portal.
+  source: '${j['source'] ?? 'propertypal'}',
+  sourceId: '${j['sourceId'] ?? j['id']}',
   url: '${j['url'] ?? ''}',
   address: '${j['address'] ?? ''}',
   postcode: postcodeIn('${j['address'] ?? ''}') ?? '',

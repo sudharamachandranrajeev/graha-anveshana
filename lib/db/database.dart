@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
   ];
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -59,7 +59,14 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     },
     // 2 and 3 added the car tables, which moved to Vahana Anveshana. Databases
     // already at those versions keep the tables, unused; nothing is dropped.
-    onUpgrade: (m, from, to) async {},
+    // 4 added email searches.
+    onUpgrade: (m, from, to) async {
+      if (from < 4) {
+        await m.addColumn(searches, searches.source);
+        await m.addColumn(searches, searches.kind);
+        await m.addColumn(searches, searches.keywords);
+      }
+    },
   );
 
   static const _indexes = [

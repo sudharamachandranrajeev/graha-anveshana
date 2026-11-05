@@ -93,8 +93,19 @@ class Viewings extends Table with SyncedRow {
 class Searches extends Table with SyncedRow {
   TextColumn get name => text()();
 
-  /// PropertyPal search path, e.g. /property-to-rent/enniskillen.
+  /// propertypal: Watch reads a PropertyPal search. email: Watch reads the
+  /// portal alert emails forwarded to it (England).
+  TextColumn get source => text().withDefault(const Constant('propertypal'))();
+
+  /// PropertyPal search path, e.g. /property-to-rent/enniskillen. Empty for email.
   TextColumn get path => text()();
+
+  /// Email searches: rent | buy.
+  TextColumn get kind => text().withDefault(const Constant(''))();
+
+  /// Email searches: words the advert must mention, comma separated; a word
+  /// starting with "-" must not appear.
+  TextColumn get keywords => text().withDefault(const Constant(''))();
   IntColumn get maxPrice => integer().nullable()();
   IntColumn get minBeds => integer().nullable()();
   IntColumn get maxBeds => integer().nullable()();

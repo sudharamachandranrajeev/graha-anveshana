@@ -18,7 +18,10 @@ class WatchSearch {
   const WatchSearch({
     required this.id,
     required this.name,
-    required this.path,
+    this.source = 'propertypal',
+    this.path = '',
+    this.kind = '',
+    this.keywords = const [],
     this.maxPrice,
     this.minBeds,
     this.maxBeds,
@@ -32,20 +35,34 @@ class WatchSearch {
 
   final String id, name;
 
-  /// A PropertyPal search path, e.g. /property-to-rent/enniskillen.
+  /// propertypal, or email (portal alert emails forwarded to Watch).
+  final String source;
+
+  /// A PropertyPal search path, e.g. /property-to-rent/enniskillen. Empty for email.
   final String path;
+
+  /// Email searches: rent, buy or '' (either).
+  final String kind;
+
+  /// Email searches: words the advert must mention; "-word" must not appear.
+  final List<String> keywords;
   final int? maxPrice, minBeds, maxBeds;
   final double? centreLat, centreLon;
   final String centreLabel;
   final double? radiusKm;
   final bool includeUnpriced, paused;
 
+  bool get isEmail => source == 'email';
+
   factory WatchSearch.fromWatchJson(Map<String, Object?> j) {
     final centre = (j['centre'] as Map?)?.cast<String, Object?>();
     return WatchSearch(
       id: '${j['id']}',
       name: '${j['name'] ?? j['id']}',
-      path: '${j['path']}',
+      source: j['source'] == 'email' ? 'email' : 'propertypal',
+      path: '${j['path'] ?? ''}',
+      kind: '${j['kind'] ?? ''}',
+      keywords: [for (final k in (j['keywords'] as List?) ?? const []) '$k'],
       maxPrice: (j['maxPrice'] as num?)?.toInt(),
       minBeds: (j['minBeds'] as num?)?.toInt(),
       maxBeds: (j['maxBeds'] as num?)?.toInt(),
@@ -61,8 +78,10 @@ class WatchSearch {
   Map<String, Object?> toWatchJson() => {
     'id': id,
     'name': name,
-    'source': 'propertypal',
-    'path': path,
+    'source': source,
+    'path': isEmail ? '' : path,
+    if (isEmail && (kind == 'rent' || kind == 'buy')) 'kind': kind,
+    if (isEmail && keywords.isNotEmpty) 'keywords': keywords,
     'maxPrice': ?maxPrice,
     'minBeds': ?minBeds,
     'maxBeds': ?maxBeds,
@@ -73,6 +92,13 @@ class WatchSearch {
     'paused': paused,
   };
 }
+
+/// Splits "garden, -retirement, off street parking" into the words Watch
+/// matches (at most 20, each up to 40 characters, as the Worker accepts).
+List<String> keywordList(String text) => [
+  for (final k in text.split(',').map((k) => k.trim().toLowerCase()))
+    if (k.isNotEmpty && k != '-') k.length > 40 ? k.substring(0, 40) : k,
+].take(20).toList();
 
 /// Validates a search path the way the Worker does.
 bool isSearchPath(String path) =>

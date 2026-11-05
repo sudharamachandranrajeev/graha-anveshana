@@ -141,6 +141,34 @@ void main() {
     await app.close();
   });
 
+  testWidgets('an email search is saved with its kind and words', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Searches');
+    await app.tapText('Add');
+    await app.enter('Name', 'Leeds flats');
+    await app.tapText('A PropertyPal search (Northern Ireland)');
+    await app.tapText('Alert emails from Rightmove, Zoopla and others (England)');
+    expect(find.widgetWithText(TextField, 'PropertyPal search'), findsNothing);
+    // A distance needs a place to measure from.
+    await app.enter('Within', '5');
+    await app.tapText('Save');
+    expect(find.text('Enter a place or postcode to measure the distance from.'), findsOneWidget);
+    await app.enter('Within', '');
+    await app.enter('Words', 'Garden, -retirement');
+    await app.enter('Highest price', '1100');
+    await app.tapText('Save');
+    final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.searches).get()))!;
+    final s = rows.single;
+    expect(
+      (s.source, s.path, s.kind, s.keywords, s.maxPrice),
+      ('email', '', 'rent', 'garden, -retirement', 1100),
+    );
+    expect(find.text('Alert emails, to rent · up to £1,100 · garden, -retirement'), findsOneWidget);
+    await app.close();
+  });
+
   testWidgets('advert wording is checked against the England rules', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);

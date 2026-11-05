@@ -24,6 +24,7 @@ const anveshanaHints = <String, String>{
   'searches.fetch': 'Copy the searches Brahma Watch runs into Graha Anveshana.',
   'searches.run': 'Ask Brahma Watch to check every search now.',
   'searches.test': 'Send a test alert to your phone.',
+  'searches.emails': 'England: watch Rightmove, Zoopla and other alert emails through Brahma Watch.',
   'searches.path':
       'The part of a PropertyPal search address after the site name, e.g. /property-to-rent/enniskillen.',
   // Invest
@@ -48,7 +49,8 @@ const anveshanaHints = <String, String>{
       'by themselves; drop the ones that are not for you.',
   'page.contacts': 'Agents, landlords, tenants and trades in one place. Add them here or from a home.',
   'page.searches':
-      'PropertyPal searches Brahma Watch checks for you. Send them to the Watch, then new homes arrive '
+      'Searches Brahma Watch checks for you: PropertyPal searches, and in England the alert emails from '
+      'Rightmove, Zoopla and others. Send them to the Watch, then new homes arrive '
       'as phone alerts and under Hunt. Settings > Brahma Watch connects it first.',
   'page.invest':
       'Work out buy-to-let returns, what buying a home costs, or what land is worth to develop. Save the '

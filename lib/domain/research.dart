@@ -260,6 +260,31 @@ class Research {
     );
   }
 
+  /// Where a full postcode, a postcode district ("LS6") or a place name
+  /// ("Pontefract") is, or null when postcodes.io does not know it.
+  Future<({double lat, double lon, String label})?> whereIs(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return null;
+    Uri api(String path, [Map<String, String>? params]) =>
+        Uri(scheme: 'https', host: 'api.postcodes.io', path: path, queryParameters: params);
+    final (uri, labelKey) = RegExp(r'^[A-Za-z]{1,2}[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}$').hasMatch(q)
+        ? (api('/postcodes/$q'), 'postcode')
+        : RegExp(r'^[A-Za-z]{1,2}[0-9][A-Za-z0-9]?$').hasMatch(q)
+        ? (api('/outcodes/$q'), 'outcode')
+        : (api('/places', {'q': q, 'limit': '1'}), 'name_1');
+    final r = switch (await _get(uri)) {
+      {'result': {'latitude': num _, 'longitude': num _} && final Map one} => one,
+      {'result': [{'latitude': num _, 'longitude': num _} && final Map first, ...]} => first,
+      _ => null,
+    };
+    if (r == null) return null;
+    return (
+      lat: (r['latitude'] as num).toDouble(),
+      lon: (r['longitude'] as num).toDouble(),
+      label: '${r[labelKey] ?? q}',
+    );
+  }
+
   /// The latest published month of the UK HPI for [region]; the index runs
   /// about two months behind, so it steps back until a month has data.
   Future<PriceIndex?> priceIndex(String region) async {
