@@ -11,7 +11,8 @@ const anveshanaHints = <String, String>{
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
   // Hunt
-  'hunt.add': 'Paste a PropertyPal link, or type a property in.',
+  'hunt.add':
+      'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent), or type a property in.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',
   'hunt.distance': 'As the crow flies from the home point in Settings.',
   'hunt.enquiry': 'A first message: is it free, what next, when to view. Your details come from Settings.',

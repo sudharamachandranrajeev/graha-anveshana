@@ -7,6 +7,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/watch_client.dart';
 import 'common.dart';
+import 'portals_card.dart';
 
 WatchSearch _toWatch(Search s) => WatchSearch(
   id: s.id,
@@ -47,6 +48,8 @@ class SearchesPage extends ConsumerWidget {
         label: const Text('Add'),
       ),
       children: [
+        const PortalsCard(),
+        const SizedBox(height: 12),
         SectionCard(
           title: 'Brahma Watch',
           hint: 'settings.watch',

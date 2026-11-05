@@ -7,6 +7,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
+import '../domain/portals.dart';
 import 'common.dart';
 import 'look.dart';
 import 'property_page.dart';
@@ -164,8 +165,10 @@ class _HuntPageState extends ConsumerState<HuntPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.link),
-              title: const Text('From a PropertyPal link'),
-              subtitle: const Text('An advert, or a whole search page'),
+              title: const Text('From a link'),
+              subtitle: const Text(
+                'PropertyPal adverts and searches, or an advert on Rightmove, Zoopla, OnTheMarket, OpenRent',
+              ),
               onTap: () => Navigator.pop(context, 'link'),
             ),
             ListTile(
@@ -188,22 +191,28 @@ class _HuntPageState extends ConsumerState<HuntPage> {
   }
 }
 
-/// Asks for a PropertyPal link and imports its adverts.
+/// Asks for an advert link. PropertyPal adverts are read; an advert on
+/// another portal is only recognised from its link (those sites forbid
+/// fetching), so its details are typed in beside the saved link.
 Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind kind) async {
   final link = TextEditingController();
   var added = 0, updated = 0;
+  PortalAdvert? portal;
   final ok = await showFormDialog(
     context,
-    title: 'Add from PropertyPal',
+    title: 'Add from a link',
     action: 'Add',
     fields: (_) => [
       Field(link, 'Link', hint: 'https://www.propertypal.com/…', autofocus: true),
       const Text(
-        'PropertyPal sometimes asks for a browser check. If it does, Brahma Watch can bring the listing in '
-        'instead, or type it in.',
+        'PropertyPal adverts are read for you. For Rightmove, Zoopla, OnTheMarket or OpenRent the link is '
+        'kept and you type the details, because those sites do not allow apps to read them. If PropertyPal '
+        'asks for a browser check, Brahma Watch can bring the listing in instead.',
       ),
     ],
     onSave: () async {
+      portal = parsePortalLink(link.text);
+      if (portal != null) return null;
       final List<Listing> listings;
       try {
         listings = await fetchPropertyPal(link.text);
@@ -218,7 +227,10 @@ Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind ki
       return null;
     },
   );
-  if (ok && context.mounted) {
+  if (!ok || !context.mounted) return;
+  if (portal != null) {
+    await editProperty(context, ref, kind: kind, advert: portal);
+  } else {
     showMessage(context, ['Added $added', if (updated > 0) 'updated $updated'].join(', '));
   }
 }
@@ -229,13 +241,14 @@ Future<void> editProperty(
   WidgetRef ref, {
   Property? p,
   PropertyKind kind = PropertyKind.rent,
+  PortalAdvert? advert,
 }) {
-  final address = TextEditingController(text: p?.address);
+  final address = TextEditingController(text: p?.address ?? advert?.address);
   final postcode = TextEditingController(text: p?.postcode);
   final price = TextEditingController(text: p?.price?.toString());
   final beds = TextEditingController(text: p?.beds?.toString());
   final style = TextEditingController(text: p?.style);
-  final url = TextEditingController(text: p?.url);
+  final url = TextEditingController(text: p?.url ?? advert?.url.toString());
   var k = p == null ? kind : PropertyKind.of(p.kind);
   return showFormDialog(
     context,
@@ -257,6 +270,11 @@ Future<void> editProperty(
     onSave: () async {
       if (address.text.trim().isEmpty) return 'Enter the address.';
       final pc = postcode.text.trim().isEmpty ? postcodeIn(address.text) : postcodeIn(postcode.text);
+      if (p == null && advert != null) {
+        final all = await ref.read(propertiesProvider.future);
+        final dup = all.where((x) => x.source == advert.portal.name && x.sourceId == advert.id).firstOrNull;
+        if (dup != null) return 'This advert is already in your list: ${dup.address}.';
+      }
       await ref.mutate((s) async {
         final id = p?.id ?? newId();
         await s.book.save(
@@ -270,6 +288,8 @@ Future<void> editProperty(
             beds: Value(intIn(beds)),
             style: Value(style.text.trim()),
             url: Value(url.text.trim()),
+            source: p == null && advert != null ? Value(advert.portal.name) : const Value.absent(),
+            sourceId: p == null && advert != null ? Value(advert.id) : const Value.absent(),
             added: Value(p?.added ?? today()),
           ),
           id,
