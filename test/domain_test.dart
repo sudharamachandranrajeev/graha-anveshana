@@ -135,6 +135,21 @@ void main() {
   });
 
   group('lettings', () {
+    test('a rent rise waits for two months notice and a year since the last', () {
+      expect(
+        earliestRentIncrease(noticeServed: '2026-11-05', lastIncreaseOrStart: '2025-10-01'),
+        '2027-01-05',
+      );
+      expect(
+        earliestRentIncrease(noticeServed: '2026-11-05', lastIncreaseOrStart: '2026-06-15'),
+        '2027-06-15',
+      );
+      expect(
+        earliestRentIncrease(noticeServed: '2026-12-31', lastIncreaseOrStart: '2020-01-01'),
+        '2027-02-28',
+      );
+    });
+
     test('rent falls due monthly, on short months at the month end', () {
       expect(rentDueDates(start: '2026-01-15', day: 15, asOf: '2026-04-14'), [
         '2026-01-15',

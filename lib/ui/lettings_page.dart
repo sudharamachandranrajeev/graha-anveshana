@@ -251,6 +251,12 @@ class _TenancyCard extends ConsumerWidget {
                 icon: const Icon(Icons.payments_outlined),
                 label: Text(landlord ? 'Record rent received' : 'Record rent paid'),
               ),
+              if (landlord)
+                TextButton.icon(
+                  onPressed: () => _rentIncrease(context),
+                  icon: const Icon(Icons.trending_up),
+                  label: const Text('Rent rise dates'),
+                ),
               TextButton.icon(
                 onPressed: () => editTenancy(context, ref, properties, t: t),
                 icon: const Icon(Icons.edit_outlined),
@@ -259,6 +265,51 @@ class _TenancyCard extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// England: when a rent rise can start and what it is as a percentage.
+  Future<void> _rentIncrease(BuildContext context) async {
+    final newRent = TextEditingController();
+    var notice = today(), last = t.start;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final from = earliestRentIncrease(noticeServed: notice, lastIncreaseOrStart: last);
+          final rent = intIn(newRent);
+          final rise = rent == null || t.rent == 0 ? null : (rent - t.rent) / t.rent * 100;
+          return AlertDialog(
+            title: const Text('Rent rise dates'),
+            scrollable: true,
+            content: SizedBox(
+              width: 480,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Notice served on'),
+                  DateField(value: notice, onChanged: (d) => setState(() => notice = d)),
+                  const SizedBox(height: 12),
+                  const Text('Last rent rise, or the tenancy start'),
+                  DateField(value: last, onChanged: (d) => setState(() => last = d)),
+                  const SizedBox(height: 12),
+                  Field(newRent, 'New rent a month', number: true, prefix: '£'),
+                  FigureRow('Earliest the new rent can start', niceDate(from), strong: true),
+                  if (rise != null) FigureRow('Rise on ${gbp(t.rent)}', '${rise.toStringAsFixed(1)}%'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'England, from 1 May 2026: one rise a year, by a formal notice (section 13, Form 4A) '
+                    'giving at least two months. The tenant can ask a tribunal to set the market rent. '
+                    'Guidance only, not legal advice: check gov.uk before you serve it.',
+                  ),
+                ],
+              ),
+            ),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+          );
+        },
       ),
     );
   }

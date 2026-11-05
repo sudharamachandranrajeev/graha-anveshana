@@ -50,6 +50,29 @@ const complianceKinds = <ComplianceKind>[
     nations: {},
     note: 'NI: within 28 days of the tenancy starting.',
   ),
+  (
+    id: 'rra_sheet',
+    label: "Renters' Rights Act information sheet given",
+    months: null,
+    nations: {Nation.england},
+    note: 'England: give it to every tenant. Existing tenants were due it by 31 May 2026.',
+  ),
+  (
+    id: 'prs_register',
+    label: 'Private rented sector database registration',
+    months: null,
+    nations: {Nation.england},
+    note:
+        'England: you and each property must register. Opens by region from 15 Dec 2026, starting in the '
+        'West Midlands; the Yorkshire date and fee are not yet confirmed. Check gov.uk.',
+  ),
+  (
+    id: 'right_to_rent',
+    label: 'Right to rent check',
+    months: null,
+    nations: {Nation.england},
+    note: 'England: before the tenancy starts, for every adult who will live there.',
+  ),
   (id: 'insurance', label: 'Landlord insurance renewal', months: 12, nations: {}, note: ''),
   (id: 'legionella', label: 'Legionella risk assessment', months: 24, nations: {}, note: ''),
 ];
@@ -86,3 +109,12 @@ int rentBalance({
   required String asOf,
 }) =>
     rentDueDates(start: start, end: end, day: day, asOf: asOf).length * rent - paid.fold(0, (a, b) => a + b);
+
+/// The earliest date a rent rise can start in England under the Renters'
+/// Rights Act: at least two months after the notice, and at least a year
+/// after the last rise (or after the tenancy began, for the first rise).
+/// Dates are yyyy-MM-dd.
+String earliestRentIncrease({required String noticeServed, required String lastIncreaseOrStart}) {
+  final byNotice = addMonths(noticeServed, 2), byYear = addMonths(lastIncreaseOrStart, 12);
+  return byNotice.compareTo(byYear) >= 0 ? byNotice : byYear;
+}
