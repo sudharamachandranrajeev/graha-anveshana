@@ -7,6 +7,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
+import '../domain/viewing_checklist.dart';
 import 'common.dart';
 import 'look.dart';
 import 'contacts_page.dart';
@@ -162,10 +163,19 @@ class PropertyPage extends ConsumerWidget {
         const SizedBox(height: 12),
         SectionCard(
           title: 'Viewings',
-          trailing: TextButton.icon(
-            onPressed: () => _bookViewing(context, ref, p),
-            icon: const Icon(Icons.event_available_outlined),
-            label: const Text('Book'),
+          trailing: Wrap(
+            children: [
+              TextButton.icon(
+                onPressed: () => _checklist(context, ref, p, kind),
+                icon: const Icon(Icons.checklist),
+                label: const Text('Checklist'),
+              ),
+              TextButton.icon(
+                onPressed: () => _bookViewing(context, ref, p),
+                icon: const Icon(Icons.event_available_outlined),
+                label: const Text('Book'),
+              ),
+            ],
           ),
           child: viewings.isEmpty
               ? const Text('None booked.')
@@ -266,6 +276,43 @@ class PropertyPage extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  /// Tick what was wrong at a viewing; the problems are added to the notes.
+  Future<void> _checklist(BuildContext context, WidgetRef ref, Property p, PropertyKind kind) async {
+    final items = viewingChecklist(kind);
+    final found = <String>{};
+    await showFormDialog(
+      context,
+      title: 'Viewing checklist',
+      action: 'Add to notes',
+      fields: (setState) => [
+        const Text('Tick what you found wrong. Each line says what to look for.'),
+        for (final i in items)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: found.contains(i.id),
+            title: Text(i.label),
+            subtitle: Text(i.ask),
+            onChanged: (v) => setState(() => v! ? found.add(i.id) : found.remove(i.id)),
+          ),
+      ],
+      onSave: () async {
+        final note = viewingNote(today(), [
+          for (final i in items)
+            if (found.contains(i.id)) i,
+        ]);
+        await ref.mutate(
+          (s) => s.book.save(
+            s.db.properties,
+            p.copyWith(notes: p.notes.isEmpty ? note : '${p.notes}\n$note'),
+            p.id,
+          ),
+        );
+        return null;
+      },
     );
   }
 

@@ -184,6 +184,21 @@ void main() {
     await app.close();
   });
 
+  testWidgets('the viewing checklist adds the problems to the notes', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
+    await app.tapText('Checklist');
+    await app.tapText('Damp or mould');
+    await app.tapText('Parking');
+    await app.tapText('Add to notes');
+    final p = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!
+        .firstWhere((x) => x.address.startsWith('Apt 1'));
+    expect(p.notes, contains('problems: damp or mould; parking.'));
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
