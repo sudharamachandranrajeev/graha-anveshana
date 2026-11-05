@@ -27,6 +27,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeProvider).value;
+    final log = ref.watch(interactionsProvider).value ?? const <Interaction>[];
     return PageScaffold(
       title: 'Hunt',
       banner: 'page.hunt',
@@ -137,6 +138,12 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                             distance: dist(p),
                             best: top != null && p.id == top.id,
                             share: dearest > 0 && p.price != null ? p.price! / dearest : null,
+                            quietDays: stage == Stage.enquired || stage == Stage.viewing
+                                ? daysWithoutReply([
+                                    for (final i in log.where((i) => i.propertyId == p.id))
+                                      (channel: i.channel, direction: i.direction, at: i.at),
+                                  ], today())
+                                : null,
                           ),
                       ];
                     }(),
@@ -328,8 +335,11 @@ class _StageHeading extends StatelessWidget {
 /// or price large on the right. [best] underlines the top-rated in lime;
 /// [share] draws its price against the dearest in the list.
 class PropertyCard extends StatelessWidget {
-  const PropertyCard(this.p, {super.key, this.distance, this.best = false, this.share});
+  const PropertyCard(this.p, {super.key, this.distance, this.best = false, this.share, this.quietDays});
   final Property p;
+
+  /// Days since you wrote to the agent with no reply; null when not waiting.
+  final int? quietDays;
   final double? distance;
   final bool best;
   final double? share;
@@ -404,6 +414,8 @@ class PropertyCard extends StatelessWidget {
                                   'hunt.gone',
                                   child: StatusLabel(Status.warning, listingStatusLabel(p.listingStatus)),
                                 ),
+                              if (quietDays != null && quietDays! >= chaseAfterDays)
+                                StatusLabel(Status.info, 'No reply for $quietDays days: chase'),
                               if (p.rating > 0)
                                 Text('★' * p.rating, style: t.bodySmall?.copyWith(color: lime)),
                             ],

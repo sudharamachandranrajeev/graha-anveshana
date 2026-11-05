@@ -1,3 +1,5 @@
+import 'package:brahma_core/brahma_core.dart' show daysBetween;
+
 /// What the user is doing with a property.
 enum PropertyKind {
   rent('To rent'),
@@ -54,3 +56,26 @@ String listingStatusLabel(String key) => switch (key) {
 
 /// Whether an advert says the property is gone.
 bool listingGone(String key) => const {'letAgreed', 'let', 'saleAgreed', 'sold', 'withdrawn'}.contains(key);
+
+/// How many days it is since you last contacted an agent about a property
+/// with nothing back, or null when they replied or you have not written.
+/// [log] holds (channel, direction, local time yyyy-MM-ddTHH:mm); notes and
+/// visits are not messages. [today] is yyyy-MM-dd.
+int? daysWithoutReply(Iterable<({String channel, String direction, String at})> log, String today) {
+  const messages = {'call', 'sms', 'whatsapp', 'email'};
+  String? lastOut, lastIn;
+  for (final i in log) {
+    if (!messages.contains(i.channel)) continue;
+    final day = i.at.substring(0, 10);
+    if (i.direction == 'in') {
+      if (lastIn == null || day.compareTo(lastIn) > 0) lastIn = day;
+    } else if (lastOut == null || day.compareTo(lastOut) > 0) {
+      lastOut = day;
+    }
+  }
+  if (lastOut == null || (lastIn != null && lastIn.compareTo(lastOut) >= 0)) return null;
+  return daysBetween(today, lastOut);
+}
+
+/// A chase is worth suggesting after this many days of silence.
+const chaseAfterDays = 4;

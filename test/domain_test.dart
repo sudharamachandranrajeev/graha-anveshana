@@ -5,6 +5,7 @@ import 'package:anveshana/app/security_checks.dart';
 import 'package:anveshana/domain/contact_links.dart';
 import 'package:anveshana/domain/lettings.dart';
 import 'package:anveshana/domain/listing.dart';
+import 'package:anveshana/domain/pipeline.dart';
 import 'package:anveshana/domain/research.dart';
 import 'package:anveshana/domain/tax.dart';
 import 'package:anveshana/domain/watch_client.dart';
@@ -131,6 +132,31 @@ void main() {
       expect(text, contains('viewing'));
       expect(text, contains('About us: Two adults, no pets'));
       expect(text, endsWith('A Tenant\n07700 900123'));
+    });
+  });
+
+  group('pipeline', () {
+    test('silence after your message is counted until they reply', () {
+      ({String channel, String direction, String at}) m(String c, String d, String at) =>
+          (channel: c, direction: d, at: at);
+      expect(daysWithoutReply([m('email', 'out', '2026-11-01T09:00')], '2026-11-06'), 5);
+      expect(
+        daysWithoutReply([
+          m('email', 'out', '2026-11-01T09:00'),
+          m('call', 'in', '2026-11-02T10:00'),
+        ], '2026-11-06'),
+        isNull,
+      );
+      expect(
+        daysWithoutReply([
+          m('email', 'out', '2026-11-01T09:00'),
+          m('email', 'out', '2026-11-04T09:00'),
+        ], '2026-11-06'),
+        2,
+        reason: 'counted from the latest message',
+      );
+      expect(daysWithoutReply([m('note', 'out', '2026-10-01T09:00')], '2026-11-06'), isNull);
+      expect(daysWithoutReply(const [], '2026-11-06'), isNull);
     });
   });
 
