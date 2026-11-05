@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Lettings: import rent from your bank. Paste a statement downloaded as CSV; the app finds the lines
+  for the rent or naming the tenant, skips ones already recorded, and records the ones you tick.
+  Nothing leaves the device.
+- Lettings: rent received by Making Tax Digital quarter (6 April to 5 July and so on), with a copy
+  as CSV for your tax software or accountant. Income only; nothing is sent to HMRC.
+- Hunt: find saved homes by words in the address, postcode or your notes ("pets", or "-damp" to
+  hide), by fewest bedrooms and by the most you will pay.
+- Council tax and bills a month on each home; Compare adds them to the rent as an all-in figure.
+- Is it fair? shows the income tenant referencing usually asks for (30 times the rent, 36 for a
+  guarantor), and the deposit line says six weeks when the rent is £50,000 a year or more.
+
 ## 0.5.0
 
 Works for England now, not just Northern Ireland.
