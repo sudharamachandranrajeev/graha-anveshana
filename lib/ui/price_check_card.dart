@@ -1,0 +1,136 @@
+import 'package:brahma_core/brahma_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../db/database.dart';
+import '../domain/pipeline.dart';
+import '../domain/price_check.dart';
+import '../domain/research.dart';
+import 'common.dart';
+import 'look.dart';
+
+/// Is the rent or price fair? Compares an advert with open data for its
+/// postcode, and for lets lists the most a tenant can be asked to pay up front.
+class PriceCheckCard extends ConsumerStatefulWidget {
+  const PriceCheckCard(this.p, {super.key});
+  final Property p;
+
+  @override
+  ConsumerState<PriceCheckCard> createState() => _PriceCheckCardState();
+}
+
+class _PriceCheckCardState extends ConsumerState<PriceCheckCard> {
+  List<CheckLine>? lines;
+  String? error;
+  var busy = false;
+
+  Future<void> _run() async {
+    final p = widget.p;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final research = Research();
+      final place = await research.place(p.postcode);
+      final result = <CheckLine>[];
+      if (PropertyKind.of(p.kind) == PropertyKind.rent) {
+        result.addAll(rentCheck(rent: p.price!, beds: p.beds, place: place));
+      } else {
+        // Each source can fail on its own; the other still answers.
+        List<Sale> sales = const [];
+        PriceIndex? index;
+        final problems = <String>[];
+        try {
+          sales = await research.sales(place.postcode);
+        } catch (e) {
+          problems.add('Sold prices: ${describeError(e)}');
+        }
+        try {
+          index = await research.priceIndex(place.district);
+        } catch (e) {
+          problems.add('House price index: ${describeError(e)}');
+        }
+        result.addAll(
+          priceCheck(
+            price: p.price!,
+            style: p.style,
+            today: ref.read(todayProvider),
+            sales: sales,
+            index: index,
+          ),
+        );
+        if (problems.isNotEmpty) error = problems.join('\n');
+      }
+      if (mounted) setState(() => lines = result);
+    } catch (e) {
+      if (mounted) setState(() => error = describeError(e));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.p;
+    final rent = PropertyKind.of(p.kind) == PropertyKind.rent;
+    if (p.price == null || p.postcode.isEmpty || PropertyKind.of(p.kind) == PropertyKind.owned) {
+      return const SizedBox.shrink();
+    }
+    final costs = rent ? moveInCosts(p.price!) : null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SectionCard(
+        title: 'Is it fair?',
+        trailing: TextButton.icon(
+          onPressed: busy ? null : _run,
+          icon: const Icon(Icons.fact_check_outlined),
+          label: const Text('Check'),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (busy) const LinearProgressIndicator(),
+            if (lines == null && !busy)
+              Text(
+                rent
+                    ? 'Compare this rent with the area and with housing benefit rates.'
+                    : 'Compare this price with recent sales in the postcode and the area average.',
+              ),
+            if (lines != null && lines!.isEmpty) const Text('Nothing to compare with for this area yet.'),
+            for (final l in lines ?? const <CheckLine>[]) ...[
+              FigureRow(l.label, l.value, status: _status(l.verdict)),
+              if (l.note.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(l.note, style: Theme.of(context).textTheme.bodySmall),
+                ),
+            ],
+            if (error != null)
+              Padding(padding: const EdgeInsets.only(top: 8), child: StatusLabel(Status.info, error!)),
+            if (costs != null) ...[
+              const Divider(height: 24),
+              const Eyebrow('Most you can be asked to pay before moving in (England)'),
+              FigureRow('Holding deposit (one week)', gbp(costs.holding)),
+              FigureRow('Tenancy deposit (five weeks)', gbp(costs.deposit)),
+              FigureRow('First month\'s rent', gbp(costs.firstMonth)),
+              FigureRow('Needed on the day', gbp(costs.total), strong: true),
+              Text(
+                'The holding deposit comes off the first payment. Agents cannot charge fees for references or '
+                'a tenancy agreement, and cannot ask for more than a month\'s rent in advance.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Status _status(Verdict v) => switch (v) {
+    Verdict.inLine => Status.good,
+    Verdict.above => Status.warning,
+    Verdict.below => Status.info,
+    Verdict.info => Status.info,
+  };
+}

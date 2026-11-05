@@ -12,6 +12,7 @@ import 'look.dart';
 import 'contacts_page.dart';
 import 'hunt_page.dart';
 import 'invest_page.dart';
+import 'price_check_card.dart';
 import 'research_page.dart';
 
 const channelLabels = {
@@ -156,6 +157,7 @@ class PropertyPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
+        PriceCheckCard(p),
         _ContactCard(p, agent),
         const SizedBox(height: 12),
         SectionCard(
