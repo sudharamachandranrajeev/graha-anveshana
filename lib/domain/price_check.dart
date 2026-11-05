@@ -151,15 +151,23 @@ List<CheckLine> priceCheck({
 /// Act 2019 and the Renters' Rights Act): a holding deposit of up to one
 /// week's rent, a deposit of up to five weeks' (six if the rent is
 /// £50,000 a year or more), and the first month's rent.
-({int holding, int deposit, int firstMonth, int total}) moveInCosts(int monthlyRent) {
+({int holding, int deposit, int depositWeeks, int firstMonth, int total}) moveInCosts(int monthlyRent) {
   final week = monthlyRent * 12 / 52;
   final weeks = monthlyRent * 12 >= 50000 ? 6 : 5;
   final deposit = (week * weeks).floor();
   return (
     holding: week.floor(),
     deposit: deposit,
+    depositWeeks: weeks,
     firstMonth: monthlyRent,
     // The holding deposit counts towards the first payment, so it is not added.
     total: deposit + monthlyRent,
   );
 }
+
+/// The yearly income tenant referencing usually asks for: 30 times the
+/// monthly rent for the tenant (all tenants together on a joint let) and 36
+/// times for a guarantor. Referencing firms set their own multiples, so
+/// this is a guide.
+({int tenant, int guarantor}) referencingIncome(int monthlyRent) =>
+    (tenant: monthlyRent * 30, guarantor: monthlyRent * 36);

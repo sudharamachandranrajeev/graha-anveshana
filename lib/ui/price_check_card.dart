@@ -127,12 +127,25 @@ class _PriceCheckCardState extends ConsumerState<PriceCheckCard> {
               const Divider(height: 24),
               const Eyebrow('Most you can be asked to pay before moving in (England)'),
               FigureRow('Holding deposit (one week)', gbp(costs.holding)),
-              FigureRow('Tenancy deposit (five weeks)', gbp(costs.deposit)),
+              FigureRow(
+                'Tenancy deposit (${costs.depositWeeks == 6 ? 'six' : 'five'} weeks)',
+                gbp(costs.deposit),
+              ),
               FigureRow('First month\'s rent', gbp(costs.firstMonth)),
               FigureRow('Needed on the day', gbp(costs.total), strong: true),
               Text(
                 'The holding deposit comes off the first payment. Agents cannot charge fees for references or '
                 'a tenancy agreement, and cannot ask for more than a month\'s rent in advance.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const Divider(height: 24),
+              const Eyebrow('Income referencing usually asks for'),
+              FigureRow('Your yearly income (30 times the rent)', gbp(referencingIncome(p.price!).tenant)),
+              FigureRow('Or a guarantor earning (36 times)', gbp(referencingIncome(p.price!).guarantor)),
+              Text(
+                'Sharers can usually add their incomes together. Referencing firms set their own rules, and '
+                'some take savings instead. From 1 May 2026 a landlord cannot refuse you just because you '
+                'claim benefits.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

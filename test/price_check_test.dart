@@ -55,5 +55,11 @@ void main() {
     expect(c.deposit, 750);
     expect(c.total, 1400);
     expect(moveInCosts(5000).deposit, (5000 * 12 / 52 * 6).floor());
+    expect(moveInCosts(5000).depositWeeks, 6);
+    expect(c.depositWeeks, 5);
+  });
+
+  test("referencing asks for 30 times the rent, 36 for a guarantor", () {
+    expect(referencingIncome(700), (tenant: 21000, guarantor: 25200));
   });
 }
