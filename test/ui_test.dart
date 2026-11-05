@@ -199,6 +199,23 @@ void main() {
     await app.close();
   });
 
+  testWidgets('the hunt filters by words, beds and price', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    expect(find.text('Viewing (1)'), findsOneWidget);
+    await app.enter('Find', 'nowhere');
+    expect(find.text('Viewing (1)'), findsNothing);
+    expect(find.text('1 hidden by the filters.'), findsOneWidget);
+    await app.enter('Find', 'enniskillen');
+    expect(find.text('Viewing (1)'), findsOneWidget);
+    await app.enter('Most a month', '600');
+    expect(find.text('Viewing (1)'), findsNothing);
+    await app.enter('Most a month', '650');
+    expect(find.text('Viewing (1)'), findsOneWidget);
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);

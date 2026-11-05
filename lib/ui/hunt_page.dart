@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
+import '../domain/hunt_filter.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import '../domain/portals.dart';
@@ -23,6 +24,24 @@ class HuntPage extends ConsumerStatefulWidget {
 class _HuntPageState extends ConsumerState<HuntPage> {
   var kind = PropertyKind.rent;
   var showDropped = false;
+  var filter = const HuntFilter();
+  final words = TextEditingController();
+  final maxPrice = TextEditingController();
+
+  @override
+  void dispose() {
+    words.dispose();
+    maxPrice.dispose();
+    super.dispose();
+  }
+
+  void _setFilter({int? minBeds, bool clearBeds = false}) => setState(
+    () => filter = HuntFilter(
+      words: words.text,
+      minBeds: clearBeds ? null : (minBeds ?? filter.minBeds),
+      maxPrice: int.tryParse(maxPrice.text.replaceAll(RegExp(r'[^0-9]'), '')),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +100,41 @@ class _HuntPageState extends ConsumerState<HuntPage> {
               selected: showDropped,
               onSelected: (v) => setState(() => showDropped = v),
             ),
+            SizedBox(
+              width: 240,
+              child: TextField(
+                controller: words,
+                onChanged: (_) => _setFilter(),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  prefixIcon: Icon(Icons.search),
+                  labelText: 'Find',
+                  helperText: 'Address, postcode or notes. -word hides',
+                ),
+              ),
+            ),
+            DropdownButton<int?>(
+              value: filter.minBeds,
+              hint: const Text('Any beds'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Any beds')),
+                for (final b in [1, 2, 3, 4]) DropdownMenuItem(value: b, child: Text('$b+ beds')),
+              ],
+              onChanged: (b) => b == null ? _setFilter(clearBeds: true) : _setFilter(minBeds: b),
+            ),
+            SizedBox(
+              width: 140,
+              child: TextField(
+                controller: maxPrice,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => _setFilter(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  prefixText: '£',
+                  labelText: kind == PropertyKind.rent ? 'Most a month' : 'Most',
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -103,6 +157,8 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                 ],
               );
             }
+            final hidden = mine.where((p) => !filter.matches(p)).length;
+            mine.removeWhere((p) => !filter.matches(p));
             double? dist(Property p) => distanceFromHome(home, p.lat, p.lon);
             final inPlay = mine.where((p) => Stage.of(p.stage).active).toList();
             final top = ([
@@ -124,6 +180,11 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                       : 'Top rated: ${top.address.split(',').first}',
                   detail: closest == null ? null : 'Closest is ${km(closest)} from home',
                 ),
+                if (hidden > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text('$hidden hidden by the filters.'),
+                  ),
                 for (final stage in Stage.values)
                   if (stage.active || showDropped)
                     ...() {
