@@ -13,6 +13,7 @@ const anveshanaHints = <String, String>{
   // Hunt
   'hunt.add':
       'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent), or type a property in.',
+  'hunt.compare': 'Shortlisted homes side by side: price, cash needed to move in, size, distance and more.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',
   'hunt.distance': 'As the crow flies from the home point in Settings.',
   'hunt.enquiry': 'A first message: is it free, what next, when to view. Your details come from Settings.',

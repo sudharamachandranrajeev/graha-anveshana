@@ -153,6 +153,37 @@ void main() {
     await app.close();
   });
 
+  testWidgets('compare lines the shortlisted homes up side by side', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(
+      seed: (book) async {
+        for (final (i, price) in [(1, 650), (2, 600)]) {
+          final id = newId();
+          await book.save(
+            book.db.properties,
+            PropertiesCompanion.insert(
+              id: id,
+              address: '$i Test Road, Leeds LS1 4AP',
+              kind: PropertyKind.rent.name,
+              stage: Value(Stage.shortlisted.id),
+              price: Value(price),
+              added: '2026-11-01',
+            ),
+            id,
+          );
+        }
+      },
+    );
+    await app.run();
+    await tester.tap(find.byIcon(Icons.compare_arrows));
+    await app.settle();
+    expect(find.text('2 homes, cheapest first'), findsOneWidget);
+    expect(find.text('£600'), findsWidgets);
+    expect(find.text('Needed on the day'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);

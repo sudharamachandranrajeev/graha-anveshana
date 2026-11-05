@@ -9,6 +9,7 @@ import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import '../domain/portals.dart';
 import 'common.dart';
+import 'compare_page.dart';
 import 'look.dart';
 import 'property_page.dart';
 
@@ -30,6 +31,12 @@ class _HuntPageState extends ConsumerState<HuntPage> {
       title: 'Hunt',
       banner: 'page.hunt',
       actions: [
+        HintIconButton(
+          'hunt.compare',
+          icon: Icons.compare_arrows,
+          label: 'Compare shortlist',
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ComparePage(kind))),
+        ),
         HintIconButton(
           'hunt.watch',
           icon: Icons.notifications_active_outlined,
