@@ -1,13 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - Searches: keep searching England continuously. An email search watches the alert emails
   Rightmove, Zoopla, OnTheMarket, OpenRent and SpareRoom send you, forwarded to your Brahma Watch:
   near a postcode, postcode district or place name ("LS6", "Pontefract"), within a distance, up to a
   price, by bedrooms, to rent or to buy, and words the advert must or must not mention. New homes
   and price changes arrive as phone alerts and under Hunt, once even when two sites send the same
-  home. Needs the Brahma Watch from the brahma repository's `feat/watch-email-alerts` work, and a
+  home. Needs the latest Brahma Watch (brahma repository, `watch/`) and a
   domain on your Cloudflare account; "Alert emails (England)" on the Searches page explains the
   setup.
 - Alerted adverts keep their site and advert number, so a home you also pasted from Rightmove is
