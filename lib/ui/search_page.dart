@@ -195,25 +195,45 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              sliver: SliverToBoxAdapter(child: Readable(child: _bar(context))),
+              sliver: SliverToBoxAdapter(
+                child: Readable(
+                  child: SizedBox(width: double.infinity, child: _bar(context)),
+                ),
+              ),
             ),
             if (q == null)
               SliverPadding(
                 padding: const EdgeInsets.all(16),
-                sliver: SliverToBoxAdapter(child: Readable(child: _start(context))),
+                sliver: SliverToBoxAdapter(
+                  child: Readable(
+                    child: SizedBox(width: double.infinity, child: _start(context)),
+                  ),
+                ),
               )
             else ...[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverToBoxAdapter(child: Readable(child: _filters(context, q))),
+                sliver: SliverToBoxAdapter(
+                  child: Readable(
+                    child: SizedBox(width: double.infinity, child: _filters(context, q)),
+                  ),
+                ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverToBoxAdapter(child: Readable(child: _sites(context, s))),
+                sliver: SliverToBoxAdapter(
+                  child: Readable(
+                    child: SizedBox(width: double.infinity, child: _sites(context, s)),
+                  ),
+                ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverToBoxAdapter(child: Readable(child: _summary(context, s))),
+                sliver: SliverToBoxAdapter(
+                  child: Readable(
+                    child: SizedBox(width: double.infinity, child: _summary(context, s)),
+                  ),
+                ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
