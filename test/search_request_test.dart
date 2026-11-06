@@ -36,4 +36,10 @@ void main() {
     expect(readRequest('2 bed in Leeds', rent: false).rent, isFalse);
     expect(readRequest('2 bed in Leeds').rent, isTrue);
   });
+
+  test('a postcode district alone is the area', () {
+    expect(readRequest('LS6 2 bed').area, 'LS6');
+    expect(readRequest('cheap 1 bedroom flat Belfast bt9 £700').area, 'BT9');
+    expect(readRequest('2 bed to rent in Leeds').area, 'Leeds');
+  });
 }

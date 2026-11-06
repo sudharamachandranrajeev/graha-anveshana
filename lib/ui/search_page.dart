@@ -72,6 +72,7 @@ Future<String?> saveToHunt(BuildContext context, WidgetRef ref, FoundHome h, {re
 /// from [q].
 Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, SearchRequest q) async {
   final all = (await ref.read(researchesProvider.future)).where((r) => !r.archived).toList();
+  final centre = ref.read(searchProvider).centre;
   if (!context.mounted) return;
   final pick = await showModalBottomSheet<String>(
     context: context,
@@ -103,7 +104,11 @@ Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, Se
     await ref.mutate((s) async {
       final id = pick.isNotEmpty
           ? pick
-          : await s.book.createResearch(q.label, kind: q.rent ? 'rent' : 'buy', criteria: q.criteria());
+          : await s.book.createResearch(
+              q.label,
+              kind: q.rent ? 'rent' : 'buy',
+              criteria: q.criteria(lat: centre?.lat, lon: centre?.lon),
+            );
       await s.book.addItem(
         id,
         kind: 'link',
@@ -354,7 +359,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         children: [
           InputChip(
             avatar: const Icon(Icons.place_outlined, size: 18),
-            label: Text(q.near.isEmpty ? q.area : '${q.area}, near ${q.near}'),
+            label: Text(
+              q.area.isEmpty ? 'Say where' : (q.near.isEmpty ? q.area : '${q.area}, near ${q.near}'),
+            ),
             onPressed: () => _edit(context, q),
           ),
           if (beds != null)

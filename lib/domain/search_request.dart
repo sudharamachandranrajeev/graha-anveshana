@@ -300,6 +300,12 @@ SearchRequest readRequest(String input, {bool rent = true}) {
     area = postcode;
     rest = rest.replaceFirst(RegExp(postcode.replaceAll(' ', r'\s?'), caseSensitive: false), ' ');
   }
+  // A postcode district alone ("LS6", "BT9", "E14") is the area too.
+  final district = RegExp(r'\b([A-Z]{1,2}\d[A-Z\d]?)\b', caseSensitive: false).firstMatch(rest);
+  if (area.isEmpty && district != null) {
+    area = district[1]!.toUpperCase();
+    rest = rest.replaceFirst(district[0]!, ' ');
+  }
 
   // Asked-for features; what is left of a place-only request is the area.
   final must = <String>[];

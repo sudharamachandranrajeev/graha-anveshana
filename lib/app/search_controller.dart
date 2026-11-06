@@ -194,7 +194,8 @@ class SearchController extends Notifier<SearchState> {
 
   Future<void> _read(int run, SourceId s, int page) async {
     final q = state.request;
-    if (q == null) return;
+    // A newer search started: this page belongs to the old one.
+    if (q == null || run != _run) return;
     final before = state.sources[s]?.read ?? 0;
     _set(s, SourceStatus(SourceState.reading, read: before, page: page));
     try {
