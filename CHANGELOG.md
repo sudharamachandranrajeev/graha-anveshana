@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.8.0
+
+- Researches: a new tab. Start a research for each hunt or study ("Rental near work, January",
+  "Buy-to-let in Leeds"), with what fits: a centre and distance, the most price, the fewest
+  bedrooms, and words an advert should or must not mention. Each research keeps its own catalog.
+- Add to a catalog from a link (PropertyPal adverts and searches are read; other sites keep the
+  link), screenshots, photos, PDF brochures, pasted text or alert emails, or a note. Pictures are
+  read with OCR on the device (Tesseract on Linux and Windows, ML Kit on Android); PDFs give their
+  text, and pages that are only pictures are OCR'd. Price, pcm or pw, bedrooms, bathrooms,
+  postcode, address, council tax band, EPC rating, phone, agent, available date, furnished and
+  "let agreed" or "sold STC" are read from the text.
+- Read with AI (optional): fills in what OCR missed using the AI chosen in Settings, Ask AI. It
+  sends only that item's text and asks first.
+- Each item shows how well it fits the research, and why not.
+- Duplicates: the same home captured twice (same advert or link, same address, same main photo,
+  or the same postcode, bedrooms and a price within 5%) is found within a research and across
+  researches. You merge it or mark it as not the same. Merging keeps every link, note and price
+  seen, and the earliest capture date.
+- Merge two researches into one.
+- Seen before: an item that matches a Hunt home already let, sold or dropped says so.
+- Add to Hunt from any catalog item.
+- Help on every screen: the help button searches the app's own guide offline, opens the screen
+  an answer is about, or passes the question on to Ask AI.
+- The Research tab is now called Areas.
+- Pictures stay on the device inside the encrypted database; their details sync.
+
 ## 0.7.0
 
 - Searches: keep searching England continuously. An email search watches the alert emails

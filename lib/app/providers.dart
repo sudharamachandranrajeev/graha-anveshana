@@ -90,6 +90,18 @@ final areasProvider = _rows<$AreasTable, Area>(
   orderBy: [(a) => OrderingTerm.desc(a.fetched)],
 );
 
+final researchesProvider = _rows<$ResearchesTable, ResearchJob>(
+  (db) => db.researches,
+  orderBy: [(r) => OrderingTerm.desc(r.created)],
+);
+
+/// Every catalog item of every research, in capture order (duplicate checks
+/// keep the earlier one).
+final catalogItemsProvider = _rows<$CatalogItemsTable, CatalogItem>(
+  (db) => db.catalogItems,
+  orderBy: [(i) => OrderingTerm(expression: i.captured)],
+);
+
 final interactionsProvider = _rows<$InteractionsTable, Interaction>(
   (db) => db.interactions,
   orderBy: [(i) => OrderingTerm.desc(i.at)],

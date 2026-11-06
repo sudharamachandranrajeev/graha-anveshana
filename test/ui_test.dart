@@ -64,7 +64,7 @@ void main() {
     );
   }
 
-  const pages = ['Searches', 'Invest', 'Research', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
+  const pages = ['Searches', 'Invest', 'Researches', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {

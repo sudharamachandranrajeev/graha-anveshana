@@ -8,6 +8,7 @@ const anveshanaHints = <String, String>{
   'nav.searches': 'Saved searches. Brahma Watch checks them and alerts your phone.',
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
+  'nav.researches': 'Your researches: one per hunt or study, each with its own catalog of homes and documents.',
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
   // Hunt
@@ -37,6 +38,19 @@ const anveshanaHints = <String, String>{
   // Research
   'research.save': 'Keep this report to compare areas later.',
   'research.tax': 'Stamp Duty (England, NI), LBTT (Scotland) or LTT (Wales) for a price.',
+  // Researches
+  'researches.new': 'Start a research: a name, what it is for, and what fits (area, price, bedrooms, words).',
+  'researches.add':
+      'Add to the catalog from a link, a screenshot, a photo, a PDF brochure, pasted text or an alert email. '
+      'Details are read on this device.',
+  'researches.ocr': 'Screenshots and photos are read with OCR on this device (Tesseract, or ML Kit on Android).',
+  'researches.ai': 'Read with AI: sends only this item\'s text to the AI chosen in Settings, Ask AI.',
+  'researches.duplicates':
+      'Find the same home captured twice (same advert, address, photo, or postcode, beds and price) and merge them.',
+  'researches.merge': 'Merge another research into this one, then check the joined catalog for duplicates.',
+  'researches.hunt': 'Add this item to Hunt to enquire, view and track it.',
+  'researches.fit': 'How well an item fits the research: price, bedrooms, distance and words.',
+  'researches.seen': 'Seen before: you saved this home earlier and it was let or sold then.',
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',
@@ -58,6 +72,9 @@ const anveshanaHints = <String, String>{
   'page.lettings':
       'Tenancies for homes you let out or rent: rent due and paid, and safety checks with the date each '
       'is next due.',
+  'page.researches':
+      'Keep each hunt or study apart. Capture homes from any site, screenshots, photos and brochures; the '
+      'app reads the details, scores how well each fits and finds duplicates to merge.',
   'page.research':
       'Type a UK postcode for prices, crime and links about the area, or work out purchase tax. Save '
       'reports to compare areas.',
