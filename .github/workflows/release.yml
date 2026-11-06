@@ -92,7 +92,7 @@ jobs:
             --build-name=${{ needs.version.outputs.name }} --build-number=${{ needs.version.outputs.build }}
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/Graha-Anveshana-${{ needs.version.outputs.version }}-android.apk
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android
           path: dist/*
@@ -164,7 +164,7 @@ jobs:
           if ($u.ExitCode -ne 0) { throw "uninstall exited with $($u.ExitCode)" }
           if (-not (Test-Path $db.FullName)) { throw "Uninstalling deleted the user's data" }
           Write-Host "Installed, started, uninstalled; data kept."
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows
           path: dist/*
@@ -213,7 +213,7 @@ jobs:
           EOF
           sed -i 's/^          //' "$dir/README.txt"
           tar czf "dist/Graha-Anveshana-$version-linux-x64.tar.gz" "$dir"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux
           path: dist/*
@@ -240,7 +240,7 @@ jobs:
           target: google_apis
           disable-animations: true
           script: bash .github/android-smoke.sh smoke
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: smoke-android
