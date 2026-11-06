@@ -67,7 +67,7 @@ class SettingsPage extends ConsumerWidget {
                       '4. On your phone install ntfy and subscribe to that topic (scan the code).\n'
                       '5. Here choose Set up and paste the address and token (also kept in '
                       '~/.config/brahma/watch.env on that computer).'
-                : 'Connected to ${Uri.parse(watch.url).host}. New listings are brought into the hunt when the app starts.',
+                : 'Connected to ${Uri.parse(watch.url).host}. New listings are brought into Homes when the app starts.',
           ),
         ),
         const AppLockCard(),

@@ -3,14 +3,14 @@
 /// screen once.
 const anveshanaHints = <String, String>{
   // Navigation
-  'nav.hunt': 'Homes you are looking at to rent or buy, from first sight to keys.',
+  'nav.hunt': 'The homes you are considering to rent or buy, from first sight to keys.',
   'nav.contacts': 'Agents, landlords, tenants, brokers, solicitors and trades.',
   'nav.searches': 'Saved searches. Brahma Watch checks them and alerts your phone.',
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
-  'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
+  'nav.research': 'What an area is like: prices, crime and links for any UK postcode, and purchase tax.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
-  // Hunt
+  // Homes
   'hunt.add':
       'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent), or type a property in.',
   'hunt.compare': 'Shortlisted homes side by side: price, cash needed to move in, size, distance and more.',
@@ -34,7 +34,7 @@ const anveshanaHints = <String, String>{
   // Lettings
   'lettings.balance': 'Rent due so far minus rent recorded. Positive is owed.',
   'lettings.checks': 'Safety certificates and other duties with the date each is next due.',
-  // Research
+  // Areas
   'research.save': 'Keep this report to compare areas later.',
   'research.tax': 'Stamp Duty (England, NI), LBTT (Scotland) or LTT (Wales) for a price.',
   // Settings
@@ -44,14 +44,15 @@ const anveshanaHints = <String, String>{
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
   'page.hunt':
-      'Every home you are considering, from first sight to keys. Add one with a PropertyPal link, then '
-      'move it on: new, shortlisted, enquired, viewing, applied, agreed. Calls and messages move it on '
-      'by themselves; drop the ones that are not for you.',
+      'Every home you are considering, from first sight to keys. Add one from an advert link or type it '
+      'in, then move it on: new, shortlisted, enquired, viewing, applied, agreed. Calls and messages move '
+      'it on by themselves; drop the ones that are not for you. To see what the area is like, open a home '
+      'and tap Area report.',
   'page.contacts': 'Agents, landlords, tenants and trades in one place. Add them here or from a home.',
   'page.searches':
       'Searches Brahma Watch checks for you: PropertyPal searches, and in England the alert emails from '
       'Rightmove, Zoopla and others. Send them to the Watch, then new homes arrive '
-      'as phone alerts and under Hunt. Settings > Brahma Watch connects it first.',
+      'as phone alerts and under Homes. Settings > Brahma Watch connects it first.',
   'page.invest':
       'Work out buy-to-let returns, what buying a home costs, or what land is worth to develop. Save the '
       'figures to compare later.',
@@ -59,6 +60,6 @@ const anveshanaHints = <String, String>{
       'Tenancies for homes you let out or rent: rent due and paid, and safety checks with the date each '
       'is next due.',
   'page.research':
-      'Type a UK postcode for prices, crime and links about the area, or work out purchase tax. Save '
+      'About a place, not one home: prices, crime and links for any UK postcode, and purchase tax. Save '
       'reports to compare areas.',
 };

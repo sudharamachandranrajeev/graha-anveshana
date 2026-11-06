@@ -15,9 +15,9 @@ final propertyModule = AppModule(
   destinations: [
     Destination(
       id: 'hunt',
-      label: 'Hunt',
-      icon: Icons.travel_explore_outlined,
-      selectedIcon: Icons.travel_explore,
+      label: 'Homes',
+      icon: Icons.home_work_outlined,
+      selectedIcon: Icons.home_work,
       primary: true,
       page: (_) => const HuntPage(),
     ),
@@ -39,9 +39,9 @@ final propertyModule = AppModule(
     ),
     Destination(
       id: 'research',
-      label: 'Research',
-      icon: Icons.insights_outlined,
-      selectedIcon: Icons.insights,
+      label: 'Areas',
+      icon: Icons.map_outlined,
+      selectedIcon: Icons.map,
       primary: true,
       page: (_) => const ResearchPage(),
     ),

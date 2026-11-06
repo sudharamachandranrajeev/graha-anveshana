@@ -55,7 +55,7 @@ class _PortalsCardState extends ConsumerState<PortalsCard> {
         children: [
           const Text(
             'England\'s portals do not allow apps to read their adverts, so this opens their own search in '
-            'your browser. Found one you like? Copy its link and add it under Hunt.',
+            'your browser. Found one you like? Copy its link and add it under Homes.',
           ),
           const SizedBox(height: 12),
           SegmentedButton<bool>(

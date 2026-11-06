@@ -45,7 +45,7 @@ not advice.
   current UK purchase tax, mortgage stress tests and rent you need to break even.
 - ⚖️ **Is it fair?** – rent or price against the area, housing benefit rates and recent street
   sales; advert wording checked for banned fees, rent bidding and scam signs (England).
-- 🗺️ **Know the area** – type any UK postcode for house prices, street crime and recent sales,
+- 🗺️ **Know the area** – on **Areas**, type any UK postcode for house prices, street crime and recent sales,
   plus links for flood risk, energy ratings, planning and broadband.
 - 📋 **Lettings made simple** – tenancies, rent due and paid, deposits, and landlord safety checks
   that remind you when they come round again.
@@ -72,20 +72,20 @@ not advice.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/hunt-light.png" alt="Hunt" width="220"><br><sub>Hunt</sub></td>
+    <td align="center"><img src="docs/screenshots/hunt-light.png" alt="Homes" width="220"><br><sub>Homes</sub></td>
     <td align="center"><img src="docs/screenshots/invest-light.png" alt="Invest, buy-to-let sums" width="220"><br><sub>Invest (buy-to-let)</sub></td>
     <td align="center"><img src="docs/screenshots/lettings-dark.png" alt="Lettings in dark mode" width="220"><br><sub>Lettings (dark)</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/property-light.png" alt="One home's page" width="220"><br><sub>A home</sub></td>
-    <td align="center"><img src="docs/screenshots/hunt-dark.png" alt="Hunt in dark mode" width="220"><br><sub>Hunt (dark)</sub></td>
+    <td align="center"><img src="docs/screenshots/hunt-dark.png" alt="Homes in dark mode" width="220"><br><sub>Homes (dark)</sub></td>
     <td align="center"><img src="docs/screenshots/invest-dark.png" alt="Invest in dark mode" width="220"><br><sub>Invest (dark)</sub></td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/screenshots/hunt-desktop.png" alt="Hunt on a desktop window" width="80%"><br>
-  <sub>Hunt on a desktop window</sub>
+  <img src="docs/screenshots/hunt-desktop.png" alt="Homes on a desktop window" width="80%"><br>
+  <sub>Homes on a desktop window</sub>
 </p>
 
 <sub>All screenshots show made-up homes and people, rendered from the app's code.</sub>
@@ -150,13 +150,13 @@ Newer versions install over the top and keep your data.
 
 ### Step 3 – First launch
 
-The app opens on **Hunt**. Every screen works empty, so there is nothing to fill in first.
+The app opens on **Homes**, the list of homes you are considering. Every screen works empty, so there is nothing to fill in first.
 
 1. **Add your details**: open **Settings → Your details → Edit**. Your name, phone and household
    go into enquiries you send.
 2. **Set a home point**: **Settings → Home point → Set**, then type a postcode. Distances are
    measured from here.
-3. **Add a home**: on **Hunt**, tap **Add** and paste an advert link, or type the home in. Rightmove, Zoopla, OnTheMarket and OpenRent do not allow
+3. **Add a home**: on **Homes**, tap **Add** and paste an advert link, or type the home in. Rightmove, Zoopla, OnTheMarket and OpenRent do not allow
    apps to read their adverts, so for those the app keeps the link and you type the details; the
    **Searches** page opens their own search pages for any town.
 4. **Contact the agent** from the home's page. The home moves to the next stage by itself.
@@ -242,7 +242,7 @@ running and unlocked, then start the app again.
 <summary><b>Which property sites work?</b></summary>
 
 Links and saved searches work with PropertyPal. For a home from any other site, add it by hand on
-**Hunt → Add**.
+**Homes → Add**.
 </details>
 
 <details>

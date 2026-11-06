@@ -1,6 +1,6 @@
 import '../db/database.dart';
 
-/// Narrowing the saved homes on the Hunt page. The portals' own filters
+/// Narrowing the saved homes on the Homes page. The portals' own filters
 /// cannot see what the user has learned (notes such as "pets ok" or "no
 /// parking"), so the words are matched against the notes as well as the
 /// address, postcode, type and furnishing.

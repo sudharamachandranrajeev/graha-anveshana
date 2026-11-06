@@ -49,7 +49,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
     final home = ref.watch(homeProvider).value;
     final log = ref.watch(interactionsProvider).value ?? const <Interaction>[];
     return PageScaffold(
-      title: 'Hunt',
+      title: 'Homes',
       banner: 'page.hunt',
       actions: [
         HintIconButton(

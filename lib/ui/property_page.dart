@@ -253,7 +253,7 @@ class PropertyPage extends ConsumerWidget {
                 onPressed: () =>
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (_) => ResearchPage(postcode: p.postcode))),
-                icon: const Icon(Icons.insights_outlined),
+                icon: const Icon(Icons.map_outlined),
                 label: const Text('Area report'),
               ),
             if (kind == PropertyKind.rent)

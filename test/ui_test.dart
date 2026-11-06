@@ -64,7 +64,7 @@ void main() {
     );
   }
 
-  const pages = ['Searches', 'Invest', 'Research', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
+  const pages = ['Searches', 'Invest', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Homes'];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {
@@ -295,7 +295,7 @@ void main() {
     await app.tapText('Save');
     expect(find.textContaining('A Tenant'), findsOneWidget);
 
-    await app.go('Hunt');
+    await app.go('Homes');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Write an enquiry');
     expect(find.textContaining('Hello Example Lettings,'), findsOneWidget);

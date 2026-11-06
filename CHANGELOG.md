@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Hunt is now **Homes** and Research is now **Areas**, with new icons. Homes is the list of homes
+  you are considering; Areas tells you about a place (any UK postcode) and works out purchase tax.
+  Each page's tip says which is which, and a home's **Area report** opens Areas for its postcode.
+
 ## 0.7.0
 
 - Searches: keep searching England continuously. An email search watches the alert emails

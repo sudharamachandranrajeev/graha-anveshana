@@ -137,7 +137,7 @@ Future<int> pullWatchEvents(AppSession s, WatchClient watch) async {
   return added;
 }
 
-/// Checks Brahma Watch once at start-up. Offline is fine: the Hunt page has
+/// Checks Brahma Watch once at start-up. Offline is fine: the Homes page has
 /// a button, and the next start tries again.
 final watchAutoProvider = FutureProvider<void>((ref) async {
   final watch = await ref.read(watchProvider.future);
