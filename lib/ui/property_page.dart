@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
+import '../domain/book.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
+import '../domain/portals.dart';
 import '../domain/viewing_checklist.dart';
+import 'advert_browser.dart';
 import 'common.dart';
 import 'look.dart';
 import 'contacts_page.dart';
@@ -70,7 +73,11 @@ class PropertyPage extends ConsumerWidget {
           IconButton(
             tooltip: 'Open the advert',
             icon: const Icon(Icons.open_in_new),
-            onPressed: () => openUri(context, Uri.parse(p.url)),
+            // A portal advert opens in the app's browser, where Save brings
+            // in its photos and details.
+            onPressed: () => parsePortalLink(p.url) == null
+                ? openUri(context, Uri.parse(p.url))
+                : openPortal(context, Uri.parse(p.url)),
           ),
         IconButton(
           tooltip: 'Edit',
@@ -84,18 +91,7 @@ class PropertyPage extends ConsumerWidget {
         ),
       ],
       children: [
-        if (p.imageUrl != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                p.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox(),
-              ),
-            ),
-          ),
+        if (photosOf(p) case final photos when photos.isNotEmpty) PhotoGallery(photos),
         const SizedBox(height: 16),
         Eyebrow('${kind.label} · ${Stage.of(p.stage).label(kind)}'),
         const SizedBox(height: 4),
@@ -543,4 +539,88 @@ Future<void> logInteraction(BuildContext context, WidgetRef ref, {String? proper
       return null;
     },
   );
+}
+
+/// An advert's photos, swiped through one at a time.
+class PhotoGallery extends StatefulWidget {
+  const PhotoGallery(this.photos, {super.key});
+  final List<String> photos;
+
+  @override
+  State<PhotoGallery> createState() => _PhotoGalleryState();
+}
+
+class _PhotoGalleryState extends State<PhotoGallery> {
+  final pages = PageController();
+  var shown = 0;
+
+  @override
+  void dispose() {
+    pages.dispose();
+    super.dispose();
+  }
+
+  void _go(int i) =>
+      pages.animateToPage(i, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+
+  @override
+  Widget build(BuildContext context) {
+    final n = widget.photos.length;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Semantics(
+              label: 'Photo ${shown + 1} of $n',
+              child: PageView.builder(
+                controller: pages,
+                itemCount: n,
+                onPageChanged: (i) => setState(() => shown = i),
+                itemBuilder: (_, i) => Image.network(
+                  widget.photos[i],
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Center(child: Icon(Icons.broken_image_outlined)),
+                ),
+              ),
+            ),
+            if (n > 1) ...[
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Text('${shown + 1} / $n', style: const TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ),
+              // Arrows for a mouse, where swiping is awkward.
+              if (shown > 0)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton.filledTonal(
+                    tooltip: 'Previous photo',
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () => _go(shown - 1),
+                  ),
+                ),
+              if (shown < n - 1)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton.filledTonal(
+                    tooltip: 'Next photo',
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () => _go(shown + 1),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

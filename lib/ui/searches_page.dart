@@ -53,7 +53,7 @@ Future<void> showAlertEmailHelp(BuildContext context) => showDialog<void>(
     content: const SizedBox(
       width: 520,
       child: Text(
-        'Rightmove, Zoopla, OnTheMarket, OpenRent and SpareRoom do not let apps read their sites, but they '
+        'Rightmove, Zoopla, OnTheMarket, OpenRent and SpareRoom cannot be checked in the background, but they '
         'email you new homes. Brahma Watch can read those emails and alert you only to the homes that '
         'fit an email search here: near a place or postcode, your price, bedrooms and words.\n\n'
         '1. On each site, save a search with instant email alerts.\n'

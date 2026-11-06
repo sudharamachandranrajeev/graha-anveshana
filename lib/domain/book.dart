@@ -128,6 +128,8 @@ class PropertyBook {
           if (l.description.isNotEmpty) 'description': l.description,
           if (l.heating.isNotEmpty) 'heating': l.heating,
           if (l.priceSuffix.isNotEmpty) 'priceSuffix': l.priceSuffix,
+          // Every photo; imageUrl keeps the main one for lists and older versions.
+          if (l.images.isNotEmpty) 'images': l.images,
         };
         final id = existing?.id ?? newId();
         final row = PropertiesCompanion(
@@ -212,4 +214,21 @@ class PropertyBook {
     }
     return id;
   }
+}
+
+/// Every photo of [p], the main one first: the list an advert brought in, or
+/// the single photo older versions kept.
+List<String> photosOf(Property p) {
+  try {
+    if (jsonDecode(p.meta) case {'images': final List l}) {
+      final urls = [
+        for (final i in l)
+          if (i is String && i.isNotEmpty) i,
+      ];
+      if (urls.isNotEmpty) return urls;
+    }
+  } on FormatException {
+    // A damaged meta falls back to the main photo.
+  }
+  return [?p.imageUrl];
 }

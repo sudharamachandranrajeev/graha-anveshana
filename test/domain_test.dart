@@ -32,6 +32,8 @@ void main() {
       expect(l.status, 'toLet');
       expect(l.isRental, isTrue);
       expect(l.lat, 54.3485);
+      expect(l.images, ['https://example.com/101.jpg', 'https://example.com/101-kitchen.jpg']);
+      expect(l.image, 'https://example.com/101.jpg');
     });
 
     test('a search page gives every result; hidden prices are null', () {
@@ -68,6 +70,18 @@ void main() {
       expect(l.postcode, 'BT74 6AA');
       expect(l.price, 600);
       expect(l.isRental, isTrue);
+      expect(l.images, isEmpty);
+    });
+
+    test('a Brahma Watch listing brings every photo; an older Watch only the main one', () {
+      final newer = listingFromWatch({
+        'id': '7',
+        'image': 'https://example.com/a.jpg',
+        'images': ['https://example.com/a.jpg', 'https://example.com/b.jpg'],
+      });
+      expect(newer.images, ['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+      final older = listingFromWatch({'id': '7', 'image': 'https://example.com/a.jpg'});
+      expect(older.images, ['https://example.com/a.jpg']);
     });
 
     test('links are fetched from PropertyPal only, and a bot check is an error', () async {

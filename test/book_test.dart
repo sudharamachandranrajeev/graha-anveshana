@@ -4,6 +4,7 @@ import 'package:anveshana/domain/contact_links.dart';
 import 'package:anveshana/domain/listing.dart';
 import 'package:anveshana/domain/pipeline.dart';
 import 'package:brahma_core/brahma_core.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -47,6 +48,16 @@ void main() {
     expect(p.notes, 'Near work');
     expect(p.stage, Stage.shortlisted.id);
     expect(p.added, '2026-10-21');
+  });
+
+  test('every photo is kept; the main one stays the list photo', () async {
+    await book.importListing(advert());
+    final p = await only();
+    expect(p.imageUrl, 'https://example.com/101.jpg');
+    expect(photosOf(p), ['https://example.com/101.jpg', 'https://example.com/101-kitchen.jpg']);
+    // A home saved by an older version has only its main photo.
+    expect(photosOf(p.copyWith(meta: '{}')), ['https://example.com/101.jpg']);
+    expect(photosOf(p.copyWith(meta: 'not json', imageUrl: const Value(null))), isEmpty);
   });
 
   test('the agent becomes one contact, shared by its adverts', () async {

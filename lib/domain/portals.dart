@@ -1,13 +1,15 @@
-/// England's big property portals publish no free feed and forbid scraping,
-/// so the app builds the portal's own search page for the user's browser and
-/// recognises advert links the user pastes. It never fetches those sites.
+/// The big property portals publish no free feed, so the app builds each
+/// portal's own search page and recognises advert links. It never fetches
+/// those sites itself: on Android the user browses them in the app and taps
+/// Save on an advert (domain/advert_page.dart reads that one page).
 library;
 
 enum Portal {
   rightmove('Rightmove', 'rightmove.co.uk'),
   zoopla('Zoopla', 'zoopla.co.uk'),
   onTheMarket('OnTheMarket', 'onthemarket.com'),
-  openRent('OpenRent', 'openrent.co.uk');
+  openRent('OpenRent', 'openrent.co.uk'),
+  facebook('Facebook Marketplace', 'facebook.com');
 
   const Portal(this.label, this.host);
   final String label, host;
@@ -43,8 +45,8 @@ double _nearestRadius(double miles) =>
 String _slug(String area) =>
     area.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '');
 
-/// The portal's search page for [q], or null when it cannot do it: OpenRent
-/// has no sales, and Zoopla's terms forbid linking to anything but its home page.
+/// The portal's search page for [q], or null when it cannot do it (OpenRent
+/// has no sales).
 Uri? portalSearchUri(Portal portal, PortalQuery q) {
   final area = q.area.trim();
   if (area.isEmpty || (portal.lettingsOnly && !q.rent)) return null;
@@ -71,8 +73,18 @@ Uri? portalSearchUri(Portal portal, PortalQuery q) {
         }),
       );
     case Portal.zoopla:
-      // Its terms forbid links to any page but the home page.
-      return null;
+      return Uri.https(
+        'www.zoopla.co.uk',
+        '/${q.rent ? 'to-rent' : 'for-sale'}/property/${_slug(area)}/',
+        params({
+          'q': area,
+          'beds_min': n(q.minBeds),
+          'beds_max': n(q.maxBeds),
+          'price_max': n(q.maxPrice),
+          'price_frequency': q.rent && q.maxPrice != null ? 'per_month' : null,
+          'radius': r == null || r == 0 ? null : '$r',
+        }),
+      );
     case Portal.onTheMarket:
       return Uri.https(
         'www.onthemarket.com',
@@ -95,6 +107,14 @@ Uri? portalSearchUri(Portal portal, PortalQuery q) {
           'bedrooms_max': n(q.maxBeds),
           'within': r == null || r == 0 ? null : '${r.round()}',
         }),
+      );
+    case Portal.facebook:
+      // Marketplace takes a town in the path; bedrooms and distance are set
+      // on its own page.
+      return Uri.https(
+        'www.facebook.com',
+        '/marketplace/${_slug(area)}/${q.rent ? 'propertyrentals' : 'propertyforsale'}',
+        params({'maxPrice': n(q.maxPrice), 'exact': 'false'}),
       );
   }
 }
@@ -151,6 +171,11 @@ PortalAdvert? parsePortalLink(String link) {
         if (seg.length >= 2 && seg[0] == 'property-to-rent' && _digits.hasMatch(seg.last)) {
           id = seg.last;
           words = seg.length >= 3 ? seg[seg.length - 2] : '';
+        }
+      case Portal.facebook:
+        // /marketplace/item/1234567890123456/
+        if (seg.length >= 3 && seg[0] == 'marketplace' && seg[1] == 'item' && _digits.hasMatch(seg[2])) {
+          id = seg[2];
         }
     }
     if (id == null) return null;

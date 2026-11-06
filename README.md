@@ -36,7 +36,8 @@ not advice.
 
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
   enquired, viewing, applied, agreed. Add one from a PropertyPal link, an advert link from
-  Rightmove, Zoopla, OnTheMarket or OpenRent, or type it in.
+  Rightmove, Zoopla, OnTheMarket, OpenRent or Facebook Marketplace, or type it in. Every photo of
+  the advert comes too.
 - 📞 **Contact agents in one tap** – call, text, a chat app or e-mail. Each contact is logged, and a
   ready-made first enquiry carries your details.
 - 🔔 **Alerts on your phone** (optional) – your saved searches run on your own free cloud helper,
@@ -156,9 +157,11 @@ The app opens on **Homes**, the list of homes you are considering. Every screen 
    go into enquiries you send.
 2. **Set a home point**: **Settings → Home point → Set**, then type a postcode. Distances are
    measured from here.
-3. **Add a home**: on **Homes**, tap **Add** and paste an advert link, or type the home in. Rightmove, Zoopla, OnTheMarket and OpenRent do not allow
-   apps to read their adverts, so for those the app keeps the link and you type the details; the
-   **Searches** page opens their own search pages for any town.
+3. **Add a home**: on **Homes**, tap **Add** and paste an advert link, or type the home in. On
+   Android, a Rightmove, Zoopla, OnTheMarket, OpenRent or Facebook advert opens inside the app: tap
+   **Save to Homes** to bring in its photos and details. You can also share an advert to
+   Anveshana from those sites' own apps. On a computer the app keeps the link and you type the
+   details. The **Searches** page opens each site's own search for any town.
 4. **Contact the agent** from the home's page. The home moves to the next stage by itself.
 
 > [!NOTE]
@@ -241,8 +244,11 @@ running and unlocked, then start the app again.
 <details>
 <summary><b>Which property sites work?</b></summary>
 
-Links and saved searches work with PropertyPal. For a home from any other site, add it by hand on
-**Homes → Add**.
+PropertyPal links and saved searches are read for you on every device. On Android, adverts on
+Rightmove, Zoopla, OnTheMarket, OpenRent and Facebook Marketplace open inside the app, and **Save to
+Homes** reads the advert you are looking at. Nothing is read until you tap Save. Those sites change
+their pages often: if Save misses something, type it in on the home's page. On a computer, add
+those homes on **Homes → Add** and type the details.
 </details>
 
 <details>

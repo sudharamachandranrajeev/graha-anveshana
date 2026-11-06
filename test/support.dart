@@ -31,6 +31,7 @@ Map<String, Object?> samplePropertyPal({int id = 101, int? price = 650, String s
   },
   'images': [
     {'url': 'https://example.com/$id.jpg'},
+    {'url': 'https://example.com/$id-kitchen.jpg'},
   ],
   'status': {'key': status},
 };
