@@ -37,6 +37,12 @@ not advice.
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
   enquired, viewing, applied, agreed. Add one from a PropertyPal link, an advert link from
   Rightmove, Zoopla, OnTheMarket or OpenRent, or type it in.
+- 🗂️ **A research for every hunt** – keep each hunt or study apart, each with its own catalog.
+  Add links, screenshots, photos of a sign, PDF brochures or pasted alert emails, and the app reads
+  the price, bedrooms, postcode, council tax band and energy rating for you, on your device. It
+  shows how well each one fits, and finds the same home captured twice so you can merge them.
+- ❔ **Help on every screen** – search what the app can do, offline, and jump straight there. Ask
+  an AI of your choice when the guide has no answer.
 - 📞 **Contact agents in one tap** – call, text, a chat app or e-mail. Each contact is logged, and a
   ready-made first enquiry carries your details.
 - 🔔 **Alerts on your phone** (optional) – your saved searches run on your own free cloud helper,
@@ -222,6 +228,25 @@ flowchart LR
 
 No account. The lists, sums and lettings work offline on one device. Adding a PropertyPal link,
 area reports and alerts need the internet.
+</details>
+
+<details>
+<summary><b>How does it read screenshots and photos?</b></summary>
+
+With text recognition (OCR) on your own device: Tesseract on Linux and Windows, Google's on-device
+reader on Android. On Linux install the `tesseract` and `tesseract-data-eng` packages (Arch) or
+`tesseract-ocr` (Debian, Ubuntu). On Windows install Tesseract from
+[UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki). Nothing is sent anywhere. On an
+item's page, **Read with AI** can fill in what OCR missed, using the AI you chose in **Settings →
+Ask AI**; it sends only that item's text, and asks first.
+</details>
+
+<details>
+<summary><b>Does it merge duplicates by itself?</b></summary>
+
+No. It shows homes that look the same (same advert, same address, same main photo, or the same
+postcode, bedrooms and price) and you choose **Merge** or **Not the same**. Merging keeps every
+link, note and price seen, and the earliest date.
 </details>
 
 <details>

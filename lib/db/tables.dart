@@ -186,6 +186,78 @@ class Areas extends Table with SyncedRow {
   TextColumn get notes => text().withDefault(const Constant(''))();
 }
 
+/// One piece of research work ("Enniskillen rental, Jan 2027"), with its own
+/// catalog of captured homes, pages, photos and documents.
+@DataClassName('ResearchJob')
+class Researches extends Table with SyncedRow {
+  @override
+  String get tableName => 'property_researches';
+
+  TextColumn get name => text()();
+
+  /// rent, buy, invest or area.
+  TextColumn get kind => text().withDefault(const Constant('rent'))();
+
+  /// ResearchCriteria as JSON (see domain/catalog.dart): what fits.
+  TextColumn get criteria => text().withDefault(const Constant('{}'))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  BoolColumn get archived => boolean().withDefault(const Constant(false))();
+  TextColumn get created => text()();
+}
+
+/// A captured item in a research's catalog: a page, photo, screenshot, PDF,
+/// link or note, with the details read from it.
+@DataClassName('CatalogItem')
+class CatalogItems extends Table with SyncedRow {
+  @override
+  String get tableName => 'property_catalog_items';
+
+  TextColumn get researchId => text()();
+
+  /// The Hunt home it became or was linked to.
+  TextColumn get propertyId => text().nullable()();
+
+  /// page, photo, document, link or note.
+  TextColumn get kind => text()();
+  TextColumn get title => text().withDefault(const Constant(''))();
+  TextColumn get url => text().withDefault(const Constant(''))();
+
+  /// The site and its advert number, when known.
+  TextColumn get source => text().withDefault(const Constant(''))();
+  TextColumn get sourceId => text().nullable()();
+  TextColumn get address => text().withDefault(const Constant(''))();
+  TextColumn get postcode => text().withDefault(const Constant(''))();
+  IntColumn get price => integer().nullable()();
+  IntColumn get beds => integer().nullable()();
+  IntColumn get baths => integer().nullable()();
+
+  /// ItemFields extras as JSON: price period, council tax band, EPC, agent,
+  /// phone, available date, status, other links and the price history.
+  TextColumn get fields => text().withDefault(const Constant('{}'))();
+
+  /// The text the details were read from (page text or OCR).
+  TextColumn get body => text().withDefault(const Constant(''))();
+
+  /// Difference hash of the main picture, for spotting the same home.
+  TextColumn get imageHash => text().nullable()();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  TextColumn get captured => text()();
+}
+
+/// Pictures of catalog items, kept on this device inside the encrypted
+/// database. Not synced: only the details and the picture's hash travel.
+@DataClassName('CatalogImage')
+class CatalogImages extends Table {
+  @override
+  String get tableName => 'property_catalog_images';
+
+  TextColumn get itemId => text()();
+  BlobColumn get bytes => blob()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {itemId};
+}
+
 // The tables sync needs; their columns come from brahma_core.
 
 @DataClassName('Pref')

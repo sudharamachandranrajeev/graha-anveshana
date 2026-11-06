@@ -6,6 +6,7 @@ import '../ui/hunt_page.dart';
 import '../ui/invest_page.dart';
 import '../ui/lettings_page.dart';
 import '../ui/research_page.dart';
+import '../ui/researches_page.dart';
 import '../ui/searches_page.dart';
 import 'settings_page.dart';
 
@@ -38,8 +39,16 @@ final propertyModule = AppModule(
       page: (_) => const InvestPage(),
     ),
     Destination(
+      id: 'researches',
+      label: 'Researches',
+      icon: Icons.collections_bookmark_outlined,
+      selectedIcon: Icons.collections_bookmark,
+      primary: true,
+      page: (_) => const ResearchesPage(),
+    ),
+    Destination(
       id: 'research',
-      label: 'Research',
+      label: 'Areas',
       icon: Icons.insights_outlined,
       selectedIcon: Icons.insights,
       primary: true,

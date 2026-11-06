@@ -5782,6 +5782,1577 @@ class AreasCompanion extends UpdateCompanion<Area> {
   }
 }
 
+class $ResearchesTable extends Researches with TableInfo<$ResearchesTable, ResearchJob> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ResearchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('rent'),
+  );
+  static const VerificationMeta _criteriaMeta = const VerificationMeta('criteria');
+  @override
+  late final GeneratedColumn<String> criteria = GeneratedColumn<String>(
+    'criteria',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _archivedMeta = const VerificationMeta('archived');
+  @override
+  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
+    'archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("archived" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdMeta = const VerificationMeta('created');
+  @override
+  late final GeneratedColumn<String> created = GeneratedColumn<String>(
+    'created',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, hlc, deleted, name, kind, criteria, notes, archived, created];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'property_researches';
+  @override
+  VerificationContext validateIntegrity(Insertable<ResearchJob> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(_kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    }
+    if (data.containsKey('criteria')) {
+      context.handle(_criteriaMeta, criteria.isAcceptableOrUnknown(data['criteria']!, _criteriaMeta));
+    }
+    if (data.containsKey('notes')) {
+      context.handle(_notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    if (data.containsKey('archived')) {
+      context.handle(_archivedMeta, archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta));
+    }
+    if (data.containsKey('created')) {
+      context.handle(_createdMeta, created.isAcceptableOrUnknown(data['created']!, _createdMeta));
+    } else if (isInserting) {
+      context.missing(_createdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ResearchJob map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ResearchJob(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      kind: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      criteria: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}criteria'])!,
+      notes: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
+      archived: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}archived'])!,
+      created: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}created'])!,
+    );
+  }
+
+  @override
+  $ResearchesTable createAlias(String alias) {
+    return $ResearchesTable(attachedDatabase, alias);
+  }
+}
+
+class ResearchJob extends DataClass implements Insertable<ResearchJob> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+  final String name;
+
+  /// rent, buy, invest or area.
+  final String kind;
+
+  /// ResearchCriteria as JSON (see domain/catalog.dart): what fits.
+  final String criteria;
+  final String notes;
+  final bool archived;
+  final String created;
+  const ResearchJob({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.name,
+    required this.kind,
+    required this.criteria,
+    required this.notes,
+    required this.archived,
+    required this.created,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['name'] = Variable<String>(name);
+    map['kind'] = Variable<String>(kind);
+    map['criteria'] = Variable<String>(criteria);
+    map['notes'] = Variable<String>(notes);
+    map['archived'] = Variable<bool>(archived);
+    map['created'] = Variable<String>(created);
+    return map;
+  }
+
+  ResearchesCompanion toCompanion(bool nullToAbsent) {
+    return ResearchesCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      name: Value(name),
+      kind: Value(kind),
+      criteria: Value(criteria),
+      notes: Value(notes),
+      archived: Value(archived),
+      created: Value(created),
+    );
+  }
+
+  factory ResearchJob.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ResearchJob(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      name: serializer.fromJson<String>(json['name']),
+      kind: serializer.fromJson<String>(json['kind']),
+      criteria: serializer.fromJson<String>(json['criteria']),
+      notes: serializer.fromJson<String>(json['notes']),
+      archived: serializer.fromJson<bool>(json['archived']),
+      created: serializer.fromJson<String>(json['created']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'name': serializer.toJson<String>(name),
+      'kind': serializer.toJson<String>(kind),
+      'criteria': serializer.toJson<String>(criteria),
+      'notes': serializer.toJson<String>(notes),
+      'archived': serializer.toJson<bool>(archived),
+      'created': serializer.toJson<String>(created),
+    };
+  }
+
+  ResearchJob copyWith({
+    String? id,
+    String? hlc,
+    bool? deleted,
+    String? name,
+    String? kind,
+    String? criteria,
+    String? notes,
+    bool? archived,
+    String? created,
+  }) => ResearchJob(
+    id: id ?? this.id,
+    hlc: hlc ?? this.hlc,
+    deleted: deleted ?? this.deleted,
+    name: name ?? this.name,
+    kind: kind ?? this.kind,
+    criteria: criteria ?? this.criteria,
+    notes: notes ?? this.notes,
+    archived: archived ?? this.archived,
+    created: created ?? this.created,
+  );
+  ResearchJob copyWithCompanion(ResearchesCompanion data) {
+    return ResearchJob(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      name: data.name.present ? data.name.value : this.name,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      criteria: data.criteria.present ? data.criteria.value : this.criteria,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      archived: data.archived.present ? data.archived.value : this.archived,
+      created: data.created.present ? data.created.value : this.created,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchJob(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('criteria: $criteria, ')
+          ..write('notes: $notes, ')
+          ..write('archived: $archived, ')
+          ..write('created: $created')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, hlc, deleted, name, kind, criteria, notes, archived, created);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ResearchJob &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.name == this.name &&
+          other.kind == this.kind &&
+          other.criteria == this.criteria &&
+          other.notes == this.notes &&
+          other.archived == this.archived &&
+          other.created == this.created);
+}
+
+class ResearchesCompanion extends UpdateCompanion<ResearchJob> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> name;
+  final Value<String> kind;
+  final Value<String> criteria;
+  final Value<String> notes;
+  final Value<bool> archived;
+  final Value<String> created;
+  final Value<int> rowid;
+  const ResearchesCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.name = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.criteria = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.archived = const Value.absent(),
+    this.created = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ResearchesCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String name,
+    this.kind = const Value.absent(),
+    this.criteria = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.archived = const Value.absent(),
+    required String created,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       created = Value(created);
+  static Insertable<ResearchJob> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? name,
+    Expression<String>? kind,
+    Expression<String>? criteria,
+    Expression<String>? notes,
+    Expression<bool>? archived,
+    Expression<String>? created,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (name != null) 'name': name,
+      if (kind != null) 'kind': kind,
+      if (criteria != null) 'criteria': criteria,
+      if (notes != null) 'notes': notes,
+      if (archived != null) 'archived': archived,
+      if (created != null) 'created': created,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ResearchesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? name,
+    Value<String>? kind,
+    Value<String>? criteria,
+    Value<String>? notes,
+    Value<bool>? archived,
+    Value<String>? created,
+    Value<int>? rowid,
+  }) {
+    return ResearchesCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      name: name ?? this.name,
+      kind: kind ?? this.kind,
+      criteria: criteria ?? this.criteria,
+      notes: notes ?? this.notes,
+      archived: archived ?? this.archived,
+      created: created ?? this.created,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (criteria.present) {
+      map['criteria'] = Variable<String>(criteria.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (archived.present) {
+      map['archived'] = Variable<bool>(archived.value);
+    }
+    if (created.present) {
+      map['created'] = Variable<String>(created.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchesCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('criteria: $criteria, ')
+          ..write('notes: $notes, ')
+          ..write('archived: $archived, ')
+          ..write('created: $created, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CatalogItemsTable extends CatalogItems with TableInfo<$CatalogItemsTable, CatalogItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _researchIdMeta = const VerificationMeta('researchId');
+  @override
+  late final GeneratedColumn<String> researchId = GeneratedColumn<String>(
+    'research_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _propertyIdMeta = const VerificationMeta('propertyId');
+  @override
+  late final GeneratedColumn<String> propertyId = GeneratedColumn<String>(
+    'property_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta('sourceId');
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _addressMeta = const VerificationMeta('address');
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _postcodeMeta = const VerificationMeta('postcode');
+  @override
+  late final GeneratedColumn<String> postcode = GeneratedColumn<String>(
+    'postcode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<int> price = GeneratedColumn<int>(
+    'price',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bedsMeta = const VerificationMeta('beds');
+  @override
+  late final GeneratedColumn<int> beds = GeneratedColumn<int>(
+    'beds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bathsMeta = const VerificationMeta('baths');
+  @override
+  late final GeneratedColumn<int> baths = GeneratedColumn<int>(
+    'baths',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fieldsMeta = const VerificationMeta('fields');
+  @override
+  late final GeneratedColumn<String> fields = GeneratedColumn<String>(
+    'fields',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _imageHashMeta = const VerificationMeta('imageHash');
+  @override
+  late final GeneratedColumn<String> imageHash = GeneratedColumn<String>(
+    'image_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _capturedMeta = const VerificationMeta('captured');
+  @override
+  late final GeneratedColumn<String> captured = GeneratedColumn<String>(
+    'captured',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    hlc,
+    deleted,
+    researchId,
+    propertyId,
+    kind,
+    title,
+    url,
+    source,
+    sourceId,
+    address,
+    postcode,
+    price,
+    beds,
+    baths,
+    fields,
+    body,
+    imageHash,
+    notes,
+    captured,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'property_catalog_items';
+  @override
+  VerificationContext validateIntegrity(Insertable<CatalogItem> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('research_id')) {
+      context.handle(
+        _researchIdMeta,
+        researchId.isAcceptableOrUnknown(data['research_id']!, _researchIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_researchIdMeta);
+    }
+    if (data.containsKey('property_id')) {
+      context.handle(
+        _propertyIdMeta,
+        propertyId.isAcceptableOrUnknown(data['property_id']!, _propertyIdMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(_kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(_titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    }
+    if (data.containsKey('url')) {
+      context.handle(_urlMeta, url.isAcceptableOrUnknown(data['url']!, _urlMeta));
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta, source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(_sourceIdMeta, sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta));
+    }
+    if (data.containsKey('address')) {
+      context.handle(_addressMeta, address.isAcceptableOrUnknown(data['address']!, _addressMeta));
+    }
+    if (data.containsKey('postcode')) {
+      context.handle(_postcodeMeta, postcode.isAcceptableOrUnknown(data['postcode']!, _postcodeMeta));
+    }
+    if (data.containsKey('price')) {
+      context.handle(_priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
+    }
+    if (data.containsKey('beds')) {
+      context.handle(_bedsMeta, beds.isAcceptableOrUnknown(data['beds']!, _bedsMeta));
+    }
+    if (data.containsKey('baths')) {
+      context.handle(_bathsMeta, baths.isAcceptableOrUnknown(data['baths']!, _bathsMeta));
+    }
+    if (data.containsKey('fields')) {
+      context.handle(_fieldsMeta, fields.isAcceptableOrUnknown(data['fields']!, _fieldsMeta));
+    }
+    if (data.containsKey('body')) {
+      context.handle(_bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    }
+    if (data.containsKey('image_hash')) {
+      context.handle(_imageHashMeta, imageHash.isAcceptableOrUnknown(data['image_hash']!, _imageHashMeta));
+    }
+    if (data.containsKey('notes')) {
+      context.handle(_notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    if (data.containsKey('captured')) {
+      context.handle(_capturedMeta, captured.isAcceptableOrUnknown(data['captured']!, _capturedMeta));
+    } else if (isInserting) {
+      context.missing(_capturedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CatalogItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogItem(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      researchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}research_id'],
+      )!,
+      propertyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}property_id'],
+      ),
+      kind: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      title: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      url: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}url'])!,
+      source: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+      sourceId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}source_id']),
+      address: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}address'])!,
+      postcode: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}postcode'])!,
+      price: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}price']),
+      beds: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}beds']),
+      baths: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}baths']),
+      fields: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}fields'])!,
+      body: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      imageHash: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}image_hash']),
+      notes: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
+      captured: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}captured'])!,
+    );
+  }
+
+  @override
+  $CatalogItemsTable createAlias(String alias) {
+    return $CatalogItemsTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogItem extends DataClass implements Insertable<CatalogItem> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+  final String researchId;
+
+  /// The Hunt home it became or was linked to.
+  final String? propertyId;
+
+  /// page, photo, document, link or note.
+  final String kind;
+  final String title;
+  final String url;
+
+  /// The site and its advert number, when known.
+  final String source;
+  final String? sourceId;
+  final String address;
+  final String postcode;
+  final int? price;
+  final int? beds;
+  final int? baths;
+
+  /// ItemFields extras as JSON: price period, council tax band, EPC, agent,
+  /// phone, available date, status, other links and the price history.
+  final String fields;
+
+  /// The text the details were read from (page text or OCR).
+  final String body;
+
+  /// Difference hash of the main picture, for spotting the same home.
+  final String? imageHash;
+  final String notes;
+  final String captured;
+  const CatalogItem({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.researchId,
+    this.propertyId,
+    required this.kind,
+    required this.title,
+    required this.url,
+    required this.source,
+    this.sourceId,
+    required this.address,
+    required this.postcode,
+    this.price,
+    this.beds,
+    this.baths,
+    required this.fields,
+    required this.body,
+    this.imageHash,
+    required this.notes,
+    required this.captured,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['research_id'] = Variable<String>(researchId);
+    if (!nullToAbsent || propertyId != null) {
+      map['property_id'] = Variable<String>(propertyId);
+    }
+    map['kind'] = Variable<String>(kind);
+    map['title'] = Variable<String>(title);
+    map['url'] = Variable<String>(url);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || sourceId != null) {
+      map['source_id'] = Variable<String>(sourceId);
+    }
+    map['address'] = Variable<String>(address);
+    map['postcode'] = Variable<String>(postcode);
+    if (!nullToAbsent || price != null) {
+      map['price'] = Variable<int>(price);
+    }
+    if (!nullToAbsent || beds != null) {
+      map['beds'] = Variable<int>(beds);
+    }
+    if (!nullToAbsent || baths != null) {
+      map['baths'] = Variable<int>(baths);
+    }
+    map['fields'] = Variable<String>(fields);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || imageHash != null) {
+      map['image_hash'] = Variable<String>(imageHash);
+    }
+    map['notes'] = Variable<String>(notes);
+    map['captured'] = Variable<String>(captured);
+    return map;
+  }
+
+  CatalogItemsCompanion toCompanion(bool nullToAbsent) {
+    return CatalogItemsCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      researchId: Value(researchId),
+      propertyId: propertyId == null && nullToAbsent ? const Value.absent() : Value(propertyId),
+      kind: Value(kind),
+      title: Value(title),
+      url: Value(url),
+      source: Value(source),
+      sourceId: sourceId == null && nullToAbsent ? const Value.absent() : Value(sourceId),
+      address: Value(address),
+      postcode: Value(postcode),
+      price: price == null && nullToAbsent ? const Value.absent() : Value(price),
+      beds: beds == null && nullToAbsent ? const Value.absent() : Value(beds),
+      baths: baths == null && nullToAbsent ? const Value.absent() : Value(baths),
+      fields: Value(fields),
+      body: Value(body),
+      imageHash: imageHash == null && nullToAbsent ? const Value.absent() : Value(imageHash),
+      notes: Value(notes),
+      captured: Value(captured),
+    );
+  }
+
+  factory CatalogItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogItem(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      researchId: serializer.fromJson<String>(json['researchId']),
+      propertyId: serializer.fromJson<String?>(json['propertyId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      title: serializer.fromJson<String>(json['title']),
+      url: serializer.fromJson<String>(json['url']),
+      source: serializer.fromJson<String>(json['source']),
+      sourceId: serializer.fromJson<String?>(json['sourceId']),
+      address: serializer.fromJson<String>(json['address']),
+      postcode: serializer.fromJson<String>(json['postcode']),
+      price: serializer.fromJson<int?>(json['price']),
+      beds: serializer.fromJson<int?>(json['beds']),
+      baths: serializer.fromJson<int?>(json['baths']),
+      fields: serializer.fromJson<String>(json['fields']),
+      body: serializer.fromJson<String>(json['body']),
+      imageHash: serializer.fromJson<String?>(json['imageHash']),
+      notes: serializer.fromJson<String>(json['notes']),
+      captured: serializer.fromJson<String>(json['captured']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'researchId': serializer.toJson<String>(researchId),
+      'propertyId': serializer.toJson<String?>(propertyId),
+      'kind': serializer.toJson<String>(kind),
+      'title': serializer.toJson<String>(title),
+      'url': serializer.toJson<String>(url),
+      'source': serializer.toJson<String>(source),
+      'sourceId': serializer.toJson<String?>(sourceId),
+      'address': serializer.toJson<String>(address),
+      'postcode': serializer.toJson<String>(postcode),
+      'price': serializer.toJson<int?>(price),
+      'beds': serializer.toJson<int?>(beds),
+      'baths': serializer.toJson<int?>(baths),
+      'fields': serializer.toJson<String>(fields),
+      'body': serializer.toJson<String>(body),
+      'imageHash': serializer.toJson<String?>(imageHash),
+      'notes': serializer.toJson<String>(notes),
+      'captured': serializer.toJson<String>(captured),
+    };
+  }
+
+  CatalogItem copyWith({
+    String? id,
+    String? hlc,
+    bool? deleted,
+    String? researchId,
+    Value<String?> propertyId = const Value.absent(),
+    String? kind,
+    String? title,
+    String? url,
+    String? source,
+    Value<String?> sourceId = const Value.absent(),
+    String? address,
+    String? postcode,
+    Value<int?> price = const Value.absent(),
+    Value<int?> beds = const Value.absent(),
+    Value<int?> baths = const Value.absent(),
+    String? fields,
+    String? body,
+    Value<String?> imageHash = const Value.absent(),
+    String? notes,
+    String? captured,
+  }) => CatalogItem(
+    id: id ?? this.id,
+    hlc: hlc ?? this.hlc,
+    deleted: deleted ?? this.deleted,
+    researchId: researchId ?? this.researchId,
+    propertyId: propertyId.present ? propertyId.value : this.propertyId,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    url: url ?? this.url,
+    source: source ?? this.source,
+    sourceId: sourceId.present ? sourceId.value : this.sourceId,
+    address: address ?? this.address,
+    postcode: postcode ?? this.postcode,
+    price: price.present ? price.value : this.price,
+    beds: beds.present ? beds.value : this.beds,
+    baths: baths.present ? baths.value : this.baths,
+    fields: fields ?? this.fields,
+    body: body ?? this.body,
+    imageHash: imageHash.present ? imageHash.value : this.imageHash,
+    notes: notes ?? this.notes,
+    captured: captured ?? this.captured,
+  );
+  CatalogItem copyWithCompanion(CatalogItemsCompanion data) {
+    return CatalogItem(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      researchId: data.researchId.present ? data.researchId.value : this.researchId,
+      propertyId: data.propertyId.present ? data.propertyId.value : this.propertyId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      url: data.url.present ? data.url.value : this.url,
+      source: data.source.present ? data.source.value : this.source,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      address: data.address.present ? data.address.value : this.address,
+      postcode: data.postcode.present ? data.postcode.value : this.postcode,
+      price: data.price.present ? data.price.value : this.price,
+      beds: data.beds.present ? data.beds.value : this.beds,
+      baths: data.baths.present ? data.baths.value : this.baths,
+      fields: data.fields.present ? data.fields.value : this.fields,
+      body: data.body.present ? data.body.value : this.body,
+      imageHash: data.imageHash.present ? data.imageHash.value : this.imageHash,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      captured: data.captured.present ? data.captured.value : this.captured,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogItem(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('researchId: $researchId, ')
+          ..write('propertyId: $propertyId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('url: $url, ')
+          ..write('source: $source, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('address: $address, ')
+          ..write('postcode: $postcode, ')
+          ..write('price: $price, ')
+          ..write('beds: $beds, ')
+          ..write('baths: $baths, ')
+          ..write('fields: $fields, ')
+          ..write('body: $body, ')
+          ..write('imageHash: $imageHash, ')
+          ..write('notes: $notes, ')
+          ..write('captured: $captured')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    hlc,
+    deleted,
+    researchId,
+    propertyId,
+    kind,
+    title,
+    url,
+    source,
+    sourceId,
+    address,
+    postcode,
+    price,
+    beds,
+    baths,
+    fields,
+    body,
+    imageHash,
+    notes,
+    captured,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogItem &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.researchId == this.researchId &&
+          other.propertyId == this.propertyId &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.url == this.url &&
+          other.source == this.source &&
+          other.sourceId == this.sourceId &&
+          other.address == this.address &&
+          other.postcode == this.postcode &&
+          other.price == this.price &&
+          other.beds == this.beds &&
+          other.baths == this.baths &&
+          other.fields == this.fields &&
+          other.body == this.body &&
+          other.imageHash == this.imageHash &&
+          other.notes == this.notes &&
+          other.captured == this.captured);
+}
+
+class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> researchId;
+  final Value<String?> propertyId;
+  final Value<String> kind;
+  final Value<String> title;
+  final Value<String> url;
+  final Value<String> source;
+  final Value<String?> sourceId;
+  final Value<String> address;
+  final Value<String> postcode;
+  final Value<int?> price;
+  final Value<int?> beds;
+  final Value<int?> baths;
+  final Value<String> fields;
+  final Value<String> body;
+  final Value<String?> imageHash;
+  final Value<String> notes;
+  final Value<String> captured;
+  final Value<int> rowid;
+  const CatalogItemsCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.researchId = const Value.absent(),
+    this.propertyId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.url = const Value.absent(),
+    this.source = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.address = const Value.absent(),
+    this.postcode = const Value.absent(),
+    this.price = const Value.absent(),
+    this.beds = const Value.absent(),
+    this.baths = const Value.absent(),
+    this.fields = const Value.absent(),
+    this.body = const Value.absent(),
+    this.imageHash = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.captured = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogItemsCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String researchId,
+    this.propertyId = const Value.absent(),
+    required String kind,
+    this.title = const Value.absent(),
+    this.url = const Value.absent(),
+    this.source = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.address = const Value.absent(),
+    this.postcode = const Value.absent(),
+    this.price = const Value.absent(),
+    this.beds = const Value.absent(),
+    this.baths = const Value.absent(),
+    this.fields = const Value.absent(),
+    this.body = const Value.absent(),
+    this.imageHash = const Value.absent(),
+    this.notes = const Value.absent(),
+    required String captured,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       researchId = Value(researchId),
+       kind = Value(kind),
+       captured = Value(captured);
+  static Insertable<CatalogItem> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? researchId,
+    Expression<String>? propertyId,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<String>? url,
+    Expression<String>? source,
+    Expression<String>? sourceId,
+    Expression<String>? address,
+    Expression<String>? postcode,
+    Expression<int>? price,
+    Expression<int>? beds,
+    Expression<int>? baths,
+    Expression<String>? fields,
+    Expression<String>? body,
+    Expression<String>? imageHash,
+    Expression<String>? notes,
+    Expression<String>? captured,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (researchId != null) 'research_id': researchId,
+      if (propertyId != null) 'property_id': propertyId,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (url != null) 'url': url,
+      if (source != null) 'source': source,
+      if (sourceId != null) 'source_id': sourceId,
+      if (address != null) 'address': address,
+      if (postcode != null) 'postcode': postcode,
+      if (price != null) 'price': price,
+      if (beds != null) 'beds': beds,
+      if (baths != null) 'baths': baths,
+      if (fields != null) 'fields': fields,
+      if (body != null) 'body': body,
+      if (imageHash != null) 'image_hash': imageHash,
+      if (notes != null) 'notes': notes,
+      if (captured != null) 'captured': captured,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? researchId,
+    Value<String?>? propertyId,
+    Value<String>? kind,
+    Value<String>? title,
+    Value<String>? url,
+    Value<String>? source,
+    Value<String?>? sourceId,
+    Value<String>? address,
+    Value<String>? postcode,
+    Value<int?>? price,
+    Value<int?>? beds,
+    Value<int?>? baths,
+    Value<String>? fields,
+    Value<String>? body,
+    Value<String?>? imageHash,
+    Value<String>? notes,
+    Value<String>? captured,
+    Value<int>? rowid,
+  }) {
+    return CatalogItemsCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      researchId: researchId ?? this.researchId,
+      propertyId: propertyId ?? this.propertyId,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      url: url ?? this.url,
+      source: source ?? this.source,
+      sourceId: sourceId ?? this.sourceId,
+      address: address ?? this.address,
+      postcode: postcode ?? this.postcode,
+      price: price ?? this.price,
+      beds: beds ?? this.beds,
+      baths: baths ?? this.baths,
+      fields: fields ?? this.fields,
+      body: body ?? this.body,
+      imageHash: imageHash ?? this.imageHash,
+      notes: notes ?? this.notes,
+      captured: captured ?? this.captured,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (researchId.present) {
+      map['research_id'] = Variable<String>(researchId.value);
+    }
+    if (propertyId.present) {
+      map['property_id'] = Variable<String>(propertyId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (postcode.present) {
+      map['postcode'] = Variable<String>(postcode.value);
+    }
+    if (price.present) {
+      map['price'] = Variable<int>(price.value);
+    }
+    if (beds.present) {
+      map['beds'] = Variable<int>(beds.value);
+    }
+    if (baths.present) {
+      map['baths'] = Variable<int>(baths.value);
+    }
+    if (fields.present) {
+      map['fields'] = Variable<String>(fields.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (imageHash.present) {
+      map['image_hash'] = Variable<String>(imageHash.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (captured.present) {
+      map['captured'] = Variable<String>(captured.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('researchId: $researchId, ')
+          ..write('propertyId: $propertyId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('url: $url, ')
+          ..write('source: $source, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('address: $address, ')
+          ..write('postcode: $postcode, ')
+          ..write('price: $price, ')
+          ..write('beds: $beds, ')
+          ..write('baths: $baths, ')
+          ..write('fields: $fields, ')
+          ..write('body: $body, ')
+          ..write('imageHash: $imageHash, ')
+          ..write('notes: $notes, ')
+          ..write('captured: $captured, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CatalogImagesTable extends CatalogImages with TableInfo<$CatalogImagesTable, CatalogImage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogImagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [itemId, bytes];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'property_catalog_images';
+  @override
+  VerificationContext validateIntegrity(Insertable<CatalogImage> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('item_id')) {
+      context.handle(_itemIdMeta, itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta));
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(_bytesMeta, bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta));
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {itemId};
+  @override
+  CatalogImage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogImage(
+      itemId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}item_id'])!,
+      bytes: attachedDatabase.typeMapping.read(DriftSqlType.blob, data['${effectivePrefix}bytes'])!,
+    );
+  }
+
+  @override
+  $CatalogImagesTable createAlias(String alias) {
+    return $CatalogImagesTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogImage extends DataClass implements Insertable<CatalogImage> {
+  final String itemId;
+  final Uint8List bytes;
+  const CatalogImage({required this.itemId, required this.bytes});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['item_id'] = Variable<String>(itemId);
+    map['bytes'] = Variable<Uint8List>(bytes);
+    return map;
+  }
+
+  CatalogImagesCompanion toCompanion(bool nullToAbsent) {
+    return CatalogImagesCompanion(itemId: Value(itemId), bytes: Value(bytes));
+  }
+
+  factory CatalogImage.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogImage(
+      itemId: serializer.fromJson<String>(json['itemId']),
+      bytes: serializer.fromJson<Uint8List>(json['bytes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'itemId': serializer.toJson<String>(itemId),
+      'bytes': serializer.toJson<Uint8List>(bytes),
+    };
+  }
+
+  CatalogImage copyWith({String? itemId, Uint8List? bytes}) =>
+      CatalogImage(itemId: itemId ?? this.itemId, bytes: bytes ?? this.bytes);
+  CatalogImage copyWithCompanion(CatalogImagesCompanion data) {
+    return CatalogImage(
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImage(')
+          ..write('itemId: $itemId, ')
+          ..write('bytes: $bytes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(itemId, $driftBlobEquality.hash(bytes));
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogImage &&
+          other.itemId == this.itemId &&
+          $driftBlobEquality.equals(other.bytes, this.bytes));
+}
+
+class CatalogImagesCompanion extends UpdateCompanion<CatalogImage> {
+  final Value<String> itemId;
+  final Value<Uint8List> bytes;
+  final Value<int> rowid;
+  const CatalogImagesCompanion({
+    this.itemId = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CatalogImagesCompanion.insert({
+    required String itemId,
+    required Uint8List bytes,
+    this.rowid = const Value.absent(),
+  }) : itemId = Value(itemId),
+       bytes = Value(bytes);
+  static Insertable<CatalogImage> custom({
+    Expression<String>? itemId,
+    Expression<Uint8List>? bytes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (itemId != null) 'item_id': itemId,
+      if (bytes != null) 'bytes': bytes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CatalogImagesCompanion copyWith({Value<String>? itemId, Value<Uint8List>? bytes, Value<int>? rowid}) {
+    return CatalogImagesCompanion(
+      itemId: itemId ?? this.itemId,
+      bytes: bytes ?? this.bytes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogImagesCompanion(')
+          ..write('itemId: $itemId, ')
+          ..write('bytes: $bytes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PrefsTable extends Prefs with TableInfo<$PrefsTable, Pref> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -6644,6 +8215,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RentPaymentsTable rentPayments = $RentPaymentsTable(this);
   late final $ComplianceItemsTable complianceItems = $ComplianceItemsTable(this);
   late final $AreasTable areas = $AreasTable(this);
+  late final $ResearchesTable researches = $ResearchesTable(this);
+  late final $CatalogItemsTable catalogItems = $CatalogItemsTable(this);
+  late final $CatalogImagesTable catalogImages = $CatalogImagesTable(this);
   late final $PrefsTable prefs = $PrefsTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
@@ -6663,6 +8237,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rentPayments,
     complianceItems,
     areas,
+    researches,
+    catalogItems,
+    catalogImages,
     prefs,
     outbox,
     syncCursors,
@@ -9303,6 +10880,734 @@ typedef $$AreasTableProcessedTableManager =
       Area,
       PrefetchHooks Function()
     >;
+typedef $$ResearchesTableCreateCompanionBuilder = ResearchesCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String name,
+  Value<String> kind,
+  Value<String> criteria,
+  Value<String> notes,
+  Value<bool> archived,
+  required String created,
+  Value<int> rowid,
+});
+typedef $$ResearchesTableUpdateCompanionBuilder = ResearchesCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> name,
+  Value<String> kind,
+  Value<String> criteria,
+  Value<String> notes,
+  Value<bool> archived,
+  Value<String> created,
+  Value<int> rowid,
+});
+
+class $$ResearchesTableFilterComposer extends Composer<_$AppDatabase, $ResearchesTable> {
+  $$ResearchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get criteria =>
+      $composableBuilder(column: $table.criteria, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => ColumnFilters(column));
+}
+
+class $$ResearchesTableOrderingComposer extends Composer<_$AppDatabase, $ResearchesTable> {
+  $$ResearchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get criteria =>
+      $composableBuilder(column: $table.criteria, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ResearchesTableAnnotationComposer extends Composer<_$AppDatabase, $ResearchesTable> {
+  $$ResearchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get kind => $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get criteria =>
+      $composableBuilder(column: $table.criteria, builder: (column) => column);
+
+  GeneratedColumn<String> get notes => $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  GeneratedColumn<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => column);
+}
+
+class $$ResearchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ResearchesTable,
+          ResearchJob,
+          $$ResearchesTableFilterComposer,
+          $$ResearchesTableOrderingComposer,
+          $$ResearchesTableAnnotationComposer,
+          $$ResearchesTableCreateCompanionBuilder,
+          $$ResearchesTableUpdateCompanionBuilder,
+          (ResearchJob, BaseReferences<_$AppDatabase, $ResearchesTable, ResearchJob>),
+          ResearchJob,
+          PrefetchHooks Function()
+        > {
+  $$ResearchesTableTableManager(_$AppDatabase db, $ResearchesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$ResearchesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$ResearchesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$ResearchesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> criteria = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                Value<String> created = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchesCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                name: name,
+                kind: kind,
+                criteria: criteria,
+                notes: notes,
+                archived: archived,
+                created: created,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String name,
+                Value<String> kind = const Value.absent(),
+                Value<String> criteria = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                required String created,
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchesCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                name: name,
+                kind: kind,
+                criteria: criteria,
+                notes: notes,
+                archived: archived,
+                created: created,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ResearchesTable, ResearchJob>(table),
+                  BaseReferences<_$AppDatabase, $ResearchesTable, ResearchJob>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ResearchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ResearchesTable,
+      ResearchJob,
+      $$ResearchesTableFilterComposer,
+      $$ResearchesTableOrderingComposer,
+      $$ResearchesTableAnnotationComposer,
+      $$ResearchesTableCreateCompanionBuilder,
+      $$ResearchesTableUpdateCompanionBuilder,
+      (ResearchJob, BaseReferences<_$AppDatabase, $ResearchesTable, ResearchJob>),
+      ResearchJob,
+      PrefetchHooks Function()
+    >;
+typedef $$CatalogItemsTableCreateCompanionBuilder = CatalogItemsCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String researchId,
+  Value<String?> propertyId,
+  required String kind,
+  Value<String> title,
+  Value<String> url,
+  Value<String> source,
+  Value<String?> sourceId,
+  Value<String> address,
+  Value<String> postcode,
+  Value<int?> price,
+  Value<int?> beds,
+  Value<int?> baths,
+  Value<String> fields,
+  Value<String> body,
+  Value<String?> imageHash,
+  Value<String> notes,
+  required String captured,
+  Value<int> rowid,
+});
+typedef $$CatalogItemsTableUpdateCompanionBuilder = CatalogItemsCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> researchId,
+  Value<String?> propertyId,
+  Value<String> kind,
+  Value<String> title,
+  Value<String> url,
+  Value<String> source,
+  Value<String?> sourceId,
+  Value<String> address,
+  Value<String> postcode,
+  Value<int?> price,
+  Value<int?> beds,
+  Value<int?> baths,
+  Value<String> fields,
+  Value<String> body,
+  Value<String?> imageHash,
+  Value<String> notes,
+  Value<String> captured,
+  Value<int> rowid,
+});
+
+class $$CatalogItemsTableFilterComposer extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get researchId =>
+      $composableBuilder(column: $table.researchId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get propertyId =>
+      $composableBuilder(column: $table.propertyId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get postcode =>
+      $composableBuilder(column: $table.postcode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get beds =>
+      $composableBuilder(column: $table.beds, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get baths =>
+      $composableBuilder(column: $table.baths, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fields =>
+      $composableBuilder(column: $table.fields, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get captured =>
+      $composableBuilder(column: $table.captured, builder: (column) => ColumnFilters(column));
+}
+
+class $$CatalogItemsTableOrderingComposer extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get researchId =>
+      $composableBuilder(column: $table.researchId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get propertyId =>
+      $composableBuilder(column: $table.propertyId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get postcode =>
+      $composableBuilder(column: $table.postcode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get beds =>
+      $composableBuilder(column: $table.beds, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get baths =>
+      $composableBuilder(column: $table.baths, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fields =>
+      $composableBuilder(column: $table.fields, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get captured =>
+      $composableBuilder(column: $table.captured, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CatalogItemsTableAnnotationComposer extends Composer<_$AppDatabase, $CatalogItemsTable> {
+  $$CatalogItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get researchId =>
+      $composableBuilder(column: $table.researchId, builder: (column) => column);
+
+  GeneratedColumn<String> get propertyId =>
+      $composableBuilder(column: $table.propertyId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind => $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title => $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get url => $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get postcode =>
+      $composableBuilder(column: $table.postcode, builder: (column) => column);
+
+  GeneratedColumn<int> get price => $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<int> get beds => $composableBuilder(column: $table.beds, builder: (column) => column);
+
+  GeneratedColumn<int> get baths => $composableBuilder(column: $table.baths, builder: (column) => column);
+
+  GeneratedColumn<String> get fields =>
+      $composableBuilder(column: $table.fields, builder: (column) => column);
+
+  GeneratedColumn<String> get body => $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get imageHash =>
+      $composableBuilder(column: $table.imageHash, builder: (column) => column);
+
+  GeneratedColumn<String> get notes => $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get captured =>
+      $composableBuilder(column: $table.captured, builder: (column) => column);
+}
+
+class $$CatalogItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CatalogItemsTable,
+          CatalogItem,
+          $$CatalogItemsTableFilterComposer,
+          $$CatalogItemsTableOrderingComposer,
+          $$CatalogItemsTableAnnotationComposer,
+          $$CatalogItemsTableCreateCompanionBuilder,
+          $$CatalogItemsTableUpdateCompanionBuilder,
+          (CatalogItem, BaseReferences<_$AppDatabase, $CatalogItemsTable, CatalogItem>),
+          CatalogItem,
+          PrefetchHooks Function()
+        > {
+  $$CatalogItemsTableTableManager(_$AppDatabase db, $CatalogItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$CatalogItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$CatalogItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$CatalogItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> researchId = const Value.absent(),
+                Value<String?> propertyId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> sourceId = const Value.absent(),
+                Value<String> address = const Value.absent(),
+                Value<String> postcode = const Value.absent(),
+                Value<int?> price = const Value.absent(),
+                Value<int?> beds = const Value.absent(),
+                Value<int?> baths = const Value.absent(),
+                Value<String> fields = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<String> captured = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogItemsCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                researchId: researchId,
+                propertyId: propertyId,
+                kind: kind,
+                title: title,
+                url: url,
+                source: source,
+                sourceId: sourceId,
+                address: address,
+                postcode: postcode,
+                price: price,
+                beds: beds,
+                baths: baths,
+                fields: fields,
+                body: body,
+                imageHash: imageHash,
+                notes: notes,
+                captured: captured,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String researchId,
+                Value<String?> propertyId = const Value.absent(),
+                required String kind,
+                Value<String> title = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> sourceId = const Value.absent(),
+                Value<String> address = const Value.absent(),
+                Value<String> postcode = const Value.absent(),
+                Value<int?> price = const Value.absent(),
+                Value<int?> beds = const Value.absent(),
+                Value<int?> baths = const Value.absent(),
+                Value<String> fields = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String?> imageHash = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                required String captured,
+                Value<int> rowid = const Value.absent(),
+              }) => CatalogItemsCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                researchId: researchId,
+                propertyId: propertyId,
+                kind: kind,
+                title: title,
+                url: url,
+                source: source,
+                sourceId: sourceId,
+                address: address,
+                postcode: postcode,
+                price: price,
+                beds: beds,
+                baths: baths,
+                fields: fields,
+                body: body,
+                imageHash: imageHash,
+                notes: notes,
+                captured: captured,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CatalogItemsTable, CatalogItem>(table),
+                  BaseReferences<_$AppDatabase, $CatalogItemsTable, CatalogItem>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CatalogItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CatalogItemsTable,
+      CatalogItem,
+      $$CatalogItemsTableFilterComposer,
+      $$CatalogItemsTableOrderingComposer,
+      $$CatalogItemsTableAnnotationComposer,
+      $$CatalogItemsTableCreateCompanionBuilder,
+      $$CatalogItemsTableUpdateCompanionBuilder,
+      (CatalogItem, BaseReferences<_$AppDatabase, $CatalogItemsTable, CatalogItem>),
+      CatalogItem,
+      PrefetchHooks Function()
+    >;
+typedef $$CatalogImagesTableCreateCompanionBuilder = CatalogImagesCompanion Function({
+  required String itemId,
+  required Uint8List bytes,
+  Value<int> rowid,
+});
+typedef $$CatalogImagesTableUpdateCompanionBuilder = CatalogImagesCompanion Function({
+  Value<String> itemId,
+  Value<Uint8List> bytes,
+  Value<int> rowid,
+});
+
+class $$CatalogImagesTableFilterComposer extends Composer<_$AppDatabase, $CatalogImagesTable> {
+  $$CatalogImagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => ColumnFilters(column));
+}
+
+class $$CatalogImagesTableOrderingComposer extends Composer<_$AppDatabase, $CatalogImagesTable> {
+  $$CatalogImagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CatalogImagesTableAnnotationComposer extends Composer<_$AppDatabase, $CatalogImagesTable> {
+  $$CatalogImagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+}
+
+class $$CatalogImagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CatalogImagesTable,
+          CatalogImage,
+          $$CatalogImagesTableFilterComposer,
+          $$CatalogImagesTableOrderingComposer,
+          $$CatalogImagesTableAnnotationComposer,
+          $$CatalogImagesTableCreateCompanionBuilder,
+          $$CatalogImagesTableUpdateCompanionBuilder,
+          (CatalogImage, BaseReferences<_$AppDatabase, $CatalogImagesTable, CatalogImage>),
+          CatalogImage,
+          PrefetchHooks Function()
+        > {
+  $$CatalogImagesTableTableManager(_$AppDatabase db, $CatalogImagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$CatalogImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$CatalogImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$CatalogImagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> itemId = const Value.absent(),
+            Value<Uint8List> bytes = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => CatalogImagesCompanion(itemId: itemId, bytes: bytes, rowid: rowid),
+          createCompanionCallback: ({
+            required String itemId,
+            required Uint8List bytes,
+            Value<int> rowid = const Value.absent(),
+          }) => CatalogImagesCompanion.insert(itemId: itemId, bytes: bytes, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CatalogImagesTable, CatalogImage>(table),
+                  BaseReferences<_$AppDatabase, $CatalogImagesTable, CatalogImage>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CatalogImagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CatalogImagesTable,
+      CatalogImage,
+      $$CatalogImagesTableFilterComposer,
+      $$CatalogImagesTableOrderingComposer,
+      $$CatalogImagesTableAnnotationComposer,
+      $$CatalogImagesTableCreateCompanionBuilder,
+      $$CatalogImagesTableUpdateCompanionBuilder,
+      (CatalogImage, BaseReferences<_$AppDatabase, $CatalogImagesTable, CatalogImage>),
+      CatalogImage,
+      PrefetchHooks Function()
+    >;
 typedef $$PrefsTableCreateCompanionBuilder = PrefsCompanion Function({
   required String id,
   Value<String> hlc,
@@ -9813,6 +12118,10 @@ class $AppDatabaseManager {
   $$ComplianceItemsTableTableManager get complianceItems =>
       $$ComplianceItemsTableTableManager(_db, _db.complianceItems);
   $$AreasTableTableManager get areas => $$AreasTableTableManager(_db, _db.areas);
+  $$ResearchesTableTableManager get researches => $$ResearchesTableTableManager(_db, _db.researches);
+  $$CatalogItemsTableTableManager get catalogItems => $$CatalogItemsTableTableManager(_db, _db.catalogItems);
+  $$CatalogImagesTableTableManager get catalogImages =>
+      $$CatalogImagesTableTableManager(_db, _db.catalogImages);
   $$PrefsTableTableManager get prefs => $$PrefsTableTableManager(_db, _db.prefs);
   $$OutboxTableTableManager get outbox => $$OutboxTableTableManager(_db, _db.outbox);
   $$SyncCursorsTableTableManager get syncCursors => $$SyncCursorsTableTableManager(_db, _db.syncCursors);

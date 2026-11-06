@@ -106,7 +106,7 @@ class _ResearchPageState extends ConsumerState<ResearchPage> {
   Widget build(BuildContext context) {
     final r = report;
     return PageScaffold(
-      title: 'Research',
+      title: 'Areas',
       banner: 'page.research',
       children: [
         SectionCard(
