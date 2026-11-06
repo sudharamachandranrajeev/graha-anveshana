@@ -1,7 +1,7 @@
 name: anveshana
 description: "Graha Anveshana - property search, renting, buying, investment, development and lettings (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.8.2+11
+version: 0.9.0+12
 
 environment:
   sdk: ^3.13.5
@@ -17,6 +17,9 @@ dependencies:
   file_picker: ^13.1.0
   flutter:
     sdk: flutter
+  # The in-app browser, for sites that need one. 6.2 (beta) is the first
+  # with a Linux plugin; 6.1's Android build fails under AGP 9.
+  flutter_inappwebview: 6.2.0-beta.3
   flutter_riverpod: ^3.4.3
   google_mlkit_text_recognition: ^1.0.0
   http: ^1.6.0
@@ -32,6 +35,12 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.35.1
   build_runner: ^2.16.2
+
+dependency_overrides:
+  # The web view's Linux plugin with libwpe made optional: WPE WebKit 2.52+
+  # (Arch, Fedora) no longer ships it. See packages/flutter_inappwebview_linux.
+  flutter_inappwebview_linux:
+    path: packages/flutter_inappwebview_linux
 
 flutter:
   uses-material-design: true

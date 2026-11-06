@@ -184,6 +184,11 @@ jobs:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+      - name: Leave the WPE web view out
+        # Ubuntu has shipped no WPE WebKit since 22.04, so the portable tarball
+        # opens sites in the system browser (Search still reads them in the
+        # app); source builds on a system with WPE WebKit get the in-app browser.
+        run: flutter pub add 'anveshana_no_linux_webview:{"path":"packages/no_linux_webview"}'
       - name: Build
         run: |
           flutter build linux --release \

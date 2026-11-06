@@ -72,12 +72,12 @@ void main() {
 
     const openRent = '''
 <div class="description">A quiet one bed flat.</div>
-<img src="//imagescdn.openrent.co.uk/listings/77/photo1.jpg">
+<img src="//imagescdn.openrent.co.uk/listings/12/photo1.jpg">
 <table><tr> <td class="fw-medium">Deposit</td> <td>&#xA3;800.00</td> </tr>
 <tr> <td class="fw-medium">Furnishing</td> <td>Unfurnished</td> </tr></table>''';
-    final o = parseOpenRentAdvert(openRent, '77');
+    final o = parseOpenRentAdvert(openRent);
     expect(o.description, 'A quiet one bed flat.');
-    expect(o.photos, ['https://imagescdn.openrent.co.uk/listings/77/photo1.jpg']);
+    expect(o.photos, ['https://imagescdn.openrent.co.uk/listings/12/photo1.jpg']);
     expect(o.facts, {'Deposit': '£800.00', 'Furnishing': 'Unfurnished'});
   });
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.9.0
+
+- Search is the first tab. Type what you want in your own words ("2 bed to rent in Leeds under
+  £900 within 3 miles with parking, no students") and the app reads Rightmove, OnTheMarket,
+  OpenRent and PropertyPal for you, then shows every home that answers in one list: best match
+  first, then nearest, then cheapest. More load as you scroll. The same home on two sites shows
+  once, with both sites named. Your words become filters you can tap to change or remove.
+- Open a home to see it in full inside the app: every photo, the description, key features,
+  facts (deposit, furnishing, council tax...), floor plans and the agent, with Add to Hunt, Add
+  to a research and Call.
+- Zoopla, and any site that asks you to prove you are not a robot, open inside the app. Browse or
+  pass the check yourself, then tap Add these homes to my results.
+- Links to adverts and area sites open inside the app instead of your browser (Android, Windows,
+  and Linux builds with WPE WebKit). Settings > Search sites switches each site on or off and
+  signs you out of every site opened in the app.
+- A guided tour on first launch. Skip it at any step; take it again from Settings > Hints and
+  help > Take the tour.
+- The old Searches tab is now Saved searches, behind the button at the top of Search. The
+  portal links it had are gone: Search does the job inside the app.
+- Place names in Northern Ireland are found on the map through OpenStreetMap.
+
 ## 0.8.2
 
 - Updates install from inside the app. When a new version is out, the start-up banner's Update

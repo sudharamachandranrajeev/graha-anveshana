@@ -7,7 +7,7 @@ import '../ui/invest_page.dart';
 import '../ui/lettings_page.dart';
 import '../ui/research_page.dart';
 import '../ui/researches_page.dart';
-import '../ui/searches_page.dart';
+import '../ui/search_page.dart';
 import 'settings_page.dart';
 
 final propertyModule = AppModule(
@@ -15,20 +15,20 @@ final propertyModule = AppModule(
   name: 'Property',
   destinations: [
     Destination(
+      id: 'search',
+      label: 'Search',
+      icon: Icons.search_outlined,
+      selectedIcon: Icons.search,
+      primary: true,
+      page: (_) => const SearchPage(),
+    ),
+    Destination(
       id: 'hunt',
       label: 'Hunt',
       icon: Icons.travel_explore_outlined,
       selectedIcon: Icons.travel_explore,
       primary: true,
       page: (_) => const HuntPage(),
-    ),
-    Destination(
-      id: 'searches',
-      label: 'Searches',
-      icon: Icons.saved_search_outlined,
-      selectedIcon: Icons.saved_search,
-      primary: true,
-      page: (_) => const SearchesPage(),
     ),
     Destination(
       id: 'invest',

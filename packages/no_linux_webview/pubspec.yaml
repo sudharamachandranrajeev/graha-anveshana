@@ -1,0 +1,18 @@
+name: anveshana_no_linux_webview
+description: "Stands in for flutter_inappwebview on Linux so its WPE WebKit plugin is not built. The release workflow adds it for the portable tarball, which then reads the sites over HTTP only and opens pages that need a browser in the system browser."
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    implements: flutter_inappwebview
+    platforms:
+      linux:
+        dartPluginClass: NoLinuxWebView

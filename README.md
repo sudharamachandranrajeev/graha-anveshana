@@ -34,15 +34,20 @@ not advice.
 
 ## ✨ What it does
 
+- 🔎 **Search in your own words** – type "2 bed to rent in Leeds under £900 within 3 miles with
+  parking, no students". The app reads Rightmove, OnTheMarket, OpenRent and PropertyPal for you
+  and shows every home that answers in one list, best match first. The same home on two sites
+  shows once. Open any of them to see every photo, the description, the facts and the agent,
+  inside the app, and save it to Hunt or a research. Zoopla opens inside the app too.
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
-  enquired, viewing, applied, agreed. Add one from a PropertyPal link, an advert link from
-  Rightmove, Zoopla, OnTheMarket or OpenRent, or type it in.
+  enquired, viewing, applied, agreed. Add one from Search, an advert link, or type it in.
 - 🗂️ **A research for every hunt** – keep each hunt or study apart, each with its own catalog.
   Add links, screenshots, photos of a sign, PDF brochures or pasted alert emails, and the app reads
   the price, bedrooms, postcode, council tax band and energy rating for you, on your device. It
   shows how well each one fits, and finds the same home captured twice so you can merge them.
 - ❔ **Help on every screen** – search what the app can do, offline, and jump straight there. Ask
-  an AI of your choice when the guide has no answer.
+  an AI of your choice when the guide has no answer. A short guided tour on first launch, which you
+  can skip at any step and take again from **Settings → Hints and help**.
 - 📞 **Contact agents in one tap** – call, text, a chat app or e-mail. Each contact is logged, and a
   ready-made first enquiry carries your details.
 - 🔔 **Alerts on your phone** (optional) – your saved searches run on your own free cloud helper,
@@ -156,16 +161,19 @@ Newer versions install over the top and keep your data.
 
 ### Step 3 – First launch
 
-The app opens on **Hunt**. Every screen works empty, so there is nothing to fill in first.
+The app opens on **Search** and offers a one-minute tour. Tap **Not now** to skip it; you can
+take it later from **Settings → Hints and help → Take the tour**. Every screen works empty, so there
+is nothing to fill in first.
 
 1. **Add your details**: open **Settings → Your details → Edit**. Your name, phone and household
    go into enquiries you send.
 2. **Set a home point**: **Settings → Home point → Set**, then type a postcode. Distances are
    measured from here.
-3. **Add a home**: on **Hunt**, tap **Add** and paste an advert link, or type the home in. Rightmove, Zoopla, OnTheMarket and OpenRent do not allow
-   apps to read their adverts, so for those the app keeps the link and you type the details; the
-   **Searches** page opens their own search pages for any town.
-4. **Contact the agent** from the home's page. The home moves to the next stage by itself.
+3. **Search**: type what you want in the search bar, for example
+   `3 bed house for sale in York under £250k with a garden`, and press Enter. Your words become
+   filters you can tap to change. Under them, each site shows how many adverts it gave.
+4. **Open a home** to see it in full, then tap **Add to Hunt** (or **Add to a research**).
+5. **Contact the agent** from the home's page on **Hunt**. The home moves to the next stage by itself.
 
 > [!NOTE]
 > The next release opens with a short welcome. It asks where your data should live: on this
@@ -188,7 +196,7 @@ Node.js for about ten minutes.
    ```
 2. On your phone, install ntfy and subscribe to that topic.
 3. In the app, open **Settings → Brahma Watch → Set up** and paste the address and token.
-4. On **Searches**, tap **Add** for each PropertyPal search, then **Send to Watch**. Tap
+4. On **Search**, tap the **Saved searches** button at the top, then **Add** for each PropertyPal search, then **Send to Watch**. Tap
    **Test alert** to check your phone gets it.
 
 ### Step 5 (optional) – Use it on more than one device
@@ -214,8 +222,14 @@ flowchart LR
   cannot read them.
 - **Brahma Watch** checks your searches on a schedule. The app sends it your searches and
   brings in what it found each time it starts.
-- **What leaves the device on its own**: postcodes (to postcodes.io and public data sites), the
-  PropertyPal links you add, and Watch requests. Nothing else unless you turn on sync.
+- **Search** reads the property sites only when you search, from your own device, one page at a
+  time as you scroll, under the app's own name. Nothing is read in the background. Switch any site
+  off in **Settings → Search sites**.
+- **Sites that turn apps away** (Zoopla, or a site asking you to prove you are not a robot) open
+  inside the app. You browse or pass the check yourself, then tap **Add these homes to my results**.
+- **What leaves the device**: your searches (to the sites you search, and the place name to
+  postcodes.io or OpenStreetMap), postcodes for area reports, links you add, and Watch requests.
+  Nothing else unless you turn on sync.
 
 > [!IMPORTANT]
 > Your password and recovery key are the only ways to unlock synced data. If you lose both, nobody
@@ -226,7 +240,7 @@ flowchart LR
 <details>
 <summary><b>Do I need an account or the internet?</b></summary>
 
-No account. The lists, sums and lettings work offline on one device. Adding a PropertyPal link,
+No account. The lists, sums and lettings work offline on one device. Search, adding a link,
 area reports and alerts need the internet.
 </details>
 
@@ -283,8 +297,25 @@ running and unlocked, then start the app again.
 <details>
 <summary><b>Which property sites work?</b></summary>
 
-Links and saved searches work with PropertyPal. For a home from any other site, add it by hand on
-**Hunt → Add**.
+**Search** reads Rightmove, OnTheMarket, OpenRent (to rent only) and PropertyPal (Northern
+Ireland). Zoopla does not let apps read it, so tap **Open Zoopla** under the search: it opens
+inside the app, and **Add these homes to my results** brings the homes on the page you see into
+the list. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
+other sites.
+</details>
+
+<details>
+<summary><b>Search shows nothing, or a site is missing</b></summary>
+
+- **"Nothing answers that yet"**: the filters are too tight. Tap a filter chip to change it, or
+  the cross on it to remove it.
+- **A site shows a grey sign**: hover or long-press it to see why. PropertyPal covers Northern
+  Ireland only, and OpenRent has homes to rent only.
+- **"Open Rightmove" (or another site)**: the site asked to check you are not a robot. Tap it,
+  pass the check on the site's page inside the app, then tap **Add these homes to my results**.
+- **Linux download**: the portable Linux build has no built-in web view (most Linux systems do
+  not ship one), so Zoopla and robot checks open in your usual browser. Search itself still works
+  in the app.
 </details>
 
 <details>

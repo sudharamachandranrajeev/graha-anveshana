@@ -5,7 +5,7 @@ const anveshanaHints = <String, String>{
   // Navigation
   'nav.hunt': 'Homes you are looking at to rent or buy, from first sight to keys.',
   'nav.contacts': 'Agents, landlords, tenants, brokers, solicitors and trades.',
-  'nav.searches': 'Saved searches. Brahma Watch checks them and alerts your phone.',
+  'nav.search': 'Find homes to rent or buy across the property sites, in your own words.',
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
   'nav.researches':
@@ -21,7 +21,9 @@ const anveshanaHints = <String, String>{
   'hunt.enquiry': 'A first message: is it free, what next, when to view. Your details come from Settings.',
   'hunt.stage': 'Where this property is in your hunt. Calls and messages move it on by themselves.',
   'hunt.gone': 'The advert says it is let or sold.',
-  // Searches
+  // Search
+  'search.saved': 'Searches Brahma Watch checks for you, and the alerts it sends.',
+  // Saved searches
   'searches.send': 'Replace the searches Brahma Watch runs with these.',
   'searches.fetch': 'Copy the searches Brahma Watch runs into Graha Anveshana.',
   'searches.run': 'Ask Brahma Watch to check every search now.',
@@ -55,11 +57,14 @@ const anveshanaHints = <String, String>{
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',
+  'settings.sites':
+      'The sites the Search tab reads when you search. Each is read only then, from this device, one '
+      'page at a time.',
   'settings.watch':
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
   'page.hunt':
-      'Every home you are considering, from first sight to keys. Add one with a PropertyPal link, then '
+      'Every home you are considering, from first sight to keys. Add one from Search or a link, then '
       'move it on: new, shortlisted, enquired, viewing, applied, agreed. Calls and messages move it on '
       'by themselves; drop the ones that are not for you.',
   'page.contacts': 'Agents, landlords, tenants and trades in one place. Add them here or from a home.',

@@ -350,11 +350,9 @@ class SourceReader {
         final url = Uri.https('www.openrent.co.uk', '/properties-to-rent/${_slug(q.area)}', {'term': q.area});
         return parseOpenRentSearch(await _get(source, url));
       case SourceId.zoopla:
-        final url = Uri.https(
-          'www.zoopla.co.uk',
-          '/${q.rent ? 'to-rent' : 'for-sale'}/property/${_slug(q.area)}/',
-        );
-        throw SourceBlocked(source, url);
+        // Zoopla turns apps away, and its terms allow links to its home page
+        // only: the user searches there in the in-app browser.
+        throw SourceBlocked(source, Uri.https('www.zoopla.co.uk', '/'));
     }
   }
 

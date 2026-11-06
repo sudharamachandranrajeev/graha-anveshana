@@ -11,6 +11,7 @@ import '../domain/listing.dart';
 import '../domain/local_rules.dart';
 import '../domain/research.dart';
 import '../domain/tax.dart';
+import 'browser_page.dart';
 import 'common.dart';
 import 'look.dart';
 import 'invest_page.dart';
@@ -341,7 +342,7 @@ class _ReportView extends StatelessWidget {
               IconButton(
                 tooltip: 'Open the council page',
                 icon: const Icon(Icons.open_in_new, size: 18),
-                onPressed: () => openUri(context, n.url),
+                onPressed: () => openInApp(context, n.url),
               ),
             ],
           ),
@@ -428,7 +429,7 @@ class _ReportView extends StatelessWidget {
             children: [
               for (final l in researchLinks(p))
                 TextButton.icon(
-                  onPressed: () => openUri(context, l.url),
+                  onPressed: () => openInApp(context, l.url),
                   icon: const Icon(Icons.open_in_new, size: 16),
                   label: Text(l.label),
                 ),

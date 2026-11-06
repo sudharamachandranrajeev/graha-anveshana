@@ -196,7 +196,7 @@ AdvertDetails parsePropertyPalAdvert(String html) {
   );
 }
 
-AdvertDetails parseOpenRentAdvert(String html, String id) {
+AdvertDetails parseOpenRentAdvert(String html) {
   final m = RegExp(
     r'<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)</div>',
     caseSensitive: false,
@@ -213,15 +213,23 @@ AdvertDetails parseOpenRentAdvert(String html, String id) {
       if (RegExp(r'check|tick|yes', caseSensitive: false).hasMatch(cell)) value = 'Yes';
       if (RegExp(r'cross|times|close|no\b', caseSensitive: false).hasMatch(cell)) value = 'No';
     }
-    if (label.isNotEmpty && value.isNotEmpty && label.length < 40 && value != 'View Offers')
+    if (label.isNotEmpty && value.isNotEmpty && label.length < 40 && value != 'View Offers') {
       facts[label] = value;
+    }
   }
-  final photos = <String>{
+  // The photo folder is the landlord's listing number, not the advert's;
+  // the first photo on the page is the advert's own, so its folder is kept
+  // and any other homes' photos further down are not.
+  final all = [
     for (final p in RegExp(
-      '(?:https:)?//imagescdn\\.openrent\\.co\\.uk/listings/$id/[^"\'\\s)]+',
+      '(?:https:)?//imagescdn\\.openrent\\.co\\.uk/listings/(\\d+)/[^"\'\\s)]+',
     ).allMatches(html))
-      p.group(0)!.startsWith('//') ? 'https:${p.group(0)}' : p.group(0)!,
-  }.where((u) => !u.contains('_thumb')).toList();
+      (folder: p.group(1)!, url: p.group(0)!.startsWith('//') ? 'https:${p.group(0)}' : p.group(0)!),
+  ];
+  final photos = {
+    for (final p in all)
+      if (p.folder == all.first.folder && !p.url.contains('_thumb')) p.url,
+  }.toList();
   if (m == null && photos.isEmpty) throw const FormatException('No advert on that OpenRent page');
   return AdvertDetails(
     description: m == null ? '' : plainText(m.group(1)!),
@@ -247,7 +255,7 @@ Future<AdvertDetails?> readAdvert(http.Client client, Listing l) async {
     SourceId.rightmove => parseRightmoveAdvert(r.body),
     SourceId.onTheMarket => parseOnTheMarketAdvert(r.body),
     SourceId.propertyPal => parsePropertyPalAdvert(r.body),
-    SourceId.openRent => parseOpenRentAdvert(r.body, l.sourceId),
+    SourceId.openRent => parseOpenRentAdvert(r.body),
     SourceId.zoopla => null,
   };
 }

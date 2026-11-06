@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:anveshana/app/search_controller.dart';
+import 'package:anveshana/app/tour.dart';
 import 'package:anveshana/db/database.dart';
 import 'package:anveshana/domain/book.dart';
 import 'package:anveshana/domain/listing.dart';
@@ -6,6 +10,8 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'app_harness.dart';
 import 'support.dart';
@@ -64,7 +70,7 @@ void main() {
     );
   }
 
-  const pages = ['Searches', 'Invest', 'Researches', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
+  const pages = ['Search', 'Invest', 'Researches', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {
@@ -109,6 +115,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run();
+    await app.go('Hunt');
     for (final again in [false, true]) {
       await app.tapText('Add');
       await app.tapText('From a link');
@@ -127,25 +134,92 @@ void main() {
     await app.close();
   });
 
-  testWidgets('the Searches page opens portal searches for a town', (tester) async {
+  testWidgets('a search in plain words lists the sites\' homes and opens one in the app', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open();
-    await app.run();
-    await app.go('Searches');
-    expect(find.text('Type a town or postcode to open the searches.'), findsOneWidget);
-    await app.enter('Town or postcode', 'Doncaster');
-    expect(find.text('Rightmove'), findsOneWidget);
-    expect(find.text('OnTheMarket'), findsOneWidget);
-    expect(find.text('OpenRent'), findsOneWidget);
-    expect(find.text('Zoopla'), findsNothing);
+    final asked = <Uri>[];
+    await app.run(
+      overrides: [
+        searchHttpProvider.overrideWithValue(
+          MockClient((r) async {
+            asked.add(r.url);
+            if (r.url.host == 'los.rightmove.co.uk') {
+              return http.Response(
+                jsonEncode({
+                  'matches': [
+                    {'id': '7', 'type': 'REGION'},
+                  ],
+                }),
+                200,
+              );
+            }
+            if (r.url.host == 'www.rightmove.co.uk' && r.url.path.endsWith('find.html')) {
+              return http.Response(_rightmovePage, 200);
+            }
+            return http.Response('', 404);
+          }),
+        ),
+      ],
+    );
+    // Search is the first screen.
+    expect(find.text('Try'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextField).first,
+      '2 bed to rent in Exampletown under £800, no students',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await app.settle();
+    // The words became filters; a filter can be removed.
+    expect(find.text('2 bed'), findsOneWidget);
+    expect(find.text('Up to £800 pcm'), findsOneWidget);
+    expect(find.text('No students'), findsOneWidget);
+    expect(asked.firstWhere((u) => u.path.endsWith('find.html')).queryParameters['maxPrice'], '800');
+    // One home answers; the let-agreed one and the dear one are left out.
+    expect(find.text('1 home answers, of 3 read'), findsOneWidget);
+    expect(find.text('Rightmove 3'), findsOneWidget);
+    expect(find.text('Open Zoopla'), findsOneWidget);
+    expect(find.text('14 Sample Street, Exampletown, EX1 1AA'), findsOneWidget);
+    // Opening it reads the advert in the app; its page here is not found.
+    await app.tap(find.text('14 Sample Street, Exampletown, EX1 1AA'));
+    expect(find.text('Add to Hunt'), findsOneWidget);
+    expect(find.text('See it on Rightmove'), findsOneWidget);
+    await app.tapText('Add to Hunt');
+    final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!;
+    expect((rows.single.source, rows.single.price, rows.single.kind), ('rightmove', 650, 'rent'));
     await app.close();
+  });
+
+  testWidgets('the tour is offered once, skips at any step and runs again from Settings', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(offerTour: true);
+    await app.run();
+    expect(find.text('Take the tour'), findsOneWidget);
+    await app.tapText('Take the tour');
+    expect(find.text('Step 1 of ${anveshanaTour.length}'), findsOneWidget);
+    await app.tapText('Next');
+    expect(find.text('Search in your own words'), findsOneWidget);
+    await app.tapText('Skip tour');
+    expect(find.text('Search in your own words'), findsNothing);
+    await app.go('Settings');
+    await app.tap(find.text('Take the tour').last);
+    expect(find.text('Welcome to Graha Anveshana'), findsOneWidget);
+    await app.tapText('Skip tour');
+    await app.close();
+    // Not offered again.
+    final again = AppHarness(tester)..desktop();
+    await again.open(offerTour: true);
+    await tester.runAsync(() => again.session.db.setLocalSetting('tour.offered', 'x'));
+    await again.run();
+    expect(find.text('Take the tour'), findsNothing);
+    await again.close();
   });
 
   testWidgets('an email search is saved with its kind and words', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run();
-    await app.go('Searches');
+    await app.go('Search');
+    await app.tap(find.byTooltip('Saved searches and alerts'));
     await app.tapText('Add');
     await app.enter('Name', 'Leeds flats');
     await app.tapText('A PropertyPal search (Northern Ireland)');
@@ -173,6 +247,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
+    await app.go('Hunt');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Check advert wording');
     await app.enter('Advert text', 'Best offers over £700. No DSS.');
@@ -204,6 +279,7 @@ void main() {
       },
     );
     await app.run();
+    await app.go('Hunt');
     await tester.tap(find.byIcon(Icons.compare_arrows));
     await app.settle();
     expect(find.text('2 homes, cheapest first'), findsOneWidget);
@@ -219,6 +295,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
+    await app.go('Hunt');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Checklist');
     await app.tapText('Damp or mould');
@@ -234,6 +311,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
+    await app.go('Hunt');
     expect(find.text('Viewing (1)'), findsOneWidget);
     await app.enter('Find', 'nowhere');
     expect(find.text('Viewing (1)'), findsNothing);
@@ -251,6 +329,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
+    await app.go('Hunt');
     expect(find.text('Viewing (1)'), findsOneWidget);
     expect(find.textContaining('£650 pcm'), findsOneWidget);
     expect(find.text('0.5 km'), findsOneWidget);
@@ -261,6 +340,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run();
+    await app.go('Hunt');
     await app.tapText('Add');
     await app.tapText('Type it in');
     await app.enter('Address', '3 Lake Road, Enniskillen BT74 7AA');
@@ -358,3 +438,38 @@ void main() {
     await app.close();
   });
 }
+
+// A made-up Rightmove results page: one home that answers, one let agreed,
+// one over the price.
+final _rightmovePage =
+    '<html><script id="__NEXT_DATA__" type="application/json">${jsonEncode({
+      'props': {
+        'pageProps': {
+          'searchResults': {
+            'properties': [
+              {
+                'id': 111,
+                'bedrooms': 2,
+                'displayAddress': '14 Sample Street, Exampletown, EX1 1AA',
+                'price': {'amount': 150, 'frequency': 'weekly'},
+                'summary': 'Bright flat with allocated parking',
+              },
+              {
+                'id': 112,
+                'bedrooms': 2,
+                'displayAddress': 'Other Road, Exampletown',
+                'price': {'amount': 700, 'frequency': 'monthly'},
+                'displayStatus': 'Let agreed',
+              },
+              {
+                'id': 113,
+                'bedrooms': 2,
+                'displayAddress': 'Dear Lane, Exampletown',
+                'price': {'amount': 1500, 'frequency': 'monthly'},
+              },
+            ],
+            'pagination': {'next': null},
+          },
+        },
+      },
+    })}</script></html>';

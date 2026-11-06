@@ -6,6 +6,7 @@ import '../domain/book.dart';
 import '../domain/contact_links.dart';
 import '../domain/research.dart';
 import '../ui/common.dart';
+import '../ui/search_page.dart';
 import 'providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -70,13 +71,15 @@ class SettingsPage extends ConsumerWidget {
                 : 'Connected to ${Uri.parse(watch.url).host}. New listings are brought into the hunt when the app starts.',
           ),
         ),
+        const SearchSitesCard(),
         const AppLockCard(),
         const HintsCard(),
         const SyncCard(),
         const SecurityCard(
           network:
-              'Nothing leaves the device unless you sign in to sync, look up a postcode, add a PropertyPal link '
-              'or use Brahma Watch.',
+              'Nothing leaves the device unless you search (the sites you search are read then, from this '
+              'device), open a site in the app, sign in to sync, look up a postcode, add a link or use '
+              'Brahma Watch.',
         ),
         const AboutCard(
           description: 'Property search, renting, buying, investment, development and lettings.',

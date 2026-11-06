@@ -8,6 +8,7 @@ import '../db/database.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
 import '../domain/viewing_checklist.dart';
+import 'browser_page.dart';
 import 'common.dart';
 import 'look.dart';
 import 'contacts_page.dart';
@@ -68,9 +69,9 @@ class PropertyPage extends ConsumerWidget {
       actions: [
         if (p.url.isNotEmpty)
           IconButton(
-            tooltip: 'Open the advert',
+            tooltip: 'See the advert',
             icon: const Icon(Icons.open_in_new),
-            onPressed: () => openUri(context, Uri.parse(p.url)),
+            onPressed: () => openInApp(context, Uri.parse(p.url)),
           ),
         IconButton(
           tooltip: 'Edit',

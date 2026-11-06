@@ -11,6 +11,7 @@ import '../domain/watch_client.dart';
 import '../ui/hints.dart';
 import 'security_checks.dart';
 import 'session.dart';
+import 'tour.dart';
 
 /// The open session; main() overrides this before the first frame.
 final sessionProvider = Provider<AppSession>((ref) => throw StateError('No session'));
@@ -23,6 +24,7 @@ List<Override> anveshanaOverrides(AppSession session) => [
   appIdentityProvider.overrideWithValue(anveshanaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...anveshanaHints}),
   sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck, ...anveshanaChecks]),
+  tourProvider.overrideWithValue(anveshanaTour),
 ];
 
 extension Mutate on WidgetRef {

@@ -5,6 +5,7 @@ import 'package:anveshana/domain/book.dart';
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -18,22 +19,26 @@ class AppHarness {
   PropertyBook get book => session.book;
 
   /// Opens the database; [seed] runs before the app starts.
-  Future<void> open({Future<void> Function(PropertyBook book)? seed}) async {
+  Future<void> open({Future<void> Function(PropertyBook book)? seed, bool offerTour = false}) async {
     await tester.runAsync(() async {
       final store = await Store.open(memoryDatabase());
       session = AppSession(KeyVault(MemorySecretStore(), anveshanaIdentity), store, PropertyBook(store));
       // Past the first-run choice between this device only and sync.
       await session.db.setLocalSetting('onboarding.sync', 'done');
+      // And past the tour offer; tour_test covers it.
+      if (!offerTour) await session.db.setLocalSetting('tour.offered', '1');
       await seed?.call(session.book);
     });
   }
 
-  Future<void> run() async {
+  /// Starts the app; [overrides] replace providers (e.g. the sites' HTTP client).
+  Future<void> run({List<Override> overrides = const []}) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           ...anveshanaOverrides(session),
           deviceFactsProvider.overrideWith((ref) async => const DeviceFacts()),
+          ...overrides,
         ],
         retry: (_, _) => null,
         child: const AnveshanaApp(),

@@ -7,8 +7,8 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/research.dart';
 import '../domain/watch_client.dart';
+import 'browser_page.dart';
 import 'common.dart';
-import 'portals_card.dart';
 
 WatchSearch _toWatch(Search s) => WatchSearch(
   id: s.id,
@@ -77,7 +77,7 @@ class SearchesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final watch = ref.watch(watchProvider).value;
     return PageScaffold(
-      title: 'Searches',
+      title: 'Saved searches',
       banner: 'page.searches',
       fab: FloatingActionButton.extended(
         heroTag: null,
@@ -86,8 +86,6 @@ class SearchesPage extends ConsumerWidget {
         label: const Text('Add'),
       ),
       children: [
-        const PortalsCard(),
-        const SizedBox(height: 12),
         SectionCard(
           title: 'Brahma Watch',
           hint: 'settings.watch',
@@ -178,7 +176,7 @@ class SearchesPage extends ConsumerWidget {
                                     tooltip: 'Open on PropertyPal',
                                     icon: const Icon(Icons.open_in_new),
                                     onPressed: () =>
-                                        openUri(context, Uri.parse('https://www.propertypal.com${s.path}')),
+                                        openInApp(context, Uri.parse('https://www.propertypal.com${s.path}')),
                                   ),
                           ),
                         ),

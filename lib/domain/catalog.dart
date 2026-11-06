@@ -69,6 +69,21 @@ class ItemFields {
     this.furnished = '',
   });
 
+  /// The details a site's advert gives.
+  factory ItemFields.fromListing(Listing l) => ItemFields(
+    address: l.address,
+    postcode: l.postcode,
+    price: l.price,
+    period: l.isRental ? 'pcm' : '',
+    beds: l.beds,
+    baths: l.baths,
+    agent: l.agent,
+    phone: l.agentPhone,
+    availableFrom: l.availableFrom ?? '',
+    status: l.status,
+    furnished: l.furnished.toLowerCase(),
+  );
+
   final String address, postcode;
   final int? price;
 

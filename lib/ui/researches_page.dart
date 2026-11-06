@@ -15,6 +15,7 @@ import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import '../domain/portals.dart';
 import '../domain/research.dart';
+import 'browser_page.dart';
 import 'common.dart';
 import 'look.dart';
 import 'property_page.dart';
@@ -555,20 +556,6 @@ Future<String> _add(
   });
 }
 
-ItemFields _fromListing(Listing l) => ItemFields(
-  address: l.address,
-  postcode: l.postcode,
-  price: l.price,
-  period: l.isRental ? 'pcm' : '',
-  beds: l.beds,
-  baths: l.baths,
-  agent: l.agent,
-  phone: l.agentPhone,
-  availableFrom: l.availableFrom ?? '',
-  status: l.status,
-  furnished: l.furnished.toLowerCase(),
-);
-
 Future<void> _addLink(BuildContext context, WidgetRef ref, ResearchJob r) async {
   final link = TextEditingController();
   final ids = <String>[];
@@ -604,7 +591,7 @@ Future<void> _addLink(BuildContext context, WidgetRef ref, ResearchJob r) async 
               url: l.url,
               source: 'propertypal',
               sourceId: l.sourceId,
-              fields: _fromListing(l),
+              fields: ItemFields.fromListing(l),
               body: l.description,
             ),
           );
@@ -1103,7 +1090,7 @@ class _CatalogItemPageState extends ConsumerState<CatalogItemPage> {
               ),
             for (final link in linksOf(i))
               OutlinedButton.icon(
-                onPressed: () => openUri(context, Uri.parse(link)),
+                onPressed: () => openInApp(context, Uri.parse(link)),
                 icon: const Icon(Icons.open_in_new, size: 18),
                 label: Text(Uri.tryParse(link)?.host.replaceFirst('www.', '') ?? link),
               ),

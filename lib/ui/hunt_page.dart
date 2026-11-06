@@ -282,8 +282,8 @@ Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind ki
       Field(link, 'Link', hint: 'https://www.propertypal.com/…', autofocus: true),
       const Text(
         'PropertyPal adverts are read for you. For Rightmove, Zoopla, OnTheMarket or OpenRent the link is '
-        'kept and you type the details, because those sites do not allow apps to read them. If PropertyPal '
-        'asks for a browser check, Brahma Watch can bring the listing in instead.',
+        'kept and you type the details. Quicker: find the home with Search, which reads those sites in '
+        'the app, and tap Add to Hunt.',
       ),
     ],
     onSave: () async {
