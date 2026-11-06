@@ -60,11 +60,9 @@ packages:
   brahma_core:
     dependency: "direct main"
     description:
-      path: core
-      ref: HEAD
-      resolved-ref: eb49e1e45a6523d9095b304b2b2e71809eda1272
-      url: "https://github.com/sudharamachandranrajeev/brahma.git"
-    source: git
+      path: "../brahma/core"
+      relative: true
+    source: path
     version: "0.1.0"
   build:
     dependency: transitive
@@ -190,10 +188,10 @@ packages:
     dependency: transitive
     description:
       name: crypto
-      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
+      sha256: e3626ae6270383c9e3a549f34c9e4cd26c09ae6a9adaab2bf4737a00340efdc4
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.7"
+    version: "3.0.8"
   cryptography:
     dependency: transitive
     description:
@@ -695,7 +693,7 @@ packages:
     source: hosted
     version: "3.0.0"
   package_info_plus:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: package_info_plus
       sha256: "73ef2cd5c11a7548f9b7f6fc2a4f6113de2e64aa2a70de63feede95548822908"
@@ -719,7 +717,7 @@ packages:
     source: hosted
     version: "1.9.1"
   path_provider:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: a7f4874f987173da295a61c181b8ee71dab59b332a486b391babf26a1b884825

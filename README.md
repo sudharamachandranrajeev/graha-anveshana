@@ -250,6 +250,23 @@ link, note and price seen, and the earliest date.
 </details>
 
 <details>
+<summary><b>How do I update?</b></summary>
+
+From inside the app. When a new version is out, a banner says so at start-up. Tap **Update**, or
+go to **Settings → About → Check for updates**.
+
+1. The app downloads the new version from this repository's releases.
+2. It checks the download against the release's checksums. A download that does not match is
+   thrown away.
+3. It installs the new version. On Android the system installer opens; allow installing from
+   Graha Anveshana the first time. On Windows the setup runs. On Linux the new version is swapped
+   in and the app offers to restart.
+
+Your data stays where it is. The app asks GitHub at most once a day. To stop it asking, turn off
+**Look for new versions** in **Settings → Security and privacy → Sentinel**.
+</details>
+
+<details>
 <summary><b>Windows says the app might be unsafe</b></summary>
 
 The build isn't code-signed (a paid certificate). Click **More info → Run anyway**. Check the file

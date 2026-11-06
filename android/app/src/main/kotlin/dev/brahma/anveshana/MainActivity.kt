@@ -5,14 +5,17 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 /**
  * Hands anveshana:// links to Dart (lib/app/links.dart): the camera app opens
  * them when it scans a pairing QR code. Also tells Dart the device's name
- * for the pairing request, and what Sentinel asks about the device. A
+ * for the pairing request, hands an update's APK to the system's installer
+ * (brahma_core's AppUpdater), and answers what Sentinel asks about the device. A
  * fragment activity, which local_auth needs for the app lock's fingerprint
  * and face prompt.
  */
@@ -38,6 +41,27 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.brahma.anveshana/update")
+            .setMethodCallHandler { call, result ->
+                val path = call.argument<String>("path")
+                if (call.method != "installApk" || path == null) {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                try {
+                    // Shared from filesDir/updates (res/xml/file_paths.xml).
+                    val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", File(path))
+                    startActivity(
+                        Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }
+                    )
+                    result.success(true)
+                } catch (error: Exception) {
+                    result.error("install_failed", error.message, null)
+                }
+            }
     }
 
     /**

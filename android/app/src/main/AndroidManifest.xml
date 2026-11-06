@@ -4,6 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- App lock: fingerprint, face or the device PIN (local_auth). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <!-- The in-app updater hands a downloaded, checksum-checked APK to the
+         system's installer (brahma_core's AppUpdater). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <!-- usesCleartextTraffic: plain http is allowed only so a sync server on
          the user's own network (192.168.x, Tailscale, .local) can be reached.
          The app refuses http to any public host (validateServerUrl), and
@@ -51,6 +54,16 @@
             </intent-filter>
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
+        <!-- The installer needs a content: URI for the APK; a file: one is refused. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

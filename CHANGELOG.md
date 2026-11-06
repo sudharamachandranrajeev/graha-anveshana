@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.2
+
+- Updates install from inside the app. When a new version is out, the start-up banner's Update
+  button (or Settings > About > Check for updates) downloads it, checks it against the release's
+  checksums, and installs it: the Android installer opens, Windows runs the setup, and Linux
+  swaps the new version in and offers a restart. Your data stays where it is. A download that
+  does not match its checksum is thrown away, never installed.
+- Linux: the app menu entry now describes Graha Anveshana instead of a finance app.
+
 ## 0.8.1
 
 - Android: the app builds again. 0.8.0's Android package failed to build because of the on-device text reader.

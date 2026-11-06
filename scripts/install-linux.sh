@@ -68,13 +68,13 @@ cat >"$desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Graha Anveshana
-GenericName=Personal finance
-Comment=Accounts, spending, investments and reports in one private ledger
+GenericName=Property search
+Comment=Rental hunt, research catalogs, investment sums and lettings in one private app
 Exec=$dest/anveshana
 Icon=$app_id
 Terminal=false
-Categories=Office;Finance;
-Keywords=money;budget;accounts;ledger;investments;
+Categories=Office;
+Keywords=property;rental;house;research;lettings;
 StartupWMClass=$app_id
 DESKTOP
 command -v update-desktop-database >/dev/null && update-desktop-database -q "$(dirname "$desktop")" || true
