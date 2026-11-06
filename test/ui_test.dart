@@ -101,6 +101,10 @@ void main() {
     // A property's page too.
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     expect(find.text('Write an enquiry'), findsOneWidget);
+    // Every photo of the advert, one at a time.
+    expect(find.text('1 / 2'), findsOneWidget);
+    await app.tap(find.byTooltip('Next photo'));
+    expect(find.text('2 / 2'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await app.close();
   });
@@ -137,7 +141,8 @@ void main() {
     expect(find.text('Rightmove'), findsOneWidget);
     expect(find.text('OnTheMarket'), findsOneWidget);
     expect(find.text('OpenRent'), findsOneWidget);
-    expect(find.text('Zoopla'), findsNothing);
+    expect(find.text('Zoopla'), findsOneWidget);
+    expect(find.text('Facebook Marketplace'), findsOneWidget);
     await app.close();
   });
 

@@ -49,6 +49,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="anveshana"/>
             </intent-filter>
+            <!-- Share to Anveshana: an advert link shared from a portal's app or
+                 a browser opens in the app's browser, ready to save. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
         <!-- Don't delete the meta-data below.

@@ -5,6 +5,14 @@
 - Hunt is now **Homes** and Research is now **Areas**, with new icons. Homes is the list of homes
   you are considering; Areas tells you about a place (any UK postcode) and works out purchase tax.
   Each page's tip says which is which, and a home's **Area report** opens Areas for its postcode.
+- Every photo of an advert, not just the first: swipe through them on the home's page. PropertyPal
+  adverts and Brahma Watch alerts bring them all (needs the latest Brahma Watch for alerts).
+- Android: Rightmove, Zoopla, OnTheMarket, OpenRent and Facebook Marketplace open inside the app.
+  On an advert, **Save to Homes** brings in its photos, price, bedrooms and address; saving it again
+  refreshes the home. **Open the advert** on a saved home opens it here too, so older homes can
+  pick up their photos.
+- Android: share an advert link to Anveshana from a portal's app or your browser.
+- Searches: Zoopla and Facebook Marketplace join the portal searches.
 
 ## 0.7.0
 

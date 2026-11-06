@@ -12,7 +12,8 @@ const anveshanaHints = <String, String>{
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
   // Homes
   'hunt.add':
-      'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent), or type a property in.',
+      'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent, Facebook Marketplace), '
+      'or type a property in.',
   'hunt.compare': 'Shortlisted homes side by side: price, cash needed to move in, size, distance and more.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',
   'hunt.distance': 'As the crow flies from the home point in Settings.',

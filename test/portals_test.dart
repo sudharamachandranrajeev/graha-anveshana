@@ -6,8 +6,7 @@ void main() {
 
   test('every portal builds a search for a rental', () {
     final links = {for (final l in portalSearches(rent)) l.portal: l.url};
-    expect(links.length, 3);
-    expect(links, isNot(contains(Portal.zoopla)));
+    expect(links.keys, Portal.values);
     final rm = links[Portal.rightmove]!;
     expect(rm.path, '/property-to-rent/find.html');
     expect(rm.queryParameters['searchLocation'], 'Pontefract');
@@ -16,6 +15,13 @@ void main() {
     expect(links[Portal.onTheMarket]!.path, '/to-rent/property/pontefract/');
     expect(links[Portal.onTheMarket]!.queryParameters['max-price'], '900');
     expect(links[Portal.openRent]!.queryParameters['bedrooms_min'], '2');
+    final zoopla = links[Portal.zoopla]!;
+    expect(zoopla.path, '/to-rent/property/pontefract/');
+    expect(zoopla.queryParameters, containsPair('beds_min', '2'));
+    expect(zoopla.queryParameters, containsPair('price_max', '900'));
+    expect(zoopla.queryParameters, containsPair('price_frequency', 'per_month'));
+    expect(links[Portal.facebook]!.path, '/marketplace/pontefract/propertyrentals');
+    expect(links[Portal.facebook]!.queryParameters['maxPrice'], '900');
   });
 
   test('OpenRent is left out for sales; postcodes and spaces slug cleanly', () {
@@ -23,6 +29,14 @@ void main() {
     final links = portalSearches(sale);
     expect(links.map((l) => l.portal), isNot(contains(Portal.openRent)));
     expect(links.firstWhere((l) => l.portal == Portal.onTheMarket).url.path, '/for-sale/property/ls1-4ap/');
+    expect(
+      links.firstWhere((l) => l.portal == Portal.zoopla).url.queryParameters,
+      isNot(contains('price_frequency')),
+    );
+    expect(
+      links.firstWhere((l) => l.portal == Portal.facebook).url.path,
+      '/marketplace/ls1-4ap/propertyforsale',
+    );
     expect(portalSearches(const PortalQuery(area: '  ', rent: true)), isEmpty);
   });
 
@@ -40,6 +54,9 @@ void main() {
     )!;
     expect(or.id, '2345678');
     expect(or.address, '2 Bed Flat High Street');
+    final fb = parsePortalLink('https://m.facebook.com/marketplace/item/1234567890123456/?ref=search')!;
+    expect((fb.portal, fb.id), (Portal.facebook, '1234567890123456'));
+    expect(fb.url.toString(), 'https://m.facebook.com/marketplace/item/1234567890123456');
   });
 
   test('other links are not adverts', () {
@@ -47,5 +64,6 @@ void main() {
     expect(parsePortalLink('http://www.rightmove.co.uk/properties/123456789'), isNull);
     expect(parsePortalLink('https://evilrightmove.co.uk/properties/123456789'), isNull);
     expect(parsePortalLink('not a link'), isNull);
+    expect(parsePortalLink('https://www.facebook.com/marketplace/leeds/propertyrentals'), isNull);
   });
 }

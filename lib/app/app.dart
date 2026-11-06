@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ui/look.dart';
+import '../ui/share_inbox.dart';
 import 'modules.dart';
 import 'providers.dart';
 
@@ -27,12 +28,15 @@ class AnveshanaApp extends StatelessWidget {
 void fetchWatch(WidgetRef ref) => Future.microtask(() => ref.read(watchAutoProvider.future)).ignore();
 
 /// The app, opening the links the platform hands over (a scanned pairing
-/// code). There is no onboarding: every screen works empty.
+/// code, or an advert shared to it). There is no onboarding: every screen
+/// works empty.
 class _Root extends ConsumerWidget {
   const _Root();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => LinkHandler(
-    child: AppShell(destinations: allDestinations, onStart: fetchWatch, floating: true),
+    child: ShareInbox(
+      child: AppShell(destinations: allDestinations, onStart: fetchWatch, floating: true),
+    ),
   );
 }

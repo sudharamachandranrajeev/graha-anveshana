@@ -11,6 +11,7 @@ import '../domain/pipeline.dart';
 import '../domain/portals.dart';
 import '../domain/running_costs.dart';
 import 'common.dart';
+import 'advert_browser.dart';
 import 'compare_page.dart';
 import 'look.dart';
 import 'property_page.dart';
@@ -243,7 +244,8 @@ class _HuntPageState extends ConsumerState<HuntPage> {
               leading: const Icon(Icons.link),
               title: const Text('From a link'),
               subtitle: const Text(
-                'PropertyPal adverts and searches, or an advert on Rightmove, Zoopla, OnTheMarket, OpenRent',
+                'PropertyPal adverts and searches, or an advert on Rightmove, Zoopla, OnTheMarket, OpenRent '
+                'or Facebook Marketplace',
               ),
               onTap: () => Navigator.pop(context, 'link'),
             ),
@@ -267,9 +269,9 @@ class _HuntPageState extends ConsumerState<HuntPage> {
   }
 }
 
-/// Asks for an advert link. PropertyPal adverts are read; an advert on
-/// another portal is only recognised from its link (those sites forbid
-/// fetching), so its details are typed in beside the saved link.
+/// Asks for an advert link. PropertyPal adverts are read. An advert on
+/// another portal opens in the app's browser on Android, where Save reads
+/// it; elsewhere its details are typed in beside the saved link.
 Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind kind) async {
   final link = TextEditingController();
   var added = 0, updated = 0;
@@ -280,10 +282,13 @@ Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind ki
     action: 'Add',
     fields: (_) => [
       Field(link, 'Link', hint: 'https://www.propertypal.com/…', autofocus: true),
-      const Text(
-        'PropertyPal adverts are read for you. For Rightmove, Zoopla, OnTheMarket or OpenRent the link is '
-        'kept and you type the details, because those sites do not allow apps to read them. If PropertyPal '
-        'asks for a browser check, Brahma Watch can bring the listing in instead.',
+      Text(
+        canBrowseInApp
+            ? 'PropertyPal adverts are read for you. Rightmove, Zoopla, OnTheMarket, OpenRent and Facebook '
+                  'adverts open here in the app: tap Save to Homes to bring in the photos and details.'
+            : 'PropertyPal adverts are read for you. For Rightmove, Zoopla, OnTheMarket, OpenRent or Facebook '
+                  'the link is kept and you type the details; on Android the app can read those adverts for '
+                  'you. If PropertyPal asks for a browser check, Brahma Watch can bring the listing in instead.',
       ),
     ],
     onSave: () async {
@@ -304,7 +309,9 @@ Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind ki
     },
   );
   if (!ok || !context.mounted) return;
-  if (portal != null) {
+  if (portal case final ad? when canBrowseInApp) {
+    await openPortal(context, ad.url);
+  } else if (portal != null) {
     await editProperty(context, ref, kind: kind, advert: portal);
   } else {
     showMessage(context, ['Added $added', if (updated > 0) 'updated $updated'].join(', '));

@@ -24,7 +24,7 @@ class Listing {
     this.lon,
     this.agent = '',
     this.agentPhone = '',
-    this.image,
+    this.images = const [],
     this.status = '',
     this.description = '',
   });
@@ -43,7 +43,12 @@ class Listing {
   final String? availableFrom;
   final double? lat, lon;
   final String agent, agentPhone;
-  final String? image;
+
+  /// Every photo, the main one first.
+  final List<String> images;
+
+  /// The main photo, shown in lists.
+  String? get image => images.firstOrNull;
 
   /// toLet, letAgreed, forSale, saleAgreed...
   final String status;
@@ -87,7 +92,11 @@ Listing listingFromPropertyPal(Map<String, Object?> r) {
     lon: (coord['longitude'] as num?)?.toDouble(),
     agent: '${account['organisation'] ?? ''}',
     agentPhone: '${phone['international'] ?? ''}',
-    image: images is List && images.isNotEmpty ? (images.first as Map)['url'] as String? : null,
+    images: [
+      if (images is List)
+        for (final i in images)
+          if (i case {'url': final String u} when u.isNotEmpty) u,
+    ],
     status: switch (r['status']) {
       {'key': final String k} => k,
       _ => '',
@@ -132,7 +141,14 @@ Listing listingFromWatch(Map<String, Object?> j) => Listing(
   lon: (j['lon'] as num?)?.toDouble(),
   agent: '${j['agent'] ?? ''}',
   agentPhone: '${j['agentPhone'] ?? ''}',
-  image: j['image'] as String?,
+  // Newer Watches send every photo; older ones only the main one.
+  images: switch (j['images']) {
+    final List l => [
+      for (final i in l)
+        if (i is String && i.isNotEmpty) i,
+    ],
+    _ => [if (j['image'] case final String i when i.isNotEmpty) i],
+  },
   status: '${j['status'] ?? ''}',
 );
 

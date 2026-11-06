@@ -14,15 +14,29 @@ import io.flutter.plugin.common.MethodChannel
  * them when it scans a pairing QR code. Also tells Dart the device's name
  * for the pairing request, and what Sentinel asks about the device. A
  * fragment activity, which local_auth needs for the app lock's fingerprint
- * and face prompt.
+ * and face prompt. Text shared to the app (an advert link from a portal's
+ * app) goes to Dart too (lib/ui/share_inbox.dart).
  */
 class MainActivity : FlutterFragmentActivity() {
     private var channel: MethodChannel? = null
     private var pending: String? = null
+    private var shareChannel: MethodChannel? = null
+    private var pendingShare: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         pending = linkOf(intent)
+        pendingShare = sharedText(intent)
+        shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.brahma.anveshana/share").apply {
+            setMethodCallHandler { call, result ->
+                if (call.method == "takeShared") {
+                    result.success(pendingShare)
+                    pendingShare = null
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.brahma.anveshana/device").setMethodCallHandler { call, result ->
             if (call.method == "security") result.success(securityFacts()) else result.notImplemented()
         }
@@ -59,7 +73,12 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         linkOf(intent)?.let { channel?.invokeMethod("link", it) }
+        sharedText(intent)?.let { shareChannel?.invokeMethod("shared", it) }
     }
+
+    private fun sharedText(intent: Intent?): String? =
+        intent?.takeIf { it.action == Intent.ACTION_SEND && it.type == "text/plain" }
+            ?.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() }
 
     private fun linkOf(intent: Intent?): String? =
         intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data?.takeIf { it.scheme == "anveshana" }?.toString()

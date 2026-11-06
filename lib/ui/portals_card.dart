@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../domain/portals.dart';
+import 'advert_browser.dart';
 import 'common.dart';
 
-/// Opens the big portals' own search pages for an area. England's portals
-/// offer no feed and forbid apps reading them, so this only builds links.
+/// Opens the big portals' own search pages for an area: in the app's browser
+/// on Android, where an advert can be saved with its photos, otherwise in the
+/// system browser.
 class PortalsCard extends ConsumerStatefulWidget {
   const PortalsCard({super.key});
 
@@ -49,13 +51,16 @@ class _PortalsCardState extends ConsumerState<PortalsCard> {
     };
     final links = portalSearches(query);
     return SectionCard(
-      title: 'Rightmove, OnTheMarket and more',
+      title: 'Rightmove, Zoopla, Facebook and more',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'England\'s portals do not allow apps to read their adverts, so this opens their own search in '
-            'your browser. Found one you like? Copy its link and add it under Homes.',
+          Text(
+            canBrowseInApp
+                ? 'Opens each site\'s own search here in the app. On an advert you like, tap Save to Homes '
+                      'to bring in its photos and details.'
+                : 'Opens each site\'s own search in your browser. Found one you like? Copy its link and add '
+                      'it under Homes.',
           ),
           const SizedBox(height: 12),
           SegmentedButton<bool>(
@@ -140,7 +145,7 @@ class _PortalsCardState extends ConsumerState<PortalsCard> {
             children: [
               for (final l in links)
                 FilledButton.tonalIcon(
-                  onPressed: () => openUri(context, l.url),
+                  onPressed: () => openPortal(context, l.url),
                   icon: const Icon(Icons.open_in_new),
                   label: Text(l.portal.label),
                 ),
