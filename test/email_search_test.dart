@@ -77,10 +77,10 @@ void main() {
   });
 
   group('whereIs', () {
-    Research research(Map<String, Object?> Function(Uri u) answer) => Research(
+    Research research(Object Function(Uri u) answer) => Research(
       client: MockClient((req) async {
         final body = answer(req.url);
-        return http.Response(jsonEncode(body), body.containsKey('error') ? 404 : 200);
+        return http.Response(jsonEncode(body), body is Map && body.containsKey('error') ? 404 : 200);
       }),
     );
 
@@ -100,6 +100,11 @@ void main() {
               {'name_1': 'Doncaster', 'latitude': 53.52, 'longitude': -1.13},
             ],
           },
+          // Northern Ireland's places come from OpenStreetMap.
+          '/search' when u.queryParameters['q'] == 'Exampleville' => [
+            {'name': 'Exampleville', 'lat': '54.6', 'lon': '-5.9'},
+          ],
+          '/search' => <Object?>[],
           _ => {'result': <Object?>[]},
         };
       });
@@ -107,8 +112,17 @@ void main() {
       expect(await r.whereIs('WF8'), (lat: 53.69, lon: -1.31, label: 'WF8'));
       expect(await r.whereIs(' Doncaster '), (lat: 53.52, lon: -1.13, label: 'Doncaster'));
       expect(await r.whereIs('Nowhere at all'), isNull);
+      expect(await r.whereIs('Exampleville'), (lat: 54.6, lon: -5.9, label: 'Exampleville'));
       expect(await r.whereIs(''), isNull);
-      expect(seen, ['/postcodes/LS6 1AA', '/outcodes/WF8', '/places', '/places']);
+      expect(seen, [
+        '/postcodes/LS6 1AA',
+        '/outcodes/WF8',
+        '/places',
+        '/places',
+        '/search',
+        '/places',
+        '/search',
+      ]);
     });
 
     test('an unknown postcode is null, not an error', () async {

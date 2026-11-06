@@ -277,12 +277,39 @@ class Research {
       {'result': [{'latitude': num _, 'longitude': num _} && final Map first, ...]} => first,
       _ => null,
     };
-    if (r == null) return null;
+    if (r == null) return labelKey == 'name_1' ? _placeFromOsm(q) : null;
     return (
       lat: (r['latitude'] as num).toDouble(),
       lon: (r['longitude'] as num).toDouble(),
       label: '${r[labelKey] ?? q}',
     );
+  }
+
+  /// postcodes.io's place names leave out Northern Ireland; OpenStreetMap's
+  /// Nominatim knows every UK place. Asked once per search, as its policy wants.
+  Future<({double lat, double lon, String label})?> _placeFromOsm(String q) async {
+    final res = await _http
+        .get(
+          Uri.https('nominatim.openstreetmap.org', '/search', {
+            'q': q,
+            'countrycodes': 'gb',
+            'format': 'jsonv2',
+            'limit': '1',
+          }),
+          headers: {
+            'accept': 'application/json',
+            'user-agent': 'Anveshana/0.9 (personal property search app)',
+          },
+        )
+        .timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) return null;
+    final first = switch (jsonDecode(res.body)) {
+      [final Map one, ...] => one,
+      _ => null,
+    };
+    final lat = double.tryParse('${first?['lat']}'), lon = double.tryParse('${first?['lon']}');
+    if (lat == null || lon == null) return null;
+    return (lat: lat, lon: lon, label: '${first!['name'] ?? q}');
   }
 
   /// The latest published month of the UK HPI for [region]; the index runs
