@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.1
+
+- Windows: the app builds again with the in-app browser (0.9.0's Windows build failed).
+- Search: a postcode district on its own ("LS6 2 bed", "flat Belfast BT9") searches that district.
+- Search: a research made from a search keeps the search's centre for distances.
+- Search: pages still arriving from an earlier search no longer mix into a new one.
+
 ## 0.9.0
 
 - Search is the first tab. Type what you want in your own words ("2 bed to rent in Leeds under
