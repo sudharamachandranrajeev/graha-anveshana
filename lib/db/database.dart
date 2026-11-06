@@ -80,7 +80,8 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     },
   );
 
-  static const _catalogIndex = 'CREATE INDEX IF NOT EXISTS catalog_items_research ON property_catalog_items (research_id)';
+  static const _catalogIndex =
+      'CREATE INDEX IF NOT EXISTS catalog_items_research ON property_catalog_items (research_id)';
 
   static const _indexes = [
     'CREATE INDEX properties_source ON properties (source, source_id)',

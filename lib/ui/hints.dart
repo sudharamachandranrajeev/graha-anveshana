@@ -8,7 +8,8 @@ const anveshanaHints = <String, String>{
   'nav.searches': 'Saved searches. Brahma Watch checks them and alerts your phone.',
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
-  'nav.researches': 'Your researches: one per hunt or study, each with its own catalog of homes and documents.',
+  'nav.researches':
+      'Your researches: one per hunt or study, each with its own catalog of homes and documents.',
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
   // Hunt
@@ -43,10 +44,10 @@ const anveshanaHints = <String, String>{
   'researches.add':
       'Add to the catalog from a link, a screenshot, a photo, a PDF brochure, pasted text or an alert email. '
       'Details are read on this device.',
-  'researches.ocr': 'Screenshots and photos are read with OCR on this device (Tesseract, or ML Kit on Android).',
+  'researches.ocr':
+      'Screenshots and photos are read with OCR on this device (Tesseract, or ML Kit on Android).',
   'researches.ai': 'Read with AI: sends only this item\'s text to the AI chosen in Settings, Ask AI.',
-  'researches.duplicates':
-      'Find the same home captured twice (same advert, address, photo, or postcode, beds and price) and merge them.',
+  'researches.duplicates': 'Find the same home captured twice (same advert, address, photo, or postcode, beds and price) and merge them.',
   'researches.merge': 'Merge another research into this one, then check the joined catalog for duplicates.',
   'researches.hunt': 'Add this item to Hunt to enquire, view and track it.',
   'researches.fit': 'How well an item fits the research: price, bedrooms, distance and words.',
