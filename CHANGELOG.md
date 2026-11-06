@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Android: the app builds again. 0.8.0's Android package failed to build because of the on-device text reader.
+
 ## 0.8.0
 
 - Researches: a new tab. Start a research for each hunt or study ("Rental near work, January",
