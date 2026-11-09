@@ -57,7 +57,7 @@ class ComparePage extends ConsumerWidget {
           const EmptyState(
             icon: Icons.compare_arrows,
             title: 'Shortlist two or more',
-            message: 'Homes you have shortlisted, enquired about, viewed, applied for or agreed show here side by side.',
+            message: 'Homes you liked, enquired about, viewed, applied for or agreed show here side by side.',
           )
         else
           SectionCard(

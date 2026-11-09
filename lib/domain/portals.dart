@@ -1,5 +1,5 @@
 /// Advert links from England's big property portals, recognised from the
-/// link alone when the user pastes one into Hunt. (Searching them is the
+/// link alone when the user pastes one into Shortlist. (Searching them is the
 /// Search tab's job: see sources.dart.)
 library;
 

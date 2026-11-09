@@ -18,6 +18,12 @@ abstract final class PrefKeys {
 
   /// The Search tab's saved searches, a JSON list.
   static const savedSearches = 'anveshana.search.saved';
+
+  /// The profile's places homes are measured from, a JSON list.
+  static const places = 'anveshana.profile.places';
+
+  /// Homes thrown out of Search, a JSON list (see TrashedHome).
+  static const trash = 'anveshana.search.trash';
 }
 
 /// Where distances are measured from (the user's home or work).

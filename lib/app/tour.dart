@@ -29,16 +29,16 @@ const anveshanaTour = <TourStep>[
     body:
         'Your words become filters you can tap to change or remove. Each site shows how many adverts it '
         'gave. The same home on two sites shows once. Tap a home to see every photo, the description and '
-        'the agent, here in the app, and save it to Hunt or a research.',
+        'the agent, here in the app, and save it to Shortlist or a collection.',
     screen: 'search',
   ),
   TourStep(
-    title: 'Hunt',
+    title: 'Shortlist',
     body: 'Homes you are considering, from first sight to keys: enquiries, viewings, offers.',
     target: 'nav.hunt',
   ),
   TourStep(
-    title: 'Researches',
+    title: 'Collections',
     body: 'Keep each hunt or study apart, capture homes from screenshots, photos and brochures, and merge duplicates.',
     target: 'nav.researches',
   ),

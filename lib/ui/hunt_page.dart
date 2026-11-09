@@ -51,7 +51,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
     final home = ref.watch(homeProvider).value;
     final log = ref.watch(interactionsProvider).value ?? const <Interaction>[];
     return PageScaffold(
-      title: 'Hunt',
+      title: 'Shortlist',
       banner: 'page.hunt',
       actions: [
         HintIconButton(
@@ -295,7 +295,7 @@ Future<void> importFromLink(BuildContext context, WidgetRef ref, PropertyKind ki
       const Text(
         'PropertyPal adverts are read for you. For Rightmove, Zoopla, OnTheMarket or OpenRent the link is '
         'kept and you type the details. Quicker: find the home with Search, which reads those sites in '
-        'the app, and tap Add to Hunt.',
+        'the app, and tap Add to Shortlist.',
       ),
     ],
     onSave: () async {

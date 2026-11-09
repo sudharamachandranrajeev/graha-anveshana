@@ -22,10 +22,10 @@ import 'property_page.dart';
 
 const researchKinds = {'rent': 'Renting', 'buy': 'Buying', 'invest': 'Investing', 'area': 'Area study'};
 
-/// The research's criteria, read once per row.
+/// The collection's criteria, read once per row.
 ResearchCriteria criteriaOf(ResearchJob r) => ResearchCriteria.fromJson(r.criteria);
 
-/// How well [i] fits [c], with the distance from the research's centre.
+/// How well [i] fits [c], with the distance from the collection's centre.
 ({double score, List<String> misses}) itemFit(ResearchCriteria c, CatalogItem i) {
   final f = fieldsOf(i);
   final lat = (f['lat'] as num?)?.toDouble(), lon = (f['lon'] as num?)?.toDouble();
@@ -78,14 +78,14 @@ class ResearchesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(catalogItemsProvider).value ?? const <CatalogItem>[];
     return PageScaffold(
-      title: 'Researches',
+      title: 'Collections',
       banner: 'page.researches',
       fab: FloatingActionButton.extended(
         heroTag: null,
         tooltip: hintText(ref, 'researches.new'),
         onPressed: () => editResearch(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('New research'),
+        label: const Text('New collection'),
       ),
       children: [
         AsyncView(
@@ -142,7 +142,7 @@ class ResearchesPage extends ConsumerWidget {
 
 String hintText(WidgetRef ref, String id) => ref.read(hintTextsProvider)[id] ?? '';
 
-/// Starts a research, or edits one.
+/// Starts a collection, or edits one.
 Future<void> editResearch(BuildContext context, WidgetRef ref, {ResearchJob? r}) async {
   final c = r == null ? const ResearchCriteria() : criteriaOf(r);
   final name = TextEditingController(text: r?.name);
@@ -156,7 +156,7 @@ Future<void> editResearch(BuildContext context, WidgetRef ref, {ResearchJob? r})
   String? createdId;
   final ok = await showFormDialog(
     context,
-    title: r == null ? 'New research' : 'Edit research',
+    title: r == null ? 'New collection' : 'Edit collection',
     action: r == null ? 'Start' : 'Save',
     fields: (setState) => [
       Field(name, 'Name', hint: 'Rental near work, January', autofocus: r == null),
@@ -265,7 +265,7 @@ class ResearchDetailPage extends ConsumerWidget {
                 if (await confirm(
                       context,
                       'Delete "${r.name}"?',
-                      'Its catalog of ${items.length} items goes too. Homes added to Hunt stay.',
+                      'Its catalog of ${items.length} items goes too. Homes added to Shortlist stay.',
                     ) &&
                     context.mounted) {
                   Navigator.of(context).pop();
@@ -275,7 +275,7 @@ class ResearchDetailPage extends ConsumerWidget {
           },
           itemBuilder: (_) => [
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            const PopupMenuItem(value: 'merge', child: Text('Merge another research into this')),
+            const PopupMenuItem(value: 'merge', child: Text('Merge another collection into this')),
             PopupMenuItem(value: 'archive', child: Text(r.archived ? 'Bring back' : 'Archive')),
             const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
@@ -386,7 +386,8 @@ class _ItemCard extends ConsumerWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        if (item.propertyId != null) const Capsule('In Hunt', icon: Icons.travel_explore),
+                        if (item.propertyId != null)
+                          const Capsule('In Shortlist', icon: Icons.travel_explore),
                         if (listingGone(f.status)) Capsule(listingStatusLabel(f.status)),
                         if (seen != null) const Capsule('Seen before', icon: Icons.history),
                       ],
@@ -733,12 +734,12 @@ Future<bool> confirm(BuildContext context, String title, String message, {String
     ) ??
     false;
 
-/// Picks another research and merges it into [into].
+/// Picks another collection and merges it into [into].
 Future<void> mergeResearchInto(BuildContext context, WidgetRef ref, ResearchJob into) async {
   final others = (await ref.read(researchesProvider.future)).where((r) => r.id != into.id).toList();
   if (!context.mounted) return;
   if (others.isEmpty) {
-    showMessage(context, 'There is no other research to merge.');
+    showMessage(context, 'There is no other collection to merge.');
     return;
   }
   final from = await showDialog<ResearchJob>(
@@ -797,7 +798,8 @@ class _DuplicatesPage extends ConsumerWidget {
                 if (i.postcode.isNotEmpty) i.postcode,
                 if (i.source.isNotEmpty) i.source,
                 i.captured.substring(0, 10),
-                if (i.researchId != researchId) 'in ${researches[i.researchId]?.name ?? 'another research'}',
+                if (i.researchId != researchId)
+                  'in ${researches[i.researchId]?.name ?? 'another collection'}',
               ].join(' · '),
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -851,7 +853,7 @@ class _DuplicatesPage extends ConsumerWidget {
                           child: const Text('Not the same'),
                         ),
                         FilledButton(
-                          // Merge into the one in this research, the earlier one when both are.
+                          // Merge into the one in this collection, the earlier one when both are.
                           onPressed: () {
                             final keepHere = byId[p.keep.id]!.researchId == researchId;
                             final keep = keepHere ? p.keep.id : p.drop.id;
@@ -881,7 +883,7 @@ const _statuses = {
 };
 
 /// One catalog item: its picture, details (editable), links, prices seen,
-/// the text they came from, and adding it to Hunt.
+/// the text they came from, and adding it to Shortlist.
 class CatalogItemPage extends ConsumerStatefulWidget {
   const CatalogItemPage(this.id, {super.key});
   final String id;
@@ -1074,7 +1076,7 @@ class _CatalogItemPageState extends ConsumerState<CatalogItemPage> {
                     Navigator.of(context)
                         .push(MaterialPageRoute<void>(builder: (_) => PropertyPage(i.propertyId!))),
                 icon: const Icon(Icons.travel_explore),
-                label: const Text('Open in Hunt'),
+                label: const Text('Open in Shortlist'),
               )
             else
               FilledButton.tonalIcon(
@@ -1083,10 +1085,10 @@ class _CatalogItemPageState extends ConsumerState<CatalogItemPage> {
                   final now = (await ref.read(catalogItemsProvider.future)).firstWhere((x) => x.id == i.id);
                   final rental = research?.kind == 'rent' || _period.isNotEmpty;
                   await ref.mutate((s) => s.book.itemToHunt(now, rental: rental));
-                  if (context.mounted) showMessage(context, 'Added to Hunt.');
+                  if (context.mounted) showMessage(context, 'Added to Shortlist.');
                 },
                 icon: const Icon(Icons.add_home_outlined),
-                label: const Text('Add to Hunt'),
+                label: const Text('Add to Shortlist'),
               ),
             for (final link in linksOf(i))
               OutlinedButton.icon(

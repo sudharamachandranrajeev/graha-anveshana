@@ -45,6 +45,6 @@ class _Summary extends ConsumerWidget {
       ('${hunting.length}', 'in the hunt'),
       ('${booked.length}', 'viewings booked'),
       ('${due.length}', 'checks due in 30 days'),
-    ], next: properties.isEmpty ? 'Paste a listing link on Hunt to start.' : null);
+    ], next: properties.isEmpty ? 'Paste a listing link on Shortlist to start.' : null);
   }
 }

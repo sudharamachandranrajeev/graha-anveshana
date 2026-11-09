@@ -89,45 +89,37 @@ class _ListingMapState extends ConsumerState<ListingMap> {
 
   Future<void> _pick(NamedPoint p) async {
     setState(() => _picked = p);
-    await rememberPlace(ref, p);
+    await pickPlace(ref, p);
   }
 
+  /// Adds a place to the profile, and measures from it.
   Future<void> _addPlace() async {
-    final where = TextEditingController();
-    final name = TextEditingController();
-    await showFormDialog(
-      context,
-      title: 'Measure from another place',
-      action: 'Measure',
-      fields: (_) => [
-        Field(where, 'Postcode, district or town', autofocus: true),
-        Field(name, 'Name (optional, e.g. Work)'),
-      ],
-      onSave: () async {
-        if (where.text.trim().isEmpty) return 'Enter a postcode, district or town.';
-        final w = await Research(client: ref.read(searchHttpProvider)).whereIs(where.text.trim());
-        if (w == null) return 'Could not find "${where.text.trim()}". Try a postcode.';
-        final label = name.text.trim().isEmpty ? w.label : name.text.trim();
-        await _pick((lat: w.lat, lon: w.lon, label: label));
-        return null;
-      },
-    );
-    // The dialog's closing animation still reads the fields, so the
-    // controllers are left to the garbage collector.
+    final p = await askPlace(context, ref);
+    if (p != null && mounted) await _pick(p);
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final saved = ref.watch(distancePlacesProvider).value ?? const <NamedPoint>[];
+    final scheme = Theme.of(context).colorScheme;
+    final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
+    final last = ref.watch(lastPlaceProvider).value;
     final anchors = widget.anchors;
     final options = [
       ...anchors,
-      ...saved.where((s) => !anchors.any((a) => a.label.toLowerCase() == s.label.toLowerCase())),
+      ...places.where((s) => !anchors.any((a) => a.label.toLowerCase() == s.label.toLowerCase())),
     ];
-    final from = _picked ?? saved.firstOrNull ?? anchors.firstOrNull;
+    final from =
+        _picked ??
+        options.where((o) => o.label == last).firstOrNull ??
+        places.firstOrNull ??
+        anchors.firstOrNull;
     final at = _at;
-    final d = at == null || from == null ? null : distanceKm(from.lat, from.lon, at.lat, at.lon);
+    String far(NamedPoint p) {
+      final d = distanceKm(p.lat, p.lon, at!.lat, at.lon);
+      return '${at.rough ? 'about ' : ''}${miles(d)} (${km(d)})';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -151,32 +143,7 @@ class _ListingMapState extends ConsumerState<ListingMap> {
             ),
           ),
         const SizedBox(height: 8),
-        Text('Distance from', style: t.titleSmall),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            for (final p in options)
-              InputChip(
-                label: Text(p.label),
-                selected: from != null && p.label == from.label,
-                onSelected: (_) => _pick(p),
-                onDeleted: anchors.contains(p)
-                    ? null
-                    : () async {
-                        if (_picked?.label == p.label) setState(() => _picked = null);
-                        await forgetPlace(ref, p);
-                      },
-                deleteButtonTooltipMessage: 'Forget ${p.label}',
-              ),
-            ActionChip(
-              avatar: const Icon(Icons.add_location_alt_outlined, size: 18),
-              label: const Text('Another place'),
-              onPressed: _addPlace,
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
+        Text('Distance from your places', style: t.titleSmall),
         if (at == null)
           Text(
             _looking
@@ -184,25 +151,75 @@ class _ListingMapState extends ConsumerState<ListingMap> {
                 : 'This advert gives no postcode or map point, so its distance is not known.',
             style: t.bodySmall,
           )
-        else if (from == null)
-          Text('Pick a place, or add one, to see how far this home is from it.', style: t.bodySmall)
-        else
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            children: [
-              Text(
-                '${at.rough ? 'About ' : ''}${miles(d!)} (${km(d)}) from ${from.label} in a straight line'
-                '${at.rough ? ', to the middle of $_place' : ''}.',
+        else ...[
+          for (final p in options)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              selected: p.label == from?.label,
+              selectedColor: scheme.primary,
+              leading: Icon(p.label == from?.label ? Icons.place : Icons.place_outlined),
+              title: Text('${p.label}: ${far(p)}'),
+              subtitle: p.label == from?.label
+                  ? Text(
+                      'In a straight line${at.rough ? ', to the middle of $_place' : ''}; on the map.',
+                      style: t.bodySmall,
+                    )
+                  : null,
+              trailing: IconButton(
+                tooltip: 'Directions and travel time from ${p.label}',
+                icon: const Icon(Icons.directions_outlined),
+                onPressed: () => openUri(context, directionsUrl(p, (lat: at.lat, lon: at.lon))),
               ),
-              TextButton.icon(
-                onPressed: () => openUri(context, directionsUrl(from, (lat: at.lat, lon: at.lon))),
-                icon: const Icon(Icons.directions_outlined, size: 18),
-                label: const Text('Directions and travel time'),
-              ),
-            ],
+              onTap: () => _pick(p),
+            ),
+          if (options.isEmpty)
+            Text(
+              'Add your places (work, family, a school) in Profile, or here, to see how far this home is.',
+              style: t.bodySmall,
+            ),
+        ],
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _addPlace,
+            icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+            label: const Text('Add a place'),
           ),
+        ),
       ],
     );
   }
+}
+
+/// Asks for a place (a postcode, district or town, with an optional name),
+/// finds it and adds it to the profile's places. Null when cancelled.
+Future<NamedPoint?> askPlace(BuildContext context, WidgetRef ref, {NamedPoint? editing}) async {
+  final where = TextEditingController();
+  final name = TextEditingController(text: editing?.label ?? '');
+  NamedPoint? added;
+  await showFormDialog(
+    context,
+    title: editing == null ? 'Add a place' : 'Change ${editing.label}',
+    action: editing == null ? 'Add' : 'Save',
+    fields: (_) => [
+      Field(where, 'Postcode, district or town', autofocus: true),
+      Field(name, 'Name (optional, e.g. Work)'),
+      const Text('Only what you type here is sent, to postcodes.io, to find where it is.'),
+    ],
+    onSave: () async {
+      if (where.text.trim().isEmpty) return 'Enter a postcode, district or town.';
+      final w = await Research(client: ref.read(searchHttpProvider)).whereIs(where.text.trim());
+      if (w == null) return 'Could not find "${where.text.trim()}". Try a postcode.';
+      final label = name.text.trim().isEmpty ? w.label : name.text.trim();
+      final p = (lat: w.lat, lon: w.lon, label: label);
+      if (editing != null && editing.label != label) await removePlace(ref, editing);
+      await addPlace(ref, p);
+      added = p;
+      return null;
+    },
+  );
+  // The dialog's closing animation still reads the fields, so the
+  // controllers are left to the garbage collector.
+  return added;
 }

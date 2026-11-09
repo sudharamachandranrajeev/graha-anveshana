@@ -7,12 +7,14 @@ import '../app/search_controller.dart';
 import '../app/search_memory.dart';
 import '../domain/catalog.dart';
 import '../domain/catalog_book.dart';
+import '../domain/listing.dart';
 import '../domain/page_reader.dart';
 import '../domain/pipeline.dart';
 import '../domain/property_search.dart';
 import '../domain/search_request.dart';
 import '../domain/sources.dart';
 import '../domain/taste.dart';
+import '../domain/trash.dart';
 import 'advert_page.dart';
 import 'browser_page.dart';
 import 'common.dart';
@@ -57,13 +59,16 @@ Future<String?> saveToHunt(BuildContext context, WidgetRef ref, FoundHome h, {re
     );
     id = r.id;
     if (context.mounted) {
-      showMessage(context, r.added ? 'Added to Hunt.' : 'Already in Hunt; its details are updated.');
+      showMessage(
+        context,
+        r.added ? 'Added to Shortlist.' : 'Already in Shortlist; its details are updated.',
+      );
     }
   });
   return ok ? id : null;
 }
 
-/// Adds [h] to a research's catalog the user picks, or to a new one made
+/// Adds [h] to a collection's catalog the user picks, or to a new one made
 /// from [q].
 Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, SearchRequest q) async {
   final all = (await ref.read(researchesProvider.future)).where((r) => !r.archived).toList();
@@ -79,7 +84,7 @@ Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, Se
           const ListTile(title: Text('Add to which research?')),
           ListTile(
             leading: const Icon(Icons.add),
-            title: const Text('A new research for this search'),
+            title: const Text('A new collection for this search'),
             subtitle: Text(q.label),
             onTap: () => Navigator.pop(context, ''),
           ),
@@ -115,7 +120,7 @@ Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, Se
         body: l.description,
       );
     });
-    if (context.mounted) showMessage(context, 'Added to the research.');
+    if (context.mounted) showMessage(context, 'Added to the collection.');
   });
 }
 
@@ -262,7 +267,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final q = s.request;
     final taste = q == null ? Taste.none : _tasteFor(ref, q);
     final sort = effectiveSort(s.sort, taste);
-    final homes = sortHomes(s.homes, sort, likeness: (h) => _likeness(taste, h));
+    // Homes thrown out of Search never show (Profile > Trash brings them back).
+    final trash = ref.watch(trashProvider).value ?? const <TrashedHome>[];
+    final kept = [
+      for (final h in s.homes)
+        if (!isTrashed(h, trash)) h,
+    ];
+    final homes = sortHomes(kept, sort, likeness: (h) => _likeness(taste, h));
     return PageScaffold(
       title: 'Search',
       actions: [
@@ -315,7 +326,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 sliver: SliverToBoxAdapter(
                   child: Readable(
-                    child: SizedBox(width: double.infinity, child: _summary(context, s, sort, taste)),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: _summary(context, s, sort, taste, shown: kept.length),
+                    ),
                   ),
                 ),
               ),
@@ -697,7 +711,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
   }
 
-  Widget _summary(BuildContext context, SearchState s, HomeSort sort, Taste taste) {
+  Widget _summary(BuildContext context, SearchState s, HomeSort sort, Taste taste, {required int shown}) {
+    final binned = s.homes.length - shown;
     final t = Theme.of(context).textTheme;
     final c = s.centre;
     return Column(
@@ -708,8 +723,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           s.busy && s.homes.isEmpty
               ? 'Searching…'
               : [
-                  '${s.homes.length} ${s.homes.length == 1 ? 'home answers' : 'homes answer'}',
+                  '$shown ${shown == 1 ? 'home answers' : 'homes answer'}',
                   if (s.read > s.homes.length) 'of ${s.read} read',
+                  if (binned > 0) '$binned in your Trash',
                   if (c != null) 'distances from ${c.label}',
                 ].join(', '),
           style: t.titleSmall,
@@ -798,14 +814,36 @@ class _HomeCard extends ConsumerWidget {
       if (l.furnished.isNotEmpty) l.furnished,
       if (h.km != null) miles(h.km!),
     ].join(' · ');
+    final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
+    final far = h.lat == null || h.lon == null
+        ? ''
+        : [for (final p in places) '${miles(distanceKm(p.lat, p.lon, h.lat!, h.lon!))} from ${p.label}']
+              .join(' · ');
+    final bin = IconButton(
+      tooltip: 'Throw out: never show this home again',
+      icon: const Icon(Icons.delete_outline),
+      onPressed: () async {
+        final t = TrashedHome.of(h, isoDate(DateTime.now()));
+        await trashHome(ref, h);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: const Text('Thrown out. Profile > Trash brings it back.'),
+              action: SnackBarAction(label: 'Undo', onPressed: () => restoreHome(ref, t)),
+            ),
+          );
+      },
+    );
     final save = PopupMenuButton<String>(
       tooltip: 'Save',
       icon: const Icon(Icons.bookmark_add_outlined),
       onSelected: (v) =>
           v == 'hunt' ? saveToHunt(context, ref, h, rent: q.rent) : saveToResearch(context, ref, h, q),
       itemBuilder: (_) => const [
-        PopupMenuItem(value: 'hunt', child: Text('Add to Hunt')),
-        PopupMenuItem(value: 'research', child: Text('Add to a research')),
+        PopupMenuItem(value: 'hunt', child: Text('Add to Shortlist')),
+        PopupMenuItem(value: 'research', child: Text('Add to a collection')),
       ],
     );
     final body = Padding(
@@ -824,10 +862,12 @@ class _HomeCard extends ConsumerWidget {
               if (likeYours) const StatusLabel(Status.good, 'Like ones you keep'),
               if (h.gone) StatusLabel(Status.warning, q.rent ? 'Let agreed' : 'Sold'),
               first ? TourTarget('search.save', child: save) : save,
+              bin,
             ],
           ),
           Text(l.address, maxLines: 2, overflow: TextOverflow.ellipsis),
           if (facts.isNotEmpty) Text(facts, style: t.bodySmall),
+          if (far.isNotEmpty) Text(far, style: t.bodySmall),
           const SizedBox(height: 4),
           Text(_labels(h.sources), style: t.labelSmall?.copyWith(color: scheme.primary)),
           if (h.misses.isNotEmpty)
@@ -881,15 +921,13 @@ class SearchSitesCard extends ConsumerWidget {
                 SourceId.openRent => 'Homes to rent from private landlords',
                 SourceId.zoopla => 'All of the UK; read in a hidden browser, as it turns apps away',
                 SourceId.facebook =>
-                  'Homes from private landlords and sellers; read in a hidden browser. Connect it below '
+                  'Homes from private landlords and sellers; read in a hidden browser. Connect it in Profile '
                       'to search as you',
                 _ => 'All of the UK',
               }),
               value: !off.contains(s),
               onChanged: (v) => setSourceOff(ref, s, !v),
             ),
-          if (hasWebView)
-            for (final s in SourceId.values.where((s) => s.readInBrowser)) _ConnectTile(s),
           if (hasWebView)
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -922,8 +960,8 @@ final _signedInProvider = FutureProvider.family<bool?, SourceId>((ref, s) {
 });
 
 /// Connect or disconnect one site Search reads in the hidden browser.
-class _ConnectTile extends ConsumerWidget {
-  const _ConnectTile(this.site);
+class SiteConnectTile extends ConsumerWidget {
+  const SiteConnectTile(this.site, {super.key});
   final SourceId site;
 
   @override

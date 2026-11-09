@@ -89,12 +89,12 @@ class _AdvertPageState extends ConsumerState<AdvertPage> {
                         FilledButton.icon(
                           onPressed: () => saveToHunt(context, ref, h, rent: q.rent),
                           icon: const Icon(Icons.bookmark_add_outlined),
-                          label: const Text('Add to Hunt'),
+                          label: const Text('Add to Shortlist'),
                         ),
                         OutlinedButton.icon(
                           onPressed: () => saveToResearch(context, ref, h, q),
                           icon: const Icon(Icons.collections_bookmark_outlined),
-                          label: const Text('Add to a research'),
+                          label: const Text('Add to a collection'),
                         ),
                         if (phone.isNotEmpty)
                           OutlinedButton.icon(

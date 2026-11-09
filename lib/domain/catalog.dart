@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'listing.dart';
 
-/// Researches and their catalogs: reading details out of captured text,
+/// Collections and their catalogs: reading details out of captured text,
 /// finding the same home captured twice, and how well an item fits.
 
-/// What a research is looking for. Every part is optional.
+/// What a collection is looking for. Every part is optional.
 class ResearchCriteria {
   const ResearchCriteria({
     this.place = '',
@@ -360,7 +360,7 @@ List<DuplicatePair> findDuplicates(List<ItemKey> items) {
   return pairs;
 }
 
-/// How well an item fits a research, 0 to 1, with the reasons it misses.
+/// How well an item fits a collection, 0 to 1, with the reasons it misses.
 /// Unknown details neither help nor count against.
 ({double score, List<String> misses}) fit(
   ResearchCriteria c, {

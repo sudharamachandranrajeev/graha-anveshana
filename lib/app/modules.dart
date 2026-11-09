@@ -8,6 +8,7 @@ import '../ui/lettings_page.dart';
 import '../ui/research_page.dart';
 import '../ui/researches_page.dart';
 import '../ui/search_page.dart';
+import 'profile_page.dart';
 import 'settings_page.dart';
 
 final propertyModule = AppModule(
@@ -24,7 +25,7 @@ final propertyModule = AppModule(
     ),
     Destination(
       id: 'hunt',
-      label: 'Hunt',
+      label: 'Shortlist',
       icon: Icons.travel_explore_outlined,
       selectedIcon: Icons.travel_explore,
       primary: true,
@@ -40,7 +41,7 @@ final propertyModule = AppModule(
     ),
     Destination(
       id: 'researches',
-      label: 'Researches',
+      label: 'Collections',
       icon: Icons.collections_bookmark_outlined,
       selectedIcon: Icons.collections_bookmark,
       primary: true,
@@ -73,6 +74,15 @@ final propertyModule = AppModule(
 
 final modules = <AppModule>[propertyModule];
 
+/// The user's own page, before Settings.
+final profileDestination = Destination(
+  id: 'profile',
+  label: 'Profile',
+  icon: Icons.person_outline,
+  selectedIcon: Icons.person,
+  page: (_) => const ProfilePage(),
+);
+
 /// Settings is app-wide, so it comes after every module's screens.
 final settingsDestination = Destination(
   id: 'settings',
@@ -82,4 +92,8 @@ final settingsDestination = Destination(
   page: (_) => const SettingsPage(),
 );
 
-List<Destination> get allDestinations => [for (final m in modules) ...m.destinations, settingsDestination];
+List<Destination> get allDestinations => [
+  for (final m in modules) ...m.destinations,
+  profileDestination,
+  settingsDestination,
+];

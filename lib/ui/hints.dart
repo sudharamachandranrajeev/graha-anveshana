@@ -15,7 +15,7 @@ const anveshanaHints = <String, String>{
   // Hunt
   'hunt.add':
       'Paste an advert link (PropertyPal, Rightmove, Zoopla, OnTheMarket, OpenRent), or type a property in.',
-  'hunt.compare': 'Shortlisted homes side by side: price, cash needed to move in, size, distance and more.',
+  'hunt.compare': 'Liked homes side by side: price, cash needed to move in, size, distance and more.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',
   'hunt.distance': 'As the crow flies from the home point in Settings.',
   'hunt.enquiry': 'A first message: is it free, what next, when to view. Your details come from Settings.',
@@ -41,8 +41,9 @@ const anveshanaHints = <String, String>{
   // Research
   'research.save': 'Keep this report to compare areas later.',
   'research.tax': 'Stamp Duty (England, NI), LBTT (Scotland) or LTT (Wales) for a price.',
-  // Researches
-  'researches.new': 'Start a research: a name, what it is for, and what fits (area, price, bedrooms, words).',
+  // Collections
+  'researches.new':
+      'Start a collection: a name, what it is for, and what fits (area, price, bedrooms, words).',
   'researches.add':
       'Add to the catalog from a link, a screenshot, a photo, a PDF brochure, pasted text or an alert email. '
       'Details are read on this device.',
@@ -50,13 +51,16 @@ const anveshanaHints = <String, String>{
       'Screenshots and photos are read with OCR on this device (Tesseract, or ML Kit on Android).',
   'researches.ai': 'Read with AI: sends only this item\'s text to the AI chosen in Settings, Ask AI.',
   'researches.duplicates': 'Find the same home captured twice (same advert, address, photo, or postcode, beds and price) and merge them.',
-  'researches.merge': 'Merge another research into this one, then check the joined catalog for duplicates.',
-  'researches.hunt': 'Add this item to Hunt to enquire, view and track it.',
-  'researches.fit': 'How well an item fits the research: price, bedrooms, distance and words.',
+  'researches.merge': 'Merge another collection into this one, then check the joined catalog for duplicates.',
+  'researches.hunt': 'Add this item to Shortlist to enquire, view and track it.',
+  'researches.fit': 'How well an item fits the collection: price, bedrooms, distance and words.',
   'researches.seen': 'Seen before: you saved this home earlier and it was let or sold then.',
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',
+  'profile.places': 'Places every home is measured from: work, family, a school. Synced with your devices.',
+  'profile.signins': 'Your own sign-ins to Zoopla and Facebook, kept by the in-app browser on this device.',
+  'profile.trash': 'Homes you threw out of Search. They never show again until you restore them.',
   'settings.sites':
       'The sites the Search tab reads when you search. Each is read only then, from this device, one '
       'page at a time.',
@@ -65,13 +69,13 @@ const anveshanaHints = <String, String>{
   // Page banners
   'page.hunt':
       'Every home you are considering, from first sight to keys. Add one from Search or a link, then '
-      'move it on: new, shortlisted, enquired, viewing, applied, agreed. Calls and messages move it on '
+      'move it on: new, liked, enquired, viewing, applied, agreed. Calls and messages move it on '
       'by themselves; drop the ones that are not for you.',
   'page.contacts': 'Agents, landlords, tenants and trades in one place. Add them here or from a home.',
   'page.searches':
       'Searches Brahma Watch checks for you: PropertyPal searches, and in England the alert emails from '
       'Rightmove, Zoopla and others. Send them to the Watch, then new homes arrive '
-      'as phone alerts and under Hunt. Settings > Brahma Watch connects it first.',
+      'as phone alerts and under Shortlist. Settings > Brahma Watch connects it first.',
   'page.invest':
       'Work out buy-to-let returns, what buying a home costs, or what land is worth to develop. Save the '
       'figures to compare later.',

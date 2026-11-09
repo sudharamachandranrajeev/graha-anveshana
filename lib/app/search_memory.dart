@@ -10,6 +10,7 @@ import '../domain/property_search.dart';
 import '../domain/search_request.dart';
 import '../domain/sources.dart';
 import '../domain/taste.dart';
+import '../domain/trash.dart';
 import 'providers.dart';
 
 // What the Search tab remembers so the user need not start again: the
@@ -154,48 +155,95 @@ Future<void> markConnected(AppDatabase db, SourceId s, String? date) =>
 /// A named point on the map: a postcode, a town, the user's work.
 typedef NamedPoint = ({double lat, double lon, String label});
 
-const _placesKey = 'anveshana.distance.places';
+/// Places kept on this device by 0.10.1, before they moved to the profile.
+const _localPlacesKey = 'anveshana.distance.places';
 
-/// The places the user measured homes from, last used first (at most 6).
-/// A home's page measures from the first by default.
-final distancePlacesProvider = FutureProvider<List<NamedPoint>>((ref) async {
+/// The place last picked to measure homes from, on this device.
+const _lastPlaceKey = 'anveshana.distance.last';
+
+/// The user's places (Profile): work, family, a school. Every home shows how
+/// far it is from each. Synced with the user's other devices.
+final profilePlacesProvider = FutureProvider<List<NamedPoint>>((ref) async {
   ref.watch(revisionProvider);
-  final raw = await ref.watch(sessionProvider).db.localSetting(_placesKey);
-  return placesFromJson(raw);
+  final session = ref.watch(sessionProvider);
+  final synced = await session.book.pref<List<Object?>>(PrefKeys.places, const []);
+  if (synced.isNotEmpty) return placesFromJson(synced);
+  return placesFromJson(jsonDecodeOr(await session.db.localSetting(_localPlacesKey)));
 });
 
-List<NamedPoint> placesFromJson(String? raw) {
-  if (raw == null || raw.isEmpty) return const [];
+/// The label of the place last picked on a home's page; null: none yet.
+final lastPlaceProvider = FutureProvider<String?>((ref) async {
+  ref.watch(revisionProvider);
+  final v = await ref.watch(sessionProvider).db.localSetting(_lastPlaceKey);
+  return v == null || v.isEmpty ? null : v;
+});
+
+Object? jsonDecodeOr(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
   try {
-    return [
-      for (final p in jsonDecode(raw) as List)
-        if (p case {'lat': final num lat, 'lon': final num lon, 'label': final String label})
-          (lat: lat.toDouble(), lon: lon.toDouble(), label: label),
-    ];
+    return jsonDecode(raw);
   } on FormatException {
-    return const [];
+    return null;
   }
 }
 
-/// [all] with [p] first, the same place (by name) not twice, at most 6.
-List<NamedPoint> placesWith(List<NamedPoint> all, NamedPoint p) =>
-    [p, ...all.where((o) => o.label.toLowerCase() != p.label.toLowerCase())].take(6).toList();
+List<NamedPoint> placesFromJson(Object? raw) => [
+  if (raw is List)
+    for (final p in raw)
+      if (p case {'lat': final num lat, 'lon': final num lon, 'label': final String label})
+        (lat: lat.toDouble(), lon: lon.toDouble(), label: label),
+];
 
-/// Remembers [p] as the place to measure from (first in the list).
-Future<void> rememberPlace(WidgetRef ref, NamedPoint p) => _savePlaces(ref, (all) => placesWith(all, p));
+/// [all] with [p] added, or put in place of the one with its name.
+List<NamedPoint> placesWith(List<NamedPoint> all, NamedPoint p) {
+  final at = all.indexWhere((o) => o.label.toLowerCase() == p.label.toLowerCase());
+  return [for (final (i, o) in all.indexed) i == at ? p : o, if (at < 0) p];
+}
 
-/// Forgets [p].
-Future<void> forgetPlace(WidgetRef ref, NamedPoint p) =>
+/// Adds [p] to the profile's places (or updates the one with its name).
+Future<void> addPlace(WidgetRef ref, NamedPoint p) => _savePlaces(ref, (all) => placesWith(all, p));
+
+/// Removes [p] from the profile's places.
+Future<void> removePlace(WidgetRef ref, NamedPoint p) =>
     _savePlaces(ref, (all) => all.where((o) => o.label != p.label).toList());
 
-Future<void> _savePlaces(WidgetRef ref, List<NamedPoint> Function(List<NamedPoint> all) change) async {
-  final db = ref.read(sessionProvider).db;
-  final next = change(placesFromJson(await db.localSetting(_placesKey)));
-  await db.setLocalSetting(
-    _placesKey,
-    jsonEncode([
-      for (final p in next) {'lat': p.lat, 'lon': p.lon, 'label': p.label},
-    ]),
-  );
+/// Remembers [p] as the place to measure the next home from.
+Future<void> pickPlace(WidgetRef ref, NamedPoint p) async {
+  await ref.read(sessionProvider).db.setLocalSetting(_lastPlaceKey, p.label);
   ref.read(revisionProvider.notifier).bump();
 }
+
+Future<void> _savePlaces(WidgetRef ref, List<NamedPoint> Function(List<NamedPoint> all) change) async {
+  final all = await ref.read(profilePlacesProvider.future);
+  await ref.mutate(
+    (s) => s.book.setPref(PrefKeys.places, [
+      for (final p in change(all)) {'lat': p.lat, 'lon': p.lon, 'label': p.label},
+    ]),
+  );
+}
+
+/// The homes thrown out of Search (see [TrashedHome]), newest first. Synced.
+final trashProvider = FutureProvider<List<TrashedHome>>((ref) async {
+  ref.watch(revisionProvider);
+  final raw = await ref.watch(sessionProvider).book.pref<List<Object?>>(PrefKeys.trash, const []);
+  return [for (final j in raw) ?TrashedHome.fromJson(j)];
+});
+
+/// Throws [h] out of Search for good (until restored).
+Future<void> trashHome(WidgetRef ref, FoundHome h) async {
+  final all = await ref.read(trashProvider.future);
+  final t = TrashedHome.of(h, isoDate(DateTime.now()));
+  await _saveTrash(ref, [t, ...all.where((o) => o.id != t.id)]);
+}
+
+/// Brings [t] back into Search.
+Future<void> restoreHome(WidgetRef ref, TrashedHome t) async {
+  final all = await ref.read(trashProvider.future);
+  await _saveTrash(ref, [...all.where((o) => o.id != t.id)]);
+}
+
+/// Empties the Trash: everything in it may show again.
+Future<void> emptyTrash(WidgetRef ref) => _saveTrash(ref, const []);
+
+Future<void> _saveTrash(WidgetRef ref, List<TrashedHome> all) =>
+    ref.mutate((s) => s.book.setPref(PrefKeys.trash, [for (final t in all) t.toJson()]));

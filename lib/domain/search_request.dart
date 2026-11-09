@@ -110,7 +110,7 @@ class SearchRequest {
     return a.toString().toLowerCase() == b.toString().toLowerCase();
   }
 
-  /// The same filters as a research's, so results and catalogs score alike.
+  /// The same filters as a collection's, so results and catalogs score alike.
   ResearchCriteria criteria({double? lat, double? lon}) => ResearchCriteria(
     place: near.isEmpty ? area : near,
     lat: lat,

@@ -71,7 +71,7 @@ void main() {
     );
   }
 
-  const pages = ['Search', 'Invest', 'Researches', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
+  const pages = ['Search', 'Invest', 'Collections', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Shortlist'];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {
@@ -116,7 +116,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     for (final again in [false, true]) {
       await app.tapText('Add');
       await app.tapText('From a link');
@@ -183,14 +183,69 @@ void main() {
     expect(find.text('14 Sample Street, Exampletown, EX1 1AA'), findsOneWidget);
     // Opening it reads the advert in the app; its page here is not found.
     await app.tap(find.text('14 Sample Street, Exampletown, EX1 1AA'));
-    expect(find.text('Add to Hunt'), findsOneWidget);
+    expect(find.text('Add to Shortlist'), findsOneWidget);
     expect(find.text('See it on Rightmove'), findsOneWidget);
     // The advert's page has its map, measured from the search's place.
     expect(find.byType(HomesMap), findsOneWidget);
-    expect(find.text('Distance from'), findsOneWidget);
-    await app.tapText('Add to Hunt');
+    expect(find.text('Distance from your places'), findsOneWidget);
+    await app.tapText('Add to Shortlist');
     final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!;
     expect((rows.single.source, rows.single.price, rows.single.kind), ('rightmove', 650, 'rent'));
+    await app.close();
+  });
+
+  testWidgets('a home thrown out of Search stays out until restored from the Trash', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run(
+      overrides: [
+        searchHttpProvider.overrideWithValue(
+          MockClient((r) async {
+            if (r.url.host == 'los.rightmove.co.uk') {
+              return http.Response(
+                jsonEncode({
+                  'matches': [
+                    {'id': '7', 'type': 'REGION'},
+                  ],
+                }),
+                200,
+              );
+            }
+            if (r.url.host == 'www.rightmove.co.uk' && r.url.path.endsWith('find.html')) {
+              return http.Response(_rightmovePage, 200);
+            }
+            return http.Response('', 404);
+          }),
+        ),
+      ],
+    );
+    Future<void> search() async {
+      await tester.enterText(find.byType(TextField).first, '2 bed to rent in Exampletown under £800');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await app.settle();
+    }
+
+    await search();
+    const address = '14 Sample Street, Exampletown, EX1 1AA';
+    expect(find.text(address), findsOneWidget);
+    await app.tap(find.byTooltip('Throw out: never show this home again'));
+    expect(find.text(address), findsNothing);
+    expect(find.textContaining('1 in your Trash'), findsOneWidget);
+
+    // A new search still leaves it out.
+    await search();
+    expect(find.text(address), findsNothing);
+
+    // Profile > Trash lists it; Restore brings it back.
+    await app.go('Profile');
+    expect(find.text('1 home thrown out of Search.'), findsOneWidget);
+    await app.tapText('Open');
+    expect(find.text(address), findsOneWidget);
+    await app.tapText('Restore');
+    expect(find.text('The Trash is empty'), findsOneWidget);
+    await app.tap(find.byType(BackButton));
+    await app.go('Search');
+    expect(find.text(address), findsOneWidget);
     await app.close();
   });
 
@@ -252,7 +307,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Check advert wording');
     await app.enter('Advert text', 'Best offers over £700. No DSS.');
@@ -284,7 +339,7 @@ void main() {
       },
     );
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await tester.tap(find.byIcon(Icons.compare_arrows));
     await app.settle();
     expect(find.text('2 homes, cheapest first'), findsOneWidget);
@@ -300,7 +355,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Checklist');
     await app.tapText('Damp or mould');
@@ -316,7 +371,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     expect(find.text('Viewing (1)'), findsOneWidget);
     await app.enter('Find', 'nowhere');
     expect(find.text('Viewing (1)'), findsNothing);
@@ -334,7 +389,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     expect(find.text('Viewing (1)'), findsOneWidget);
     expect(find.textContaining('£650 pcm'), findsOneWidget);
     expect(find.text('0.5 km'), findsOneWidget);
@@ -345,7 +400,7 @@ void main() {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await app.tapText('Add');
     await app.tapText('Type it in');
     await app.enter('Address', '3 Lake Road, Enniskillen BT74 7AA');
@@ -355,7 +410,7 @@ void main() {
     expect(find.text('New (1)'), findsOneWidget);
 
     await app.tapText('3 Lake Road, Enniskillen BT74 7AA');
-    await app.tap(find.widgetWithText(ChoiceChip, 'Shortlisted'));
+    await app.tap(find.widgetWithText(ChoiceChip, 'Liked'));
     final p = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).getSingle()))!;
     expect(p.stage, Stage.shortlisted.id);
     expect(p.postcode, 'BT74 7AA');
@@ -368,11 +423,11 @@ void main() {
     await app.close();
   });
 
-  testWidgets('the enquiry carries the details from Settings', (tester) async {
+  testWidgets('the enquiry carries the details from Profile', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);
     await app.run();
-    await app.go('Settings');
+    await app.go('Profile');
     await app.tap(find.widgetWithText(TextButton, 'Edit').first);
     await app.enter('Name', 'A Tenant');
     await app.enter('Phone', '07700 900123');
@@ -380,7 +435,7 @@ void main() {
     await app.tapText('Save');
     expect(find.textContaining('A Tenant'), findsOneWidget);
 
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     await app.tapText('Write an enquiry');
     expect(find.textContaining('Hello Example Lettings,'), findsOneWidget);

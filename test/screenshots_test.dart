@@ -167,7 +167,7 @@ void main() {
       await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
       await app.settle();
       await shot('panel-$mode');
-      await app.tap(find.text('Hunt').last);
+      await app.tap(find.text('Shortlist').last);
       await app.tap(find.text('27 Fictional Gardens').last);
       await shot('home-$mode');
       await app.close();

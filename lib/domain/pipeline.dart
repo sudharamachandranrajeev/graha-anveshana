@@ -30,7 +30,7 @@ enum Stage {
 
   String label(PropertyKind kind) => switch (this) {
     fresh => 'New',
-    shortlisted => 'Shortlisted',
+    shortlisted => 'Liked',
     enquired => 'Enquired',
     viewing => 'Viewing',
     applied => kind == PropertyKind.buy ? 'Offer made' : 'Applied',

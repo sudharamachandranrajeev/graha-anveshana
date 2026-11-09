@@ -39,13 +39,16 @@ not advice.
   Facebook Marketplace for you and shows every home that answers in one list. Sort by best
   match, price, bedrooms, distance or availability, or see them on a map. The same home on two
   sites shows once. Open any of them to see every photo, the description, the facts and the
-  agent, inside the app, and save it to Hunt or a research.
+  agent, inside the app, and save it to Shortlist or a collection. Throw out a home you do not
+  want and it never shows again; **Profile → Trash** brings it back.
 - 🧠 **Pick up where you left off** – save a search by name, carry on the last one, or run your
-  usual one in a tap. Once you keep three homes in Hunt, Search puts the homes most like them
+  usual one in a tap. Once you keep three homes in Shortlist, Search puts the homes most like them
   first ("For you"), learnt on your device from their price, bedrooms, district and features.
-- 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
+- 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, liked,
   enquired, viewing, applied, agreed. Add one from Search, an advert link, or type it in.
-- 🗂️ **A research for every hunt** – keep each hunt or study apart, each with its own catalog.
+- 📍 **How far from your places** – add work, family or a school in **Profile**, and every home
+  in Search and Shortlist shows how far it is from each.
+- 🗂️ **A collection for every hunt** – keep each hunt or study apart, each with its own catalog.
   Add links, screenshots, photos of a sign, PDF brochures or pasted alert emails, and the app reads
   the price, bedrooms, postcode, council tax band and energy rating for you, on your device. It
   shows how well each one fits, and finds the same home captured twice so you can merge them.
@@ -169,15 +172,15 @@ The app opens on **Search** and offers a one-minute tour. Tap **Not now** to ski
 take it later from **Settings → Hints and help → Take the tour**. Every screen works empty, so there
 is nothing to fill in first.
 
-1. **Add your details**: open **Settings → Your details → Edit**. Your name, phone and household
+1. **Add your details**: open **Profile → Your details → Edit**. Your name, phone and household
    go into enquiries you send.
-2. **Set a home point**: **Settings → Home point → Set**, then type a postcode. Distances are
-   measured from here.
+2. **Set a home point**: **Profile → Home point → Set**, then type a postcode. Distances are
+   measured from here. Add more under **Profile → Your places** (work, family, a school).
 3. **Search**: type what you want in the search bar, for example
    `3 bed house for sale in York under £250k with a garden`, and press Enter. Your words become
    filters you can tap to change. Under them, each site shows how many adverts it gave.
-4. **Open a home** to see it in full, then tap **Add to Hunt** (or **Add to a research**).
-5. **Contact the agent** from the home's page on **Hunt**. The home moves to the next stage by itself.
+4. **Open a home** to see it in full, then tap **Add to Shortlist** (or **Add to a collection**).
+5. **Contact the agent** from the home's page on **Shortlist**. The home moves to the next stage by itself.
 
 > [!NOTE]
 > The next release opens with a short welcome. It asks where your data should live: on this
@@ -233,12 +236,13 @@ flowchart LR
   choose whether to keep them on. If one wants a robot check or a sign-in, tap **Open Zoopla** (or
   Facebook Marketplace) and its homes join your results as its pages load. Other sites that ask
   for a robot check work the same way.
-- **Connect** (Settings → Search sites) signs you in to Zoopla or Facebook on the site's own page
+- **Connect** (Profile → Site sign-ins) signs you in to Zoopla or Facebook on the site's own page
   inside the app, so Search reads them as you. The app never sees your password; the in-app
   browser keeps the site's sign-in cookie on this device only. **Disconnect** signs you out.
+  Signing in does not get past a site's robot check: pass that yourself with **Open Zoopla**.
   Reading Facebook while signed in is against its terms and could get your account limited.
 - **Maps** use OpenStreetMap tiles. Homes without a map point are placed by postcode through
-  postcodes.io. Places you measure distances from are looked up there too and kept on this device.
+  postcodes.io. Your places (Profile) are looked up there too, and sync with your other devices.
   **Directions and travel time** opens Google Maps with the two points.
 - **What leaves the device**: your searches (to the sites you search, and the place name to
   postcodes.io or OpenStreetMap), postcodes for area reports, links you add, and Watch requests.
@@ -313,7 +317,7 @@ running and unlocked, then start the app again.
 **Search** reads Rightmove, OnTheMarket, OpenRent (to rent only) and PropertyPal (Northern
 Ireland) directly, and Zoopla and Facebook Marketplace in a hidden in-app browser. Marketplace
 knows towns by name, not postcodes, and often wants you signed in: tap **Connect Facebook
-Marketplace** in Settings → Search sites (or **Open Facebook Marketplace** under the search) and
+Marketplace** in Profile → Site sign-ins (or **Open Facebook Marketplace** under the search) and
 sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
 other sites.
 </details>

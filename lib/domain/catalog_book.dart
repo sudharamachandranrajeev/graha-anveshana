@@ -52,7 +52,7 @@ ItemFields itemFields(CatalogItem i) => ItemFields.fromJson({
 
 String _now() => DateTime.now().toIso8601String().substring(0, 19);
 
-/// Researches and catalog writes. Like every write, they go through the
+/// Collections and catalog writes. Like every write, they go through the
 /// store so they sync.
 extension CatalogWrites on PropertyBook {
   Future<String> createResearch(
@@ -177,7 +177,7 @@ extension CatalogWrites on PropertyBook {
     await remove(db.catalogItems, id);
   });
 
-  /// Removes a research with everything in its catalog. Hunt homes made
+  /// Removes a collection with everything in its catalog. Hunt homes made
   /// from it stay.
   Future<void> removeResearch(String id) => db.transaction(() async {
     for (final i in await _items(id)) {
@@ -254,14 +254,16 @@ extension CatalogWrites on PropertyBook {
     await remove(db.researches, fromId);
   });
 
-  /// Adds the item to Hunt (or refreshes the home it matches) and links them.
+  /// Adds the item to Shortlist (or refreshes the home it matches) and links them.
   Future<String> itemToHunt(CatalogItem item, {required bool rental}) async {
     final f = itemFields(item);
     final listing = Listing(
       source: item.source.isNotEmpty ? item.source : 'catalog',
       sourceId: item.sourceId ?? item.id,
       url: item.url,
-      address: f.address.isNotEmpty ? f.address : (item.title.isNotEmpty ? item.title : 'Home from research'),
+      address: f.address.isNotEmpty
+          ? f.address
+          : (item.title.isNotEmpty ? item.title : 'Home from collection'),
       postcode: f.postcode,
       price: f.monthly ?? f.price,
       priceSuffix: rental ? 'per month' : '',

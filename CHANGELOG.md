@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0
+
+- Simpler names: Hunt is now **Shortlist**, Researches are **Collections**, and the
+  "Shortlisted" stage is **Liked**.
+- New **Profile** page: your details and home point (moved from Settings), your places, site
+  sign-ins (moved from Settings → Search sites) and the Trash.
+- Your places: add work, family, a school. Every home in Search and on its page shows how far it
+  is from each, with directions. Places now sync with your other devices; ones added in 0.10.1
+  carry over.
+- Throw a home out of Search (the bin on its card) and it never shows again, on any site, until
+  you restore it from **Profile → Trash**. Undo right after, or empty the Trash.
+- Signing in to Zoopla or Facebook does not get past their robot checks; pass one yourself with
+  Open Zoopla.
+- docs/2026-11-09-uk-property-sites.md: other UK property sites, and which allow being read.
+
 ## 0.10.1
 
 - Zoopla (and other sites opened in the app): on one advert's own page, Add these homes adds

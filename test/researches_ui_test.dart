@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'app_harness.dart';
 
 void main() {
-  testWidgets('a research: catalog, fit, duplicates merged, Hunt, help search', (tester) async {
+  testWidgets('a collection: catalog, fit, duplicates merged, Hunt, help search', (tester) async {
     final app = AppHarness(tester)..desktop();
     late String research;
     await app.open(
@@ -49,7 +49,7 @@ void main() {
       },
     );
     await app.run();
-    await app.go('Researches');
+    await app.go('Collections');
     expect(find.textContaining('3 items · 1 possible duplicate'), findsOneWidget);
 
     await app.tapText('Rental near work');
@@ -71,10 +71,10 @@ void main() {
     final merged = items.firstWhere((i) => i.sourceId == '100001');
     expect(itemFields(merged).epc, 'C');
 
-    // Into Hunt from the item's page.
+    // Into Shortlist from the item's page.
     await app.tapText('14 Sample Street');
-    await app.tapText('Add to Hunt');
-    expect(find.text('Open in Hunt'), findsOneWidget);
+    await app.tapText('Add to Shortlist');
+    expect(find.text('Open in Shortlist'), findsOneWidget);
     final homes = await tester.runAsync(() => app.session.db.select(app.session.db.properties).get());
     expect(homes!.single.address, '14 Sample Street');
     expect(tester.takeException(), isNull);
@@ -84,7 +84,7 @@ void main() {
     await app.settle();
     await tester.binding.handlePopRoute();
     await app.settle();
-    await app.go('Hunt');
+    await app.go('Shortlist');
     await app.tap(find.byTooltip('Help: search this app or ask AI'));
     await tester.enterText(find.byType(TextField).last, 'merge duplicates');
     await app.settle();
