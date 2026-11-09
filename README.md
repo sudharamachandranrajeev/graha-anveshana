@@ -233,6 +233,10 @@ flowchart LR
   choose whether to keep them on. If one wants a robot check or a sign-in, tap **Open Zoopla** (or
   Facebook Marketplace) and its homes join your results as its pages load. Other sites that ask
   for a robot check work the same way.
+- **Connect** (Settings → Search sites) signs you in to Zoopla or Facebook on the site's own page
+  inside the app, so Search reads them as you. The app never sees your password; the in-app
+  browser keeps the site's sign-in cookie on this device only. **Disconnect** signs you out.
+  Reading Facebook while signed in is against its terms and could get your account limited.
 - **Maps** use OpenStreetMap tiles. Homes without a map point are placed by postcode through
   postcodes.io.
 - **What leaves the device**: your searches (to the sites you search, and the place name to
@@ -307,8 +311,9 @@ running and unlocked, then start the app again.
 
 **Search** reads Rightmove, OnTheMarket, OpenRent (to rent only) and PropertyPal (Northern
 Ireland) directly, and Zoopla and Facebook Marketplace in a hidden in-app browser. Marketplace
-knows towns by name, not postcodes, and often wants you signed in: tap **Open Facebook
-Marketplace** under the search and sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
+knows towns by name, not postcodes, and often wants you signed in: tap **Connect Facebook
+Marketplace** in Settings → Search sites (or **Open Facebook Marketplace** under the search) and
+sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
 other sites.
 </details>
 

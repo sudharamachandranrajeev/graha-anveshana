@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../domain/page_reader.dart';
+import '../domain/sources.dart';
 import 'common.dart';
 
 /// Whether this build has an embedded web view. Linux has one (WPE WebKit)
@@ -104,6 +105,24 @@ Future<({String html, String cards})> loadHidden(
   } finally {
     await view.dispose();
   }
+}
+
+/// Whether the in-app browser holds a signed-in session for [s]: the
+/// sign-in cookie is there. Null when the site has no known cookie or this
+/// build has no web view.
+Future<bool?> isSignedIn(SourceId s) async {
+  final cookie = signInFor(s).cookie;
+  if (!hasWebView || cookie == null) return null;
+  final cookies = await CookieManager.instance().getCookies(url: WebUri('https://www.${s.host}/'));
+  return cookies.any((c) => c.name == cookie);
+}
+
+/// Signs out of one site: its cookies in the in-app (and hidden) browser.
+Future<void> signOutOf(SourceId s) async {
+  if (!hasWebView) return;
+  final url = WebUri('https://www.${s.host}/');
+  await CookieManager.instance().deleteCookies(url: url, domain: '.${s.host}');
+  await CookieManager.instance().deleteCookies(url: url);
 }
 
 /// Signs out of every site opened in the app: its cookies and site data.

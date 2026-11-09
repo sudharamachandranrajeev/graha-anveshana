@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
+
+- Fixed: searching "furnished" showed unfurnished homes too. Words now match whole words only
+  ("unfurnished" no longer counts as "furnished"), furnishing is a hard limit (a home that says
+  the opposite is left out; one that does not say stays), and Rightmove and Zoopla are asked
+  for the furnishing themselves.
+- Connect Zoopla and Facebook Marketplace (Settings → Search sites): sign in on the site's own
+  page inside the app, and Search reads them as you. Disconnect signs you out. After you pass a
+  sign-in or robot check, a blocked site is searched again by itself.
 
 - Search: sort the results by best match, price (either way), most bedrooms, nearest or
   available soonest. The order you pick is remembered.

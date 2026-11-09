@@ -385,13 +385,18 @@ List<DuplicatePair> findDuplicates(List<ItemKey> items) {
   if (c.radiusKm != null) {
     check(km == null ? null : km <= c.radiusKm!, 'more than ${c.radiusKm!.toStringAsFixed(1)} km away');
   }
-  final lower = text.toLowerCase();
   for (final w in c.words.split(RegExp(r'[\s,]+')).where((w) => w.isNotEmpty)) {
     if (w.startsWith('-') && w.length > 1) {
-      check(!lower.contains(w.substring(1).toLowerCase()), 'mentions "${w.substring(1)}"');
+      check(!mentions(text, w.substring(1)), 'mentions "${w.substring(1)}"');
     } else {
-      check(lower.contains(w.toLowerCase()), 'does not mention "$w"');
+      check(mentions(text, w), 'does not mention "$w"');
     }
   }
   return (score: checks == 0 ? 1 : passed / checks, misses: misses);
 }
+
+/// Whether [text] mentions [word] as a whole word, or its plural: "garden"
+/// matches "gardens", but "furnished" does not match "unfurnished".
+bool mentions(String text, String word) =>
+    RegExp('(?<![a-z0-9])${RegExp.escape(word.toLowerCase())}(?:s|es)?(?![a-z0-9])')
+        .hasMatch(text.toLowerCase());

@@ -127,9 +127,9 @@ Future<void> saveToResearch(BuildContext context, WidgetRef ref, FoundHome h, Se
 
 /// Opens [s]'s results in the in-app browser; the user can pass the site's
 /// check or browse, then read the page into the results.
-Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri url) {
+Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri url) async {
   final rent = ref.read(searchProvider).request?.rent ?? true;
-  return openInApp(
+  await openInApp(
     context,
     url,
     title: s.label,
@@ -142,6 +142,44 @@ Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri
       return 'Read ${page.items.length} adverts from ${s.label}; $added new to your results.';
     },
   );
+  await _retryIfBlocked(ref, s);
+}
+
+/// Searches [s] again when it is still blocked: a sign-in or robot check the
+/// user just passed in the in-app browser now lets the hidden browser in.
+Future<void> _retryIfBlocked(WidgetRef ref, SourceId s) async {
+  if (!s.readInBrowser) return;
+  if (ref.read(searchProvider).sources[s]?.state != SourceState.blocked) return;
+  await ref.read(searchProvider.notifier).retry(s);
+}
+
+/// Connects the app to [s]: the user signs in on the site's own page in the
+/// in-app browser, and Search's hidden browser then reads as them. The app
+/// never sees the password; the web view keeps the site's cookies.
+Future<void> connectSite(BuildContext context, WidgetRef ref, SourceId s) async {
+  final signIn = signInFor(s);
+  await openInApp(
+    context,
+    signIn.page,
+    title: 'Connect ${s.label}',
+    readLabel: "Done: I'm signed in",
+    read: (_, _) async {
+      if (await isSignedIn(s) == false) {
+        return 'Not signed in to ${s.label} yet. Sign in on this page first.';
+      }
+      await markConnected(ref.read(sessionProvider).db, s, isoDate(DateTime.now()));
+      ref.read(revisionProvider.notifier).bump();
+      return '${s.label} connected. Close this page; Search reads it as you.';
+    },
+  );
+  await _retryIfBlocked(ref, s);
+}
+
+/// Disconnects [s]: signs out of it in the app and forgets the connection.
+Future<void> disconnectSite(WidgetRef ref, SourceId s) async {
+  await signOutOf(s);
+  await markConnected(ref.read(sessionProvider).db, s, null);
+  ref.read(revisionProvider.notifier).bump();
 }
 
 /// The Search tab: type what you want, see every site's homes that answer
@@ -835,13 +873,15 @@ class SearchSitesCard extends ConsumerWidget {
                 SourceId.openRent => 'Homes to rent from private landlords',
                 SourceId.zoopla => 'All of the UK; read in a hidden browser, as it turns apps away',
                 SourceId.facebook =>
-                  'Homes from private landlords and sellers; read in a hidden browser. Sign in through '
-                      '"Open Facebook Marketplace" on Search if it asks',
+                  'Homes from private landlords and sellers; read in a hidden browser. Connect it below '
+                      'to search as you',
                 _ => 'All of the UK',
               }),
               value: !off.contains(s),
               onChanged: (v) => setSourceOff(ref, s, !v),
             ),
+          if (hasWebView)
+            for (final s in SourceId.values.where((s) => s.readInBrowser)) _ConnectTile(s),
           if (hasWebView)
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -849,13 +889,62 @@ class SearchSitesCard extends ConsumerWidget {
               title: const Text('Sign out of all sites'),
               subtitle: const Text('Clears what sites you opened in the app keep: sign-ins and cookies.'),
               onTap: () async {
-                if (await guarded(context, signOutOfSites) && context.mounted) {
+                final out = await guarded(context, () async {
+                  await signOutOfSites();
+                  for (final s in SourceId.values.where((s) => s.readInBrowser)) {
+                    await markConnected(ref.read(sessionProvider).db, s, null);
+                  }
+                  ref.read(revisionProvider.notifier).bump();
+                });
+                if (out && context.mounted) {
                   showMessage(context, 'Signed out of every site.');
                 }
               },
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Whether the in-app browser still holds [s]'s sign-in (null: cannot tell).
+final _signedInProvider = FutureProvider.family<bool?, SourceId>((ref, s) {
+  ref.watch(revisionProvider);
+  return isSignedIn(s);
+});
+
+/// Connect or disconnect one site Search reads in the hidden browser.
+class _ConnectTile extends ConsumerWidget {
+  const _ConnectTile(this.site);
+  final SourceId site;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final since = ref.watch(siteConnectionProvider(site)).value;
+    final signedIn = ref.watch(_signedInProvider(site)).value;
+    final connected = since != null && signedIn != false;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(connected ? Icons.link : Icons.link_off),
+      title: Text(connected ? '${site.label}: connected' : 'Connect ${site.label}'),
+      subtitle: Text(
+        connected
+            ? 'Since $since. Search reads ${site.label} as you, from this device only.'
+            : since != null
+            ? 'Signed out since you connected. Connect again to search as you.'
+            : 'Sign in on ${site.label}\'s own page here; the app never sees your password.',
+      ),
+      trailing: connected
+          ? TextButton(
+              onPressed: () async {
+                if (await guarded(context, () => disconnectSite(ref, site)) && context.mounted) {
+                  showMessage(context, '${site.label} disconnected.');
+                }
+              },
+              child: const Text('Disconnect'),
+            )
+          : const Icon(Icons.chevron_right),
+      onTap: connected ? null : () => connectSite(context, ref, site),
     );
   }
 }

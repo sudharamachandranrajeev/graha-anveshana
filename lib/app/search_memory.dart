@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../db/database.dart';
 import '../domain/book.dart';
 import '../domain/pipeline.dart';
 import '../domain/property_search.dart';
 import '../domain/search_request.dart';
+import '../domain/sources.dart';
 import '../domain/taste.dart';
 import 'providers.dart';
 
@@ -133,3 +135,18 @@ double _weight(Stage stage, int rating) {
   if (stage == Stage.dropped || (rating > 0 && rating <= 2)) return -1;
   return 1 + (rating > 0 ? (rating - 3) * 0.5 : 0) + Stage.values.indexOf(stage) * 0.25;
 }
+
+String _connectKey(SourceId s) => 'anveshana.connect.${s.key}';
+
+/// When the user connected [s] (signed in to it through the app), as
+/// yyyy-MM-dd; null when not connected. Local to the device, as the
+/// sign-in itself is.
+final siteConnectionProvider = FutureProvider.family<String?, SourceId>((ref, s) async {
+  ref.watch(revisionProvider);
+  final v = await ref.watch(sessionProvider).db.localSetting(_connectKey(s));
+  return v == null || v.isEmpty ? null : v;
+});
+
+/// Records that [s] is connected (on [date]) or not (null).
+Future<void> markConnected(AppDatabase db, SourceId s, String? date) =>
+    db.setLocalSetting(_connectKey(s), date ?? '');

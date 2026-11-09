@@ -272,6 +272,26 @@ const _rightmoveRadii = [0.0, 0.25, 0.5, 1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 30.0, 
 
 double _radiusAtLeast(double miles) => _rightmoveRadii.firstWhere((r) => r >= miles, orElse: () => 40);
 
+/// Where the user signs in to a [SourceId.readInBrowser] site in the in-app
+/// browser, and the cookie the site sets once they have (null: the app
+/// cannot tell, and takes the user's word). The hidden browser Search reads
+/// the site with shares that sign-in.
+({Uri page, String? cookie}) signInFor(SourceId s) => switch (s) {
+  SourceId.facebook => (
+    page: Uri.https('www.facebook.com', '/login/', {'next': 'https://www.facebook.com/marketplace/'}),
+    cookie: 'c_user',
+  ),
+  _ => (page: Uri.https('www.${s.host}', '/'), cookie: null),
+};
+
+/// The furnishing asked for, 'furnished' or 'unfurnished', when only one is.
+String? _furnishing(SearchRequest q) =>
+    switch ((q.must.contains('furnished'), q.must.contains('unfurnished'))) {
+      (true, false) => 'furnished',
+      (false, true) => 'unfurnished',
+      _ => null,
+    };
+
 /// Facebook Marketplace names towns by a short name ("leeds",
 /// "newcastleupontyne"). It does not know postcodes.
 String _marketplacePlace(SearchRequest q) => _slug(q.area).replaceAll('-', '');
@@ -303,6 +323,7 @@ Uri browserSearchUrl(SourceId source, SearchRequest q, {int page = 0}) => switch
       if (q.minPrice != null) 'price_min': '${q.minPrice}',
       if (q.maxPrice != null) 'price_max': '${q.maxPrice}',
       if (q.radiusMiles != null) 'radius': '${_radiusAtLeast(q.radiusMiles!)}',
+      if (_furnishing(q) case final f? when q.rent) 'furnished_state': f,
       if (page > 0) 'pn': '${page + 1}',
     },
   ),
@@ -370,6 +391,11 @@ class SourceReader {
             if (q.maxPrice != null) 'maxPrice': '${q.maxPrice}',
             if (q.minPrice != null) 'minPrice': '${q.minPrice}',
             if (!q.includeGone) (q.rent ? 'includeLetAgreed' : 'includeSSTC'): 'false',
+            if (_furnishing(q) case final f? when q.rent)
+              'furnishTypes': switch (f) {
+                'furnished' => 'furnished,partFurnished',
+                _ => 'unfurnished',
+              },
             'index': '${page * 24}',
           },
         );

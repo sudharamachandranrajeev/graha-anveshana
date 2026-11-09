@@ -77,9 +77,39 @@ bool meetsRequest(FoundHome h, SearchRequest q) {
   if (q.minBeds != null && beds != null && beds < q.minBeds!) return false;
   if (q.maxBeds != null && beds != null && beds > q.maxBeds!) return false;
   if (q.radiusMiles != null && h.km != null && h.km! > q.radiusMiles! * 1.609344) return false;
-  final text = h.text.toLowerCase();
-  if (q.mustNot.any((w) => text.contains(w))) return false;
+  if (q.mustNot.any((w) => mentions(h.text, w))) return false;
+  // Furnishing is a hard limit: asked furnished, an advert that says
+  // unfurnished is left out, and the other way round.
+  final furnishing = furnishingOf(h);
+  if (q.must.contains('furnished') && furnishing == Furnishing.unfurnished) return false;
+  if (q.must.contains('unfurnished') &&
+      (furnishing == Furnishing.furnished || furnishing == Furnishing.part)) {
+    return false;
+  }
   return true;
+}
+
+enum Furnishing { furnished, part, unfurnished, either }
+
+/// What [h] says about its furnishing: the site's own field first, else
+/// its words. Null when it does not say.
+Furnishing? furnishingOf(FoundHome h) {
+  for (final c in h.copies) {
+    if (_furnishingIn(c.furnished) case final f?) return f;
+  }
+  return _furnishingIn(h.text);
+}
+
+Furnishing? _furnishingIn(String text) {
+  final t = text.toLowerCase();
+  final un = RegExp(r'\bunfurnished\b').hasMatch(t);
+  final part = RegExp(r'\bpart(?:ly|ially)?[\s-]*furnished\b').hasMatch(t);
+  final full = RegExp(r'(?<!un)(?<!part[\s-])(?<!partly[\s-])\bfurnished\b').hasMatch(t);
+  if (un && (full || part)) return Furnishing.either;
+  if (un) return Furnishing.unfurnished;
+  if (part) return Furnishing.part;
+  if (full) return Furnishing.furnished;
+  return null;
 }
 
 /// The homes that answer [q], best first: those that mention every asked-for
