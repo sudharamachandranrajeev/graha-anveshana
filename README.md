@@ -35,10 +35,14 @@ not advice.
 ## ✨ What it does
 
 - 🔎 **Search in your own words** – type "2 bed to rent in Leeds under £900 within 3 miles with
-  parking, no students". The app reads Rightmove, OnTheMarket, OpenRent and PropertyPal for you
-  and shows every home that answers in one list, best match first. The same home on two sites
-  shows once. Open any of them to see every photo, the description, the facts and the agent,
-  inside the app, and save it to Hunt or a research. Zoopla opens inside the app too.
+  parking, no students". The app reads Rightmove, Zoopla, OnTheMarket, OpenRent, PropertyPal and
+  Facebook Marketplace for you and shows every home that answers in one list. Sort by best
+  match, price, bedrooms, distance or availability, or see them on a map. The same home on two
+  sites shows once. Open any of them to see every photo, the description, the facts and the
+  agent, inside the app, and save it to Hunt or a research.
+- 🧠 **Pick up where you left off** – save a search by name, carry on the last one, or run your
+  usual one in a tap. Once you keep three homes in Hunt, Search puts the homes most like them
+  first ("For you"), learnt on your device from their price, bedrooms, district and features.
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, shortlisted,
   enquired, viewing, applied, agreed. Add one from Search, an advert link, or type it in.
 - 🗂️ **A research for every hunt** – keep each hunt or study apart, each with its own catalog.
@@ -223,10 +227,14 @@ flowchart LR
 - **Brahma Watch** checks your searches on a schedule. The app sends it your searches and
   brings in what it found each time it starts.
 - **Search** reads the property sites only when you search, from your own device, one page at a
-  time as you scroll, under the app's own name. Nothing is read in the background. Switch any site
-  off in **Settings → Search sites**.
-- **Sites that turn apps away** (Zoopla, or a site asking you to prove you are not a robot) open
-  inside the app. You browse or pass the check yourself, then tap **Add these homes to my results**.
+  time as you scroll. Switch any site off in **Settings → Search sites**.
+- **Zoopla and Facebook Marketplace** turn plain apps away, so Search reads them in a hidden
+  in-app browser, one results page at a time. Their terms do not allow automated reading; you
+  choose whether to keep them on. If one wants a robot check or a sign-in, tap **Open Zoopla** (or
+  Facebook Marketplace) and its homes join your results as its pages load. Other sites that ask
+  for a robot check work the same way.
+- **Maps** use OpenStreetMap tiles. Homes without a map point are placed by postcode through
+  postcodes.io.
 - **What leaves the device**: your searches (to the sites you search, and the place name to
   postcodes.io or OpenStreetMap), postcodes for area reports, links you add, and Watch requests.
   Nothing else unless you turn on sync.
@@ -298,9 +306,9 @@ running and unlocked, then start the app again.
 <summary><b>Which property sites work?</b></summary>
 
 **Search** reads Rightmove, OnTheMarket, OpenRent (to rent only) and PropertyPal (Northern
-Ireland). Zoopla does not let apps read it, so tap **Open Zoopla** under the search: it opens
-inside the app, and **Add these homes to my results** brings the homes on the page you see into
-the list. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
+Ireland) directly, and Zoopla and Facebook Marketplace in a hidden in-app browser. Marketplace
+knows towns by name, not postcodes, and often wants you signed in: tap **Open Facebook
+Marketplace** under the search and sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
 other sites.
 </details>
 
@@ -314,7 +322,7 @@ other sites.
 - **"Open Rightmove" (or another site)**: the site asked to check you are not a robot. Tap it,
   pass the check on the site's page inside the app, then tap **Add these homes to my results**.
 - **Linux download**: the portable Linux build has no built-in web view (most Linux systems do
-  not ship one), so Zoopla and robot checks open in your usual browser. Search itself still works
+  not ship one), so Zoopla, Facebook Marketplace and robot checks open in your usual browser. Search itself still works
   in the app.
 </details>
 

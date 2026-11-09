@@ -144,6 +144,16 @@ String? postcodeIn(String text) {
   return m == null ? null : '${m.group(1)!.toUpperCase()} ${m.group(2)!.toUpperCase()}';
 }
 
+/// The postcode district in [text] ("LS6" from "Headingley, Leeds LS6" or
+/// from "LS6 1AA"), upper case: a full postcode's first half, else a
+/// district standing at the end of the text.
+String? outcodeIn(String text) {
+  final full = postcodeIn(text);
+  if (full != null) return full.split(' ').first;
+  final m = RegExp(r'\b([A-Z]{1,2}[0-9][A-Z0-9]?)\s*$', caseSensitive: false).firstMatch(text.trim());
+  return m?.group(1)!.toUpperCase();
+}
+
 /// Great-circle distance in kilometres.
 double distanceKm(double lat1, double lon1, double lat2, double lon2) {
   const r = 6371.0;

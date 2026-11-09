@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../app/search_controller.dart';
+import '../app/search_memory.dart';
 import '../domain/catalog.dart';
 import '../domain/catalog_book.dart';
 import '../domain/page_reader.dart';
@@ -13,30 +12,32 @@ import '../domain/pipeline.dart';
 import '../domain/property_search.dart';
 import '../domain/search_request.dart';
 import '../domain/sources.dart';
+import '../domain/taste.dart';
 import 'advert_page.dart';
 import 'browser_page.dart';
 import 'common.dart';
+import 'homes_map.dart';
 import 'searches_page.dart';
 
-const _recentKey = 'anveshana.search.recent';
+/// Recent searches shown on the start screen.
+const _recentShown = 8;
 
-/// The last searches on this device, newest first.
-final recentSearchesProvider = FutureProvider<List<String>>((ref) async {
-  ref.watch(revisionProvider);
-  final raw = await ref.watch(sessionProvider).db.localSetting(_recentKey);
-  if (raw == null) return const [];
-  try {
-    return [for (final s in jsonDecode(raw) as List) '$s'];
-  } on FormatException {
-    return const [];
-  }
-});
+/// The taste for [q]'s kind, and how like it a home is.
+Taste _tasteFor(WidgetRef ref, SearchRequest q) =>
+    ref.watch(tasteProvider(q.rent ? 'rent' : 'buy')).value ?? Taste.none;
 
-Future<void> _remember(WidgetRef ref, String text) async {
-  final now = [text, ...(await ref.read(recentSearchesProvider.future)).where((s) => s != text)].take(8);
-  await ref.read(sessionProvider).db.setLocalSetting(_recentKey, jsonEncode(now.toList()));
-  ref.changed();
-}
+double _likeness(Taste t, FoundHome h) =>
+    t.likeness(price: h.price, beds: h.beds, postcode: h.postcode, text: h.text);
+
+/// How to show a past search: the words typed, unless filters were changed
+/// after; then its label.
+String named(SearchRequest q) =>
+    q.text.isNotEmpty && q.sameAs(readRequest(q.text, rent: q.rent)) ? q.text : q.label;
+
+/// The order results show in: the user's choice, else For you once the
+/// taste has learnt from three kept homes, else Best match.
+HomeSort effectiveSort(HomeSort? chosen, Taste taste) =>
+    chosen ?? (taste.strong ? HomeSort.forYou : HomeSort.best);
 
 const _examples = [
   '2 bed flat to rent in Leeds under £900 with parking',
@@ -133,6 +134,7 @@ Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri
     url,
     title: s.label,
     cardsScript: cardsScript,
+    autoRead: true,
     read: (html, cards) async {
       final page = readOpenPage(s, html, cards, rent: rent);
       if (page.items.isEmpty) return 'No adverts found on this page. Open a results page first.';
@@ -156,6 +158,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   final _focus = FocusNode();
   var _rent = true;
 
+  /// Results on a map instead of a list.
+  var _onMap = false;
+
   @override
   void dispose() {
     _text.dispose();
@@ -167,11 +172,36 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     if (text != null) _text.text = text;
     final words = _text.text.trim();
     if (words.isEmpty) return;
+    await _run(readRequest(words, rent: _rent));
+  }
+
+  /// Runs a search made before or saved, filters and all.
+  Future<void> _run(SearchRequest q, {HomeSort? sort}) async {
     _focus.unfocus();
-    final q = readRequest(words, rent: _rent);
+    _text.text = named(q);
     setState(() => _rent = q.rent);
-    await _remember(ref, words);
-    await ref.read(searchProvider.notifier).refine(q);
+    await ref.read(searchProvider.notifier).refine(q, sort: sort);
+  }
+
+  Future<void> _save(BuildContext context, SearchRequest q, HomeSort? sort) async {
+    final all = await ref.read(savedSearchesProvider.future);
+    if (!context.mounted) return;
+    final name = TextEditingController(
+      text: all.where((s) => s.request.sameAs(q)).firstOrNull?.name ?? q.label,
+    );
+    await showFormDialog(
+      context,
+      title: 'Save this search',
+      action: 'Save',
+      fields: (_) => [Field(name, 'Name', autofocus: true)],
+      onSave: () async {
+        if (name.text.trim().isEmpty) return 'Enter a name.';
+        await ref.mutate((s) => saveSearch(s.book, all, name.text.trim(), q, sort));
+        return null;
+      },
+    );
+    // The dialog's closing animation still reads the field, so the
+    // controller is left to the garbage collector, as editSearch does.
   }
 
   bool _onScroll(ScrollNotification n) {
@@ -184,6 +214,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   Widget build(BuildContext context) {
     final s = ref.watch(searchProvider);
     final q = s.request;
+    final taste = q == null ? Taste.none : _tasteFor(ref, q);
+    final sort = effectiveSort(s.sort, taste);
+    final homes = sortHomes(s.homes, sort, likeness: (h) => _likeness(taste, h));
     return PageScaffold(
       title: 'Search',
       actions: [
@@ -236,20 +269,60 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 sliver: SliverToBoxAdapter(
                   child: Readable(
-                    child: SizedBox(width: double.infinity, child: _summary(context, s)),
+                    child: SizedBox(width: double.infinity, child: _summary(context, s, sort, taste)),
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                sliver: SliverList.builder(
-                  itemCount: s.homes.length,
-                  itemBuilder: (context, i) {
-                    final card = Readable(child: _HomeCard(s.homes[i], q, first: i == 0));
-                    return i == 0 ? TourTarget('search.result', child: card) : card;
-                  },
+              if (_onMap)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: (MediaQuery.sizeOf(context).height * 0.65).clamp(320, 760),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: HomesMap(
+                          key: ValueKey(q.toJson().toString()),
+                          centre: s.centre == null ? null : (lat: s.centre!.lat, lon: s.centre!.lon),
+                          centreLabel: s.centre?.label ?? '',
+                          homes: [
+                            for (final h in homes)
+                              MapHome(
+                                label: h.price == null
+                                    ? (h.beds == null ? 'Home' : '${h.beds} bed')
+                                    : gbp(h.price!),
+                                lat: h.lat,
+                                lon: h.lon,
+                                postcode: h.postcode,
+                                address: h.main.address,
+                                onTap: () =>
+                                    Navigator.of(context)
+                                        .push(MaterialPageRoute<void>(builder: (_) => AdvertPage(h, q))),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  sliver: SliverList.builder(
+                    itemCount: homes.length,
+                    itemBuilder: (context, i) {
+                      final card = Readable(
+                        child: _HomeCard(
+                          homes[i],
+                          q,
+                          first: i == 0,
+                          likeYours: taste.strong && _likeness(taste, homes[i]) >= 0.75,
+                        ),
+                      );
+                      return i == 0 ? TourTarget('search.result', child: card) : card;
+                    },
+                  ),
                 ),
-              ),
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(16, 8, 16, 96 + MediaQuery.paddingOf(context).bottom),
                 sliver: SliverToBoxAdapter(child: Center(child: _tail(s))),
@@ -303,24 +376,71 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   );
 
   Widget _start(BuildContext context) {
-    final recent = ref.watch(recentSearchesProvider).value ?? const [];
+    final history = ref.watch(searchHistoryProvider).value ?? const [];
+    final saved = ref.watch(savedSearchesProvider).value ?? const [];
+    final last = history.firstOrNull;
+    final usual = usualSearch(history);
     final t = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Say what you want in your own words: where, rent or buy, bedrooms, price, how far, and what it '
-          'must or must not have. Graha Anveshana reads Rightmove, OnTheMarket, OpenRent and PropertyPal '
-          'for you and shows every home that answers, in one list, inside the app.',
+          'must or must not have. Graha Anveshana reads Rightmove, Zoopla, OnTheMarket, OpenRent, '
+          'PropertyPal and Facebook Marketplace for you and shows every home that answers, in one list, '
+          'inside the app.',
         ),
-        if (recent.isNotEmpty) ...[
+        if (last != null) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _run(last),
+                icon: const Icon(Icons.history),
+                label: Text('Carry on: ${named(last)}'),
+              ),
+              if (usual != null && !usual.sameAs(last))
+                OutlinedButton.icon(
+                  onPressed: () => _run(usual),
+                  icon: const Icon(Icons.repeat),
+                  label: Text('Your usual: ${named(usual)}'),
+                ),
+            ],
+          ),
+        ],
+        if (saved.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Saved', style: t.titleSmall),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final s in saved)
+                InputChip(
+                  avatar: const Icon(Icons.bookmark, size: 18),
+                  label: Text(s.name),
+                  tooltip: s.request.label,
+                  onPressed: () => _run(s.request, sort: s.sort),
+                  deleteButtonTooltipMessage: 'Forget this search',
+                  onDeleted: () => ref.mutate((x) => removeSavedSearch(x.book, saved, s.id)),
+                ),
+            ],
+          ),
+        ],
+        if (history.length > 1) ...[
           const SizedBox(height: 16),
           Text('Recent', style: t.titleSmall),
           const SizedBox(height: 4),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [for (final r in recent) ActionChip(label: Text(r), onPressed: () => _go(r))],
+            children: [
+              for (final r in history.skip(1).take(_recentShown))
+                ActionChip(label: Text(named(r)), onPressed: () => _run(r)),
+            ],
           ),
         ],
         const SizedBox(height: 16),
@@ -405,6 +525,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             avatar: const Icon(Icons.tune, size: 18),
             label: const Text('Change'),
             onPressed: () => _edit(context, q),
+          ),
+          ActionChip(
+            avatar: const Icon(Icons.bookmark_add_outlined, size: 18),
+            label: const Text('Save search'),
+            onPressed: () => _save(context, q, ref.read(searchProvider).sort),
           ),
         ],
       ),
@@ -500,8 +625,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               SourceState.blocked => ActionChip(
                 avatar: Icon(Icons.open_in_browser, size: 18, color: scheme.primary),
                 label: Text('Open ${id.label}'),
-                tooltip: id == SourceId.zoopla
-                    ? 'Zoopla turns apps away. Open it here in the app, then add its homes to your results.'
+                tooltip: id.readInBrowser
+                    ? '${id.label} showed no homes: it may want a robot check or a sign-in. Open it here; '
+                          'its homes join your results as its pages load.'
                     : '${id.label} asked to check you are not a robot. Open it here, pass the check, then '
                           'add its homes to your results.',
                 onPressed: st.url == null ? null : () => openSourcePage(context, ref, id, st.url!),
@@ -525,7 +651,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
   }
 
-  Widget _summary(BuildContext context, SearchState s) {
+  Widget _summary(BuildContext context, SearchState s, HomeSort sort, Taste taste) {
     final t = Theme.of(context).textTheme;
     final c = s.centre;
     return Column(
@@ -541,6 +667,35 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   if (c != null) 'distances from ${c.label}',
                 ].join(', '),
           style: t.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            PopupMenuButton<HomeSort>(
+              tooltip: 'Sort',
+              initialValue: sort,
+              onSelected: (v) => ref.read(searchProvider.notifier).setSort(v),
+              itemBuilder: (_) => [
+                for (final o in HomeSort.values)
+                  if (o != HomeSort.forYou || taste.count > 0)
+                    if (o != HomeSort.soonest || s.request?.rent != false)
+                      PopupMenuItem(value: o, child: Text(o.label)),
+              ],
+              child: Chip(avatar: const Icon(Icons.sort, size: 18), label: Text('Sort: ${sort.label}')),
+            ),
+            SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, label: Text('List'), icon: Icon(Icons.view_list_outlined)),
+                ButtonSegment(value: true, label: Text('Map'), icon: Icon(Icons.map_outlined)),
+              ],
+              selected: {_onMap},
+              onSelectionChanged: (v) => setState(() => _onMap = v.first),
+            ),
+          ],
         ),
       ],
     );
@@ -567,10 +722,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
 /// One home in the results.
 class _HomeCard extends ConsumerWidget {
-  const _HomeCard(this.h, this.q, {this.first = false});
+  const _HomeCard(this.h, this.q, {this.first = false, this.likeYours = false});
   final FoundHome h;
   final SearchRequest q;
   final bool first;
+
+  /// Close to the homes the user keeps (see Taste).
+  final bool likeYours;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -617,6 +775,7 @@ class _HomeCard extends ConsumerWidget {
                   style: t.titleMedium,
                 ),
               ),
+              if (likeYours) const StatusLabel(Status.good, 'Like ones you keep'),
               if (h.gone) StatusLabel(Status.warning, q.rent ? 'Let agreed' : 'Sold'),
               first ? TourTarget('search.save', child: save) : save,
             ],
@@ -674,7 +833,10 @@ class SearchSitesCard extends ConsumerWidget {
               subtitle: Text(switch (s) {
                 SourceId.propertyPal => 'Northern Ireland',
                 SourceId.openRent => 'Homes to rent from private landlords',
-                SourceId.zoopla => 'Opened here in the app when you tap it; Zoopla turns apps away',
+                SourceId.zoopla => 'All of the UK; read in a hidden browser, as it turns apps away',
+                SourceId.facebook =>
+                  'Homes from private landlords and sellers; read in a hidden browser. Sign in through '
+                      '"Open Facebook Marketplace" on Search if it asks',
                 _ => 'All of the UK',
               }),
               value: !off.contains(s),

@@ -15,6 +15,9 @@ abstract final class PrefKeys {
   static const home = 'anveshana.home';
   static const watchUrl = 'anveshana.watch.url';
   static const watchToken = 'anveshana.watch.token';
+
+  /// The Search tab's saved searches, a JSON list.
+  static const savedSearches = 'anveshana.search.saved';
 }
 
 /// Where distances are measured from (the user's home or work).

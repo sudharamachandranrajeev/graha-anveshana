@@ -4,11 +4,14 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../domain/page_reader.dart';
 import '../domain/property_search.dart';
 import '../domain/research.dart';
 import '../domain/search_request.dart';
 import '../domain/sources.dart';
+import '../ui/browser_page.dart' show hiddenPageLoader;
 import 'providers.dart';
+import 'search_memory.dart';
 
 /// The HTTP client the Search tab reads the sites with; tests replace it.
 final searchHttpProvider = Provider<http.Client>((ref) {
@@ -16,6 +19,14 @@ final searchHttpProvider = Provider<http.Client>((ref) {
   ref.onDispose(c.close);
   return c;
 });
+
+/// Loads a page in a hidden web view: its HTML and its advert cards
+/// ([cardsScript]).
+typedef PageLoader = Future<({String html, String cards})> Function(Uri url);
+
+/// How Search reads the [SourceId.readInBrowser] sites; null where this
+/// build has no web view (they then wait for the user to open them).
+final pageLoaderProvider = Provider<PageLoader?>((ref) => hiddenPageLoader());
 
 const _offKey = 'anveshana.search.off';
 
@@ -61,8 +72,13 @@ class SearchState {
     this.sources = const {},
     this.homes = const [],
     this.read = 0,
+    this.sort,
   });
   final SearchRequest? request;
+
+  /// The order the user chose; null: Best match, or For you once the
+  /// taste is strong enough (see the Search page).
+  final HomeSort? sort;
 
   /// Where distances are measured from.
   final Centre? centre;
@@ -93,33 +109,76 @@ class SearchController extends Notifier<SearchState> {
   @override
   SearchState build() => const SearchState();
 
+  /// The state with some parts changed; the request's own parts (centre,
+  /// sort) carry over.
+  SearchState _next({
+    SearchRequest? request,
+    Centre? centre,
+    String? centreNote,
+    Map<SourceId, SourceStatus>? sources,
+    List<FoundHome>? homes,
+    int? read,
+  }) => SearchState(
+    request: request ?? state.request,
+    centre: centre ?? state.centre,
+    centreNote: centreNote ?? state.centreNote,
+    sources: sources ?? state.sources,
+    homes: homes ?? state.homes,
+    read: read ?? state.read,
+    sort: state.sort,
+  );
+
   /// Reads [text] into a request and searches. [rent] is used when the words
   /// say neither rent nor buy.
   Future<void> search(String text, {bool rent = true}) => refine(readRequest(text, rent: rent));
 
-  /// Searches again with [q], e.g. after a filter chip changed.
-  Future<void> refine(SearchRequest q) async {
+  /// Searches again with [q], e.g. after a filter chip changed. [sort], when
+  /// given, is the order to show the results in (a saved search's).
+  Future<void> refine(SearchRequest q, {HomeSort? sort}) async {
     final run = ++_run;
     _all.clear();
+    final order = sort ?? state.sort ?? await ref.read(searchSortProvider.future);
     if (q.isEmpty) {
-      state = SearchState(request: q, centreNote: 'Say where: a town, area or postcode.');
+      state = SearchState(request: q, centreNote: 'Say where: a town, area or postcode.', sort: order);
       return;
     }
     final off = await ref.read(sourcesOffProvider.future);
     state = SearchState(
       request: q,
+      sort: order,
       sources: {
         for (final s in SourceId.values)
           s: off.contains(s) ? const SourceStatus(SourceState.off) : const SourceStatus(SourceState.waiting),
       },
     );
+    await recordSearch(ref, q);
     final centre = await _centre(q);
     if (run != _run) return;
-    state = SearchState(request: q, centre: centre.where, centreNote: centre.note, sources: state.sources);
+    state = SearchState(
+      request: q,
+      centre: centre.where,
+      centreNote: centre.note,
+      sources: state.sources,
+      sort: state.sort,
+    );
     await Future.wait([
       for (final s in SourceId.values)
         if (!off.contains(s)) _read(run, s, 0),
     ]);
+  }
+
+  /// Shows the results in [sort] order, and remembers it for next time.
+  Future<void> setSort(HomeSort sort) async {
+    state = SearchState(
+      request: state.request,
+      centre: state.centre,
+      centreNote: state.centreNote,
+      sources: state.sources,
+      homes: state.homes,
+      read: state.read,
+      sort: sort,
+    );
+    await rememberSort(ref, sort);
   }
 
   /// Reads the next page of every site that has more.
@@ -143,10 +202,7 @@ class SearchController extends Notifier<SearchState> {
     mergeListings(_all, page.items);
     final c = state.centre;
     final read = (state.sources[s]?.read ?? 0) + page.items.length;
-    state = SearchState(
-      request: q,
-      centre: c,
-      centreNote: state.centreNote,
+    state = _next(
       sources: {
         ...state.sources,
         s: SourceStatus(SourceState.done, read: read, note: 'Read from the page you opened'),
@@ -181,15 +237,24 @@ class SearchController extends Notifier<SearchState> {
     return (where: null, note: 'Could not find "$place" on the map, so distances are not shown.');
   }
 
-  void _set(SourceId s, SourceStatus status) {
-    state = SearchState(
-      request: state.request,
-      centre: state.centre,
-      centreNote: state.centreNote,
-      sources: {...state.sources, s: status},
-      homes: state.homes,
-      read: state.read,
-    );
+  void _set(SourceId s, SourceStatus status) => state = _next(sources: {...state.sources, s: status});
+
+  /// Reads a [SourceId.readInBrowser] site's results page in a hidden web
+  /// view. A page with no adverts is a robot check, a sign-in or an empty
+  /// search: the user is offered the page to look at themselves.
+  Future<SourcePage> _readInBrowser(SourceId s, SearchRequest q, int page) async {
+    final url = browserSearchUrl(s, q, page: page);
+    final load = ref.read(pageLoaderProvider);
+    if (load == null) throw SourceBlocked(s, url);
+    final ({String html, String cards}) got;
+    try {
+      got = await load(url);
+    } on Object {
+      throw SourceBlocked(s, url);
+    }
+    final read = readOpenPage(s, got.html, got.cards, rent: q.rent);
+    if (read.items.isEmpty) throw SourceBlocked(s, url);
+    return (items: read.items, more: browserHasMore(s, got.html, page));
   }
 
   Future<void> _read(int run, SourceId s, int page) async {
@@ -199,15 +264,11 @@ class SearchController extends Notifier<SearchState> {
     final before = state.sources[s]?.read ?? 0;
     _set(s, SourceStatus(SourceState.reading, read: before, page: page));
     try {
-      final got = await _reader.search(s, q, page: page);
+      final got = s.readInBrowser ? await _readInBrowser(s, q, page) : await _reader.search(s, q, page: page);
       if (run != _run) return;
       mergeListings(_all, got.items);
       final c = state.centre;
-      final ranked = rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon);
-      state = SearchState(
-        request: q,
-        centre: c,
-        centreNote: state.centreNote,
+      state = _next(
         sources: {
           ...state.sources,
           s: SourceStatus(
@@ -216,7 +277,7 @@ class SearchController extends Notifier<SearchState> {
             page: page + 1,
           ),
         },
-        homes: ranked,
+        homes: rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon),
         read: _all.length,
       );
     } on SourceBlocked catch (e) {

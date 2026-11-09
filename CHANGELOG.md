@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- Search: sort the results by best match, price (either way), most bedrooms, nearest or
+  available soonest. The order you pick is remembered.
+- Search: a map of the results (OpenStreetMap), with the search's centre. Tap a pin to open the
+  home. Homes the site gave no map point are placed by postcode; by district only, the pin is
+  hollow.
+- Search remembers: Carry on with the last search, Your usual (the place you search most), and
+  Save search to keep one by name with its filters and order. Saved searches sync.
+- Search learns what you like from the homes you keep in Hunt (price, bedrooms, district,
+  features; homes you drop or rate low count against). Once you keep three, results put the
+  homes most like them first ("For you") and mark the close ones. All on the device.
+- Zoopla is read with the other sites, in a hidden in-app browser; no more opening it yourself.
+  If it wants a robot check, Open Zoopla shows it, and its homes join your results by
+  themselves as its pages load.
+- New site: Facebook Marketplace (homes to rent and for sale), read the same way. Sign in through
+  Open Facebook Marketplace when it asks.
+- Hunt: sort each stage by nearest, rating, price, bedrooms or newest added, and a map of your
+  homes with your home point. A home's page shows it on a map.
+
 ## 0.9.1
 
 - Windows: the app builds again with the in-app browser (0.9.0's Windows build failed).

@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'listing.dart';
 import 'sources.dart';
 
-/// Reading results from a page the user has open in the in-app browser:
-/// Zoopla (which turns apps away), or a site that asked them to pass its
-/// robot check. The user brought the page up themselves; the app reads what
-/// is on their screen, as the Researches capture does.
+/// Reading results from a page open in a web view: Zoopla and Facebook
+/// Marketplace (which turn plain HTTP apps away), read in a hidden web view
+/// when the user searches, or a page the user opened in the in-app browser
+/// after a site asked for a robot check or a sign-in.
 
 /// Script run in the page: every advert card with its link, text and
 /// picture. A card is the nearest box around an advert link that shows a
@@ -14,7 +14,7 @@ import 'sources.dart';
 const cardsScript = r'''
 (() => {
   const seen = new Set(), out = [];
-  const advert = /\/(?:to-rent|for-sale|property-to-rent|property-for-sale|properties|details|property)\/[^?#]*?(\d{5,})/;
+  const advert = /\/(?:to-rent|for-sale|property-to-rent|property-for-sale|properties|details|property|marketplace\/item)\/[^?#]*?(\d{5,})/;
   for (const a of document.querySelectorAll('a[href]')) {
     const m = a.href.match(advert);
     if (!m || seen.has(m[1])) continue;
@@ -105,7 +105,7 @@ SourcePage readOpenPage(SourceId source, String html, String cards, {required bo
       SourceId.onTheMarket => parseOnTheMarketSearch(html, rent: rent),
       SourceId.openRent => parseOpenRentSearch(html),
       SourceId.propertyPal => (items: parsePropertyPalPage(html), more: false),
-      SourceId.zoopla => null,
+      SourceId.zoopla || SourceId.facebook => null,
     };
     if (page != null && page.items.isNotEmpty) return page;
   } on Object {

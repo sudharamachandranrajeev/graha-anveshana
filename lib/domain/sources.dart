@@ -9,20 +9,26 @@ import 'search_request.dart';
 
 /// The property sites the Search tab reads, inside the app. Each is read only
 /// when the user searches, one results page at a time as they scroll, from
-/// their own device and under the app's own name. Nothing is read in the
-/// background. Each one can be switched off in Settings.
+/// their own device. Each one can be switched off in Settings.
 enum SourceId {
   propertyPal('PropertyPal', 'propertypal.com'),
   rightmove('Rightmove', 'rightmove.co.uk'),
   onTheMarket('OnTheMarket', 'onthemarket.com'),
   openRent('OpenRent', 'openrent.co.uk'),
-  zoopla('Zoopla', 'zoopla.co.uk');
+  zoopla('Zoopla', 'zoopla.co.uk'),
+  facebook('Facebook Marketplace', 'facebook.com');
 
   const SourceId(this.label, this.host);
   final String label, host;
 
   /// The id adverts from this site carry in [Listing.source].
   String get key => name.toLowerCase();
+
+  /// Sites that turn plain HTTP apps away and draw their results with
+  /// script: the app reads them in a hidden web view instead (see
+  /// [browserSearchUrl]), and opens that page for the user when the site
+  /// wants a robot check or a sign-in.
+  bool get readInBrowser => this == zoopla || this == facebook;
 
   static SourceId? ofKey(String key) => values.where((s) => s.key == key).firstOrNull;
 }
@@ -266,8 +272,50 @@ const _rightmoveRadii = [0.0, 0.25, 0.5, 1.0, 3.0, 5.0, 10.0, 15.0, 20.0, 30.0, 
 
 double _radiusAtLeast(double miles) => _rightmoveRadii.firstWhere((r) => r >= miles, orElse: () => 40);
 
-/// Reads the sites over HTTP. Zoopla blocks apps; it is read through the
-/// in-app browser instead.
+/// Facebook Marketplace names towns by a short name ("leeds",
+/// "newcastleupontyne"). It does not know postcodes.
+String _marketplacePlace(SearchRequest q) => _slug(q.area).replaceAll('-', '');
+
+/// The results page [page] (0 first) of a [SourceId.readInBrowser] site for
+/// [q], with the request's filters, as a person would open it.
+Uri browserSearchUrl(SourceId source, SearchRequest q, {int page = 0}) => switch (source) {
+  SourceId.facebook => Uri.https(
+    'www.facebook.com',
+    '/marketplace/${_marketplacePlace(q)}/${q.rent ? 'propertyrentals' : 'propertyforsale'}',
+    {
+      if (q.minPrice != null) 'minPrice': '${q.minPrice}',
+      if (q.maxPrice != null) 'maxPrice': '${q.maxPrice}',
+      if (q.minBeds != null) 'minBedrooms': '${q.minBeds}',
+      if (q.maxBeds != null) 'maxBedrooms': '${q.maxBeds}',
+      if (q.radiusMiles != null) 'radius': '${(q.radiusMiles! * 1.609344).ceil()}',
+      'exact': 'false',
+    },
+  ),
+  SourceId.zoopla => Uri.https(
+    'www.zoopla.co.uk',
+    '/${q.rent ? 'to-rent' : 'for-sale'}/property/${_slug(q.area)}/',
+    {
+      'q': q.area,
+      'search_source': q.rent ? 'to-rent' : 'for-sale',
+      if (q.rent) 'price_frequency': 'per_month',
+      if (q.minBeds != null) 'beds_min': '${q.minBeds}',
+      if (q.maxBeds != null) 'beds_max': '${q.maxBeds}',
+      if (q.minPrice != null) 'price_min': '${q.minPrice}',
+      if (q.maxPrice != null) 'price_max': '${q.maxPrice}',
+      if (q.radiusMiles != null) 'radius': '${_radiusAtLeast(q.radiusMiles!)}',
+      if (page > 0) 'pn': '${page + 1}',
+    },
+  ),
+  _ => throw ArgumentError('${source.label} is read over HTTP'),
+};
+
+/// Whether [html], page [page] of a [SourceId.readInBrowser] site, links to
+/// a next page. Marketplace loads more as it scrolls: one page only.
+bool browserHasMore(SourceId source, String html, int page) =>
+    source == SourceId.zoopla && html.contains('pn=${page + 2}');
+
+/// Reads the sites over HTTP. Zoopla and Facebook turn apps away; the Search
+/// tab reads them in a hidden web view instead ([browserSearchUrl]).
 class SourceReader {
   SourceReader(this._http);
   final http.Client _http;
@@ -349,10 +397,10 @@ class SourceReader {
         if (page > 0) return (items: const <Listing>[], more: false);
         final url = Uri.https('www.openrent.co.uk', '/properties-to-rent/${_slug(q.area)}', {'term': q.area});
         return parseOpenRentSearch(await _get(source, url));
-      case SourceId.zoopla:
-        // Zoopla turns apps away, and its terms allow links to its home page
-        // only: the user searches there in the in-app browser.
-        throw SourceBlocked(source, Uri.https('www.zoopla.co.uk', '/'));
+      case SourceId.zoopla || SourceId.facebook:
+        // These answer plain HTTP with a robot check: the search page opens
+        // in the browser instead.
+        throw SourceBlocked(source, browserSearchUrl(source, q, page: page));
     }
   }
 

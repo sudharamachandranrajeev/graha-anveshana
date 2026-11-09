@@ -1,5 +1,7 @@
 import 'package:anveshana/app/app.dart';
 import 'package:anveshana/app/providers.dart';
+import 'package:anveshana/app/search_controller.dart';
+import 'package:anveshana/ui/homes_map.dart';
 import 'package:anveshana/app/session.dart';
 import 'package:anveshana/domain/book.dart';
 import 'package:brahma_core/brahma_core.dart';
@@ -31,13 +33,17 @@ class AppHarness {
     });
   }
 
-  /// Starts the app; [overrides] replace providers (e.g. the sites' HTTP client).
-  Future<void> run({List<Override> overrides = const []}) async {
+  /// Starts the app; [overrides] replace providers (e.g. the sites' HTTP
+  /// client). [pageLoader] stands in for the hidden web view.
+  Future<void> run({List<Override> overrides = const [], PageLoader? pageLoader}) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           ...anveshanaOverrides(session),
           deviceFactsProvider.overrideWith((ref) async => const DeviceFacts()),
+          // No web view or map tiles in widget tests.
+          pageLoaderProvider.overrideWithValue(pageLoader),
+          inlineMapsProvider.overrideWithValue(false),
           ...overrides,
         ],
         retry: (_, _) => null,

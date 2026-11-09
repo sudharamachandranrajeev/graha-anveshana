@@ -285,6 +285,51 @@ class Research {
     );
   }
 
+  /// Where each of [places] is, for map pins: full postcodes ("LS6 1AA") in
+  /// one bulk lookup, postcode districts ("LS6", the district's middle) one
+  /// by one, at most [maxDistricts]. Places postcodes.io does not know, or
+  /// that fail to load, are left out.
+  Future<Map<String, ({double lat, double lon})>> pointsFor(
+    Iterable<String> places, {
+    int maxDistricts = 20,
+  }) async {
+    final out = <String, ({double lat, double lon})>{};
+    final full = places.where(_isPostcode).toSet().toList();
+    for (var i = 0; i < full.length; i += 100) {
+      try {
+        final res = await _http
+            .post(
+              Uri.https('api.postcodes.io', '/postcodes'),
+              headers: {'content-type': 'application/json', 'accept': 'application/json'},
+              body: jsonEncode({'postcodes': full.sublist(i, i + 100 > full.length ? full.length : i + 100)}),
+            )
+            .timeout(const Duration(seconds: 30));
+        if (res.statusCode != 200) continue;
+        for (final r in ((jsonDecode(res.body) as Map)['result'] as List?) ?? const []) {
+          if (r case {
+            'query': final String q,
+            'result': {'latitude': final num lat, 'longitude': final num lon},
+          }) {
+            out[q] = (lat: lat.toDouble(), lon: lon.toDouble());
+          }
+        }
+      } on Object {
+        continue;
+      }
+    }
+    for (final d in places.where((p) => !_isPostcode(p)).toSet().take(maxDistricts)) {
+      try {
+        final w = await whereIs(d);
+        if (w != null) out[d] = (lat: w.lat, lon: w.lon);
+      } on Object {
+        continue;
+      }
+    }
+    return out;
+  }
+
+  static bool _isPostcode(String s) => RegExp(r'^[A-Z]{1,2}[0-9][A-Z0-9]? [0-9][A-Z]{2}$').hasMatch(s);
+
   /// postcodes.io's place names leave out Northern Ireland; OpenStreetMap's
   /// Nominatim knows every UK place. Asked once per search, as its policy wants.
   Future<({double lat, double lon, String label})?> _placeFromOsm(String q) async {

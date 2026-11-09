@@ -23,6 +23,8 @@ class FoundHome {
   String? get image => copies.map((c) => c.image).nonNulls.firstOrNull;
   double? get lat => copies.map((c) => c.lat).nonNulls.firstOrNull;
   double? get lon => copies.map((c) => c.lon).nonNulls.firstOrNull;
+  String? get availableFrom => copies.map((c) => c.availableFrom).nonNulls.firstOrNull;
+  String get postcode => copies.map((c) => c.postcode).where((p) => p.isNotEmpty).firstOrNull ?? '';
   String get text =>
       copies.map((c) => '${c.address}\n${c.style}\n${c.furnished}\n${c.description}').join('\n');
   bool get gone => copies.every((c) => c.status.contains('Agreed') || c.status == 'sold');
@@ -102,4 +104,48 @@ List<FoundHome> rankHomes(List<FoundHome> homes, SearchRequest q, {double? centr
     return (a.price ?? 1 << 30).compareTo(b.price ?? 1 << 30);
   });
   return kept;
+}
+
+/// The orders Search can show its homes in.
+enum HomeSort {
+  best('Best match'),
+  forYou('Most like homes you keep'),
+  priceLow('Price, lowest first'),
+  priceHigh('Price, highest first'),
+  beds('Most bedrooms'),
+  nearest('Nearest'),
+  soonest('Available soonest');
+
+  const HomeSort(this.label);
+  final String label;
+
+  static HomeSort? ofName(String? name) => values.where((s) => s.name == name).firstOrNull;
+}
+
+/// Compares two values that may be missing: missing ones go last.
+int byKnown<T extends Comparable<Object>>(T? a, T? b, {bool descending = false}) {
+  if (a == null || b == null) return a == null ? (b == null ? 0 : 1) : -1;
+  return descending ? b.compareTo(a) : a.compareTo(b);
+}
+
+/// [homes] (best first, from [rankHomes]) in [sort] order. Ties keep the
+/// best-first order. [likeness] scores a home for [HomeSort.forYou].
+List<FoundHome> sortHomes(List<FoundHome> homes, HomeSort sort, {double Function(FoundHome h)? likeness}) {
+  final liked = sort == HomeSort.forYou && likeness != null ? {for (final h in homes) h: likeness(h)} : null;
+  final int Function(FoundHome a, FoundHome b)? compare = switch (sort) {
+    HomeSort.best => null,
+    HomeSort.forYou when liked == null => null,
+    HomeSort.forYou => (a, b) => liked![b]!.compareTo(liked[a]!),
+    HomeSort.priceLow => (a, b) => byKnown(a.price, b.price),
+    HomeSort.priceHigh => (a, b) => byKnown(a.price, b.price, descending: true),
+    HomeSort.beds => (a, b) => byKnown(a.beds, b.beds, descending: true),
+    HomeSort.nearest => (a, b) => byKnown(a.km, b.km),
+    HomeSort.soonest => (a, b) => byKnown(a.availableFrom, b.availableFrom),
+  };
+  if (compare == null) return homes;
+  final at = {for (final (i, h) in homes.indexed) h: i};
+  return [...homes]..sort((a, b) {
+    final c = compare(a, b);
+    return c != 0 ? c : at[a]!.compareTo(at[b]!);
+  });
 }

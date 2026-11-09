@@ -12,6 +12,7 @@ import '../domain/portals.dart';
 import '../domain/running_costs.dart';
 import 'common.dart';
 import 'compare_page.dart';
+import 'homes_map.dart';
 import 'look.dart';
 import 'property_page.dart';
 
@@ -26,6 +27,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
   var kind = PropertyKind.rent;
   var showDropped = false;
   var filter = const HuntFilter();
+  var sort = HuntSort.nearest;
   final words = TextEditingController();
   final maxPrice = TextEditingController();
 
@@ -57,6 +59,11 @@ class _HuntPageState extends ConsumerState<HuntPage> {
           icon: Icons.compare_arrows,
           label: 'Compare shortlist',
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ComparePage(kind))),
+        ),
+        IconButton(
+          tooltip: 'Map',
+          icon: const Icon(Icons.map_outlined),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HuntMapPage(kind))),
         ),
         HintIconButton(
           'hunt.watch',
@@ -122,6 +129,11 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                 for (final b in [1, 2, 3, 4]) DropdownMenuItem(value: b, child: Text('$b+ beds')),
               ],
               onChanged: (b) => b == null ? _setFilter(clearBeds: true) : _setFilter(minBeds: b),
+            ),
+            DropdownButton<HuntSort>(
+              value: sort,
+              items: [for (final s in HuntSort.values) DropdownMenuItem(value: s, child: Text(s.label))],
+              onChanged: (s) => setState(() => sort = s ?? sort),
             ),
             SizedBox(
               width: 140,
@@ -190,7 +202,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                   if (stage.active || showDropped)
                     ...() {
                       final rows = mine.where((p) => Stage.of(p.stage) == stage).toList()
-                        ..sort((a, b) => (dist(a) ?? 1e9).compareTo(dist(b) ?? 1e9));
+                        ..sort((a, b) => sort.compare(a, b, dist));
                       if (rows.isEmpty) return const <Widget>[];
                       return [
                         _StageHeading('${stage.label(kind)} (${rows.length})'),
@@ -559,4 +571,38 @@ class _PriceTrack extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// The Hunt's homes of one kind on a map, with the home point. Dropped
+/// homes are left off.
+class HuntMapPage extends ConsumerWidget {
+  const HuntMapPage(this.kind, {super.key});
+  final PropertyKind kind;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final home = ref.watch(homeProvider).value;
+    final all = ref.watch(propertiesProvider).value ?? const <Property>[];
+    final mine = all.where((p) => p.kind == kind.name && Stage.of(p.stage).active);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(kind == PropertyKind.rent ? 'Homes to rent on the map' : 'Homes to buy on the map'),
+      ),
+      body: HomesMap(
+        centre: home == null ? null : (lat: home.lat, lon: home.lon),
+        centreLabel: home?.label.isNotEmpty == true ? home!.label : 'Home',
+        homes: [
+          for (final p in mine)
+            MapHome(
+              label: p.price == null ? p.address.split(',').first : gbp(p.price!),
+              lat: p.lat,
+              lon: p.lon,
+              postcode: p.postcode,
+              address: p.address,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PropertyPage(p.id))),
+            ),
+        ],
+      ),
+    );
+  }
 }

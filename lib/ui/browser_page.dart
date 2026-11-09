@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:brahma_core/brahma_core.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import '../domain/page_reader.dart';
 import 'common.dart';
 
 /// Whether this build has an embedded web view. Linux has one (WPE WebKit)
@@ -23,7 +25,8 @@ bool get hasWebView =>
 typedef PageReader = Future<String> Function(String html, String cards);
 
 /// Opens [url] inside the app, or in the system browser where this build
-/// has no web view. [read] adds a button that reads the page into the app.
+/// has no web view. [read] adds a button that reads the page into the app;
+/// with [autoRead] it also runs by itself each time a page finishes loading.
 Future<void> openInApp(
   BuildContext context,
   Uri url, {
@@ -31,6 +34,7 @@ Future<void> openInApp(
   String readLabel = 'Add these homes to my results',
   PageReader? read,
   String? cardsScript,
+  bool autoRead = false,
 }) async {
   if (!hasWebView || (url.scheme != 'https' && url.scheme != 'http')) {
     await openUri(context, url);
@@ -38,10 +42,68 @@ Future<void> openInApp(
   }
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) =>
-          BrowserPage(url: url, title: title, read: read, readLabel: readLabel, cardsScript: cardsScript),
+      builder: (_) => BrowserPage(
+        url: url,
+        title: title,
+        read: read,
+        readLabel: readLabel,
+        cardsScript: cardsScript,
+        autoRead: autoRead,
+      ),
     ),
   );
+}
+
+/// Loads a page in a hidden web view, as Search does for the sites that
+/// turn plain HTTP apps away. Null where this build has no web view.
+/// The hidden view shares the in-app browser's cookies, so a robot check
+/// or sign-in the user passed there counts here too.
+Future<({String html, String cards})> Function(Uri url)? hiddenPageLoader() =>
+    hasWebView && InAppWebViewPlatform.instance != null && HeadlessInAppWebView.isClassSupported()
+    ? loadHidden
+    : null;
+
+/// [url]'s HTML and advert cards ([cardsScript]), once its list is drawn.
+/// Sites draw their lists with script after the page loads, so this waits
+/// until the cards stop changing, for up to [settle].
+Future<({String html, String cards})> loadHidden(
+  Uri url, {
+  Duration timeout = const Duration(seconds: 30),
+  Duration settle = const Duration(seconds: 10),
+}) async {
+  final loaded = Completer<void>();
+  final view = HeadlessInAppWebView(
+    initialUrlRequest: URLRequest(url: WebUri.uri(url)),
+    initialSettings: InAppWebViewSettings(javaScriptEnabled: true),
+    initialSize: const Size(1280, 2400),
+    onLoadStop: (_, _) {
+      if (!loaded.isCompleted) loaded.complete();
+    },
+    onReceivedError: (_, request, error) {
+      if ((request.isForMainFrame ?? true) && !loaded.isCompleted) {
+        loaded.completeError(Exception(error.description));
+      }
+    },
+  );
+  try {
+    await view.run();
+    await loaded.future.timeout(timeout);
+    final web = view.webViewController!;
+    var cards = '[]';
+    var last = -1;
+    final until = DateTime.now().add(settle);
+    while (DateTime.now().isBefore(until)) {
+      cards = '${await web.evaluateJavascript(source: cardsScript) ?? '[]'}';
+      final n = '"id":'.allMatches(cards).length;
+      if (n > 0 && n == last) break;
+      last = n;
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
+    return (html: html, cards: cards);
+  } finally {
+    await view.dispose();
+  }
 }
 
 /// Signs out of every site opened in the app: its cookies and site data.
@@ -62,7 +124,9 @@ class BrowserPage extends StatefulWidget {
     this.read,
     this.readLabel = 'Add these homes to my results',
     this.cardsScript,
+    this.autoRead = false,
   });
+  final bool autoRead;
   final Uri url;
   final String title;
   final PageReader? read;
@@ -80,20 +144,23 @@ class _BrowserPageState extends State<BrowserPage> {
   Uri? _at;
   var _reading = false;
 
-  Future<void> _read() async {
+  /// Reads the page into the app. [auto]: a page just loaded; a page with no
+  /// adverts (a robot check, a sign-in) is passed over quietly.
+  Future<void> _read({bool auto = false}) async {
     final web = _web;
     final read = widget.read;
     if (web == null || read == null) return;
     setState(() => _reading = true);
     try {
-      final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
       final cards = widget.cardsScript == null
           ? '[]'
           : '${await web.evaluateJavascript(source: widget.cardsScript!) ?? '[]'}';
+      if (auto && !cards.contains('"id":')) return;
+      final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
       final said = await read(html, cards);
       if (mounted) showMessage(context, said);
     } catch (e) {
-      if (mounted) showError(context, e);
+      if (mounted && !auto) showError(context, e);
     } finally {
       if (mounted) setState(() => _reading = false);
     }
@@ -166,6 +233,12 @@ class _BrowserPageState extends State<BrowserPage> {
           if (t != null && t.isNotEmpty) setState(() => _title = t);
         },
         onUpdateVisitedHistory: (_, url, _) => setState(() => _at = url),
+        onLoadStop: (_, _) async {
+          if (!widget.autoRead || widget.read == null) return;
+          // Results lists are drawn by script after the page loads.
+          await Future<void>.delayed(const Duration(seconds: 2));
+          if (mounted && !_reading) await _read(auto: true);
+        },
         shouldOverrideUrlLoading: (_, action) async {
           final url = action.request.url;
           // Phone numbers, e-mail and app links go to the device's own app.

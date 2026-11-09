@@ -240,11 +240,11 @@ AdvertDetails parseOpenRentAdvert(String html) {
 }
 
 /// Reads [l]'s advert page for its full details. Null for sites read only
-/// in the browser (Zoopla) and adverts with no page.
+/// in the browser (Zoopla, Facebook) and adverts with no page.
 Future<AdvertDetails?> readAdvert(http.Client client, Listing l) async {
   final source = SourceId.ofKey(l.source);
   final url = Uri.tryParse(l.url);
-  if (source == null || source == SourceId.zoopla || url == null || url.scheme != 'https') return null;
+  if (source == null || source.readInBrowser || url == null || url.scheme != 'https') return null;
   if (!url.host.endsWith(source.host)) return null;
   final r = await client
       .get(url, headers: {'user-agent': userAgent, 'accept': 'text/html'})
@@ -256,6 +256,6 @@ Future<AdvertDetails?> readAdvert(http.Client client, Listing l) async {
     SourceId.onTheMarket => parseOnTheMarketAdvert(r.body),
     SourceId.propertyPal => parsePropertyPalAdvert(r.body),
     SourceId.openRent => parseOpenRentAdvert(r.body),
-    SourceId.zoopla => null,
+    SourceId.zoopla || SourceId.facebook => null,
   };
 }

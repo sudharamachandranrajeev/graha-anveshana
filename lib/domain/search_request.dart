@@ -67,6 +67,49 @@ class SearchRequest {
     includeGone: includeGone ?? this.includeGone,
   );
 
+  Map<String, Object?> toJson() => {
+    'text': text,
+    'area': area,
+    'rent': rent,
+    'minBeds': ?minBeds,
+    'maxBeds': ?maxBeds,
+    'minPrice': ?minPrice,
+    'maxPrice': ?maxPrice,
+    'radiusMiles': ?radiusMiles,
+    if (near.isNotEmpty) 'near': near,
+    if (must.isNotEmpty) 'must': must,
+    if (mustNot.isNotEmpty) 'mustNot': mustNot,
+    if (includeGone) 'includeGone': true,
+  };
+
+  factory SearchRequest.fromJson(Map<String, Object?> j) {
+    List<String> words(Object? o) => [
+      if (o is List)
+        for (final w in o) '$w',
+    ];
+    return SearchRequest(
+      text: '${j['text'] ?? ''}',
+      area: '${j['area'] ?? ''}',
+      rent: j['rent'] != false,
+      minBeds: (j['minBeds'] as num?)?.toInt(),
+      maxBeds: (j['maxBeds'] as num?)?.toInt(),
+      minPrice: (j['minPrice'] as num?)?.toInt(),
+      maxPrice: (j['maxPrice'] as num?)?.toInt(),
+      radiusMiles: (j['radiusMiles'] as num?)?.toDouble(),
+      near: '${j['near'] ?? ''}',
+      must: words(j['must']),
+      mustNot: words(j['mustNot']),
+      includeGone: j['includeGone'] == true,
+    );
+  }
+
+  /// The same search: the same place, kind and filters, however it was typed.
+  bool sameAs(SearchRequest o) {
+    final a = {...toJson()}..remove('text');
+    final b = {...o.toJson()}..remove('text');
+    return a.toString().toLowerCase() == b.toString().toLowerCase();
+  }
+
   /// The same filters as a research's, so results and catalogs score alike.
   ResearchCriteria criteria({double? lat, double? lon}) => ResearchCriteria(
     place: near.isEmpty ? area : near,
@@ -104,7 +147,7 @@ String _miles(double m) => m == m.roundToDouble() ? '${m.round()}' : '$m';
 const _numbers = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7};
 
 /// Features people ask for by name; kept as must-mention words.
-const _features = {
+const featureWords = {
   'parking',
   'garage',
   'garden',
@@ -312,11 +355,11 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   final words = RegExp(r"[a-z][a-z'-]*", caseSensitive: false).allMatches(rest).map((m) => m[0]!).toList();
   for (final w in words) {
     final lower = w.toLowerCase();
-    if (_features.contains(lower) && !must.contains(lower)) must.add(lower);
+    if (featureWords.contains(lower) && !must.contains(lower)) must.add(lower);
   }
   if (area.isEmpty) {
     final leftover = words
-        .where((w) => !_features.contains(w.toLowerCase()) && !_filler.contains(w.toLowerCase()))
+        .where((w) => !featureWords.contains(w.toLowerCase()) && !_filler.contains(w.toLowerCase()))
         .join(' ');
     area = _tidyPlace(leftover);
   }
