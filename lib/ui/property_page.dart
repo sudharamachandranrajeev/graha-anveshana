@@ -10,7 +10,7 @@ import '../domain/pipeline.dart';
 import '../domain/viewing_checklist.dart';
 import 'browser_page.dart';
 import 'common.dart';
-import 'homes_map.dart';
+import 'listing_map.dart';
 import 'look.dart';
 import 'contacts_page.dart';
 import 'hunt_page.dart';
@@ -123,28 +123,16 @@ class PropertyPage extends ConsumerWidget {
             Text('Added ${niceDate(p.added)}'),
           ],
         ),
-        if (ref.watch(inlineMapsProvider) && (p.lat != null || p.postcode.isNotEmpty)) ...[
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: HomesMap(
-                centre: home == null ? null : (lat: home.lat, lon: home.lon),
-                centreLabel: home?.label ?? '',
-                homes: [
-                  MapHome(
-                    label: p.price == null ? 'Here' : gbp(p.price!),
-                    lat: p.lat,
-                    lon: p.lon,
-                    postcode: p.postcode,
-                    address: p.address,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        const SizedBox(height: 16),
+        ListingMap(
+          key: ValueKey('map-${p.id}'),
+          label: p.price == null ? 'Here' : gbp(p.price!),
+          lat: p.lat,
+          lon: p.lon,
+          postcode: p.postcode,
+          address: p.address,
+          anchors: anchorPlaces(ref),
+        ),
         const SizedBox(height: 16),
         SectionCard(
           title: 'Stage',

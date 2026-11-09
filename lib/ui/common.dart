@@ -27,6 +27,12 @@ String propertyFacts(Property p) => [
 
 String km(double v) => v < 10 ? '${v.toStringAsFixed(1)} km' : '${v.round()} km';
 
+/// [km] kilometres as "1.2 mi".
+String miles(double km) {
+  final mi = km / 1.609344;
+  return mi < 10 ? '${mi.toStringAsFixed(1)} mi' : '${mi.round()} mi';
+}
+
 /// "2026-10-24T11:00" as "24 Oct 2026, 11:00".
 String niceDateTime(String at) =>
     at.length > 10 ? '${niceDate(at.substring(0, 10))}, ${at.substring(11, 16)}' : niceDate(at);

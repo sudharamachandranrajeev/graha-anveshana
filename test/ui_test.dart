@@ -10,6 +10,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:anveshana/ui/homes_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -160,6 +161,7 @@ void main() {
           }),
         ),
       ],
+      maps: true,
     );
     // Search is the first screen.
     expect(find.text('Try'), findsOneWidget);
@@ -183,6 +185,9 @@ void main() {
     await app.tap(find.text('14 Sample Street, Exampletown, EX1 1AA'));
     expect(find.text('Add to Hunt'), findsOneWidget);
     expect(find.text('See it on Rightmove'), findsOneWidget);
+    // The advert's page has its map, measured from the search's place.
+    expect(find.byType(HomesMap), findsOneWidget);
+    expect(find.text('Distance from'), findsOneWidget);
     await app.tapText('Add to Hunt');
     final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!;
     expect((rows.single.source, rows.single.price, rows.single.kind), ('rightmove', 650, 'rent'));

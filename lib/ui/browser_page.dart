@@ -5,6 +5,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../domain/page_reader.dart';
 import '../domain/sources.dart';
@@ -185,6 +186,31 @@ class _BrowserPageState extends State<BrowserPage> {
     }
   }
 
+  /// Saves the open page's HTML and the adverts the app found on it, in
+  /// Downloads (else the app's documents folder), for the user to send in
+  /// when a site's page is not read right. Cookies are not saved.
+  Future<void> _save() async {
+    final web = _web;
+    if (web == null) return;
+    try {
+      final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
+      final cards = widget.cardsScript == null
+          ? '[]'
+          : '${await web.evaluateJavascript(source: widget.cardsScript!) ?? '[]'}';
+      final dir =
+          (Platform.isAndroid || Platform.isIOS ? null : await getDownloadsDirectory()) ??
+          await getApplicationDocumentsDirectory();
+      final stamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-').substring(0, 19);
+      final name = 'anveshana-${(_at ?? widget.url).host.replaceAll('www.', '')}-$stamp';
+      final sep = Platform.pathSeparator;
+      await File('${dir.path}$sep$name.html').writeAsString('<!-- ${_at ?? widget.url} -->\n$html');
+      await File('${dir.path}$sep$name-adverts.json').writeAsString(cards);
+      if (mounted) showMessage(context, 'Saved $name.html and $name-adverts.json in ${dir.path}.');
+    } catch (e) {
+      if (mounted) showError(context, e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: false,
@@ -228,11 +254,14 @@ class _BrowserPageState extends State<BrowserPage> {
             tooltip: 'More',
             onSelected: (v) => switch (v) {
               'copy' => copyText(context, '${_at ?? widget.url}', what: 'Link copied.'),
+              'save' => _save(),
               _ => openUri(context, _at ?? widget.url),
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'copy', child: Text('Copy link')),
-              PopupMenuItem(value: 'out', child: Text('Open in your browser')),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'copy', child: Text('Copy link')),
+              const PopupMenuItem(value: 'out', child: Text('Open in your browser')),
+              if (widget.cardsScript != null)
+                const PopupMenuItem(value: 'save', child: Text('Save this page (to fix reading it)')),
             ],
           ),
         ],

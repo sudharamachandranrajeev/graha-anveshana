@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.1
+
+- Zoopla (and other sites opened in the app): on one advert's own page, Add these homes adds
+  that advert. Reading a page now says how many adverts it found, how many are new, and how many
+  your filters left out. If it finds adverts it cannot read, More → Save this page saves the page
+  to Downloads so the reading can be fixed.
+- Zoopla shows a robot check to the hidden browser; tap Open Zoopla and pass it yourself.
+- Every home's page (from Search and in Hunt) has a map, and shows how far the home is from a
+  place you pick: your home point, the search's place, or any postcode, district or town (name it,
+  e.g. "Work"). The distance is in a straight line, with a link to directions and travel time.
+  The places are remembered, and the last one is used on the next home.
+
 ## 0.10.0
 
 - Fixed: searching "furnished" showed unfurnished homes too. Words now match whole words only

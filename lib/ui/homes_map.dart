@@ -30,8 +30,19 @@ final inlineMapsProvider = Provider<bool>((ref) => true);
 /// home point) marked. Homes without a point are placed by postcode
 /// through postcodes.io; by district only, they get a hollow pin.
 class HomesMap extends StatefulWidget {
-  const HomesMap({super.key, required this.homes, this.centre, this.centreLabel = '', this.locate});
+  const HomesMap({
+    super.key,
+    required this.homes,
+    this.centre,
+    this.centreLabel = '',
+    this.from,
+    this.locate,
+  });
   final List<MapHome> homes;
+
+  /// A place the home is measured from: marked, with a straight line to the
+  /// home (when there is one home).
+  final ({double lat, double lon, String label})? from;
   final ({double lat, double lon})? centre;
   final String centreLabel;
 
@@ -57,6 +68,8 @@ class _HomesMapState extends State<HomesMap> {
   @override
   void didUpdateWidget(HomesMap old) {
     super.didUpdateWidget(old);
+    // A new place to measure from: fit the camera again to take it in.
+    if (old.from != widget.from) _fitted = false;
     _lookUp();
   }
 
@@ -105,7 +118,12 @@ class _HomesMapState extends State<HomesMap> {
     final scheme = Theme.of(context).colorScheme;
     final pins = _pins;
     final c = widget.centre;
-    final points = [for (final p in pins) p.at, if (c != null) LatLng(c.lat, c.lon)];
+    final from = widget.from;
+    final points = [
+      for (final p in pins) p.at,
+      if (c != null) LatLng(c.lat, c.lon),
+      if (from != null) LatLng(from.lat, from.lon),
+    ];
     _fit(points);
     final missing = widget.homes.length - pins.length;
     return Stack(
@@ -121,6 +139,17 @@ class _HomesMapState extends State<HomesMap> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'dev.brahma.anveshana',
             ),
+            if (from != null && pins.length == 1)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [LatLng(from.lat, from.lon), pins.single.at],
+                    color: scheme.secondary,
+                    strokeWidth: 3,
+                    pattern: StrokePattern.dashed(segments: const [8, 6]),
+                  ),
+                ],
+              ),
             MarkerLayer(
               markers: [
                 if (c != null)
@@ -131,6 +160,17 @@ class _HomesMapState extends State<HomesMap> {
                     child: Tooltip(
                       message: widget.centreLabel.isEmpty ? 'The centre' : widget.centreLabel,
                       child: Icon(Icons.my_location, color: scheme.tertiary, size: 28),
+                    ),
+                  ),
+                if (from != null)
+                  Marker(
+                    point: LatLng(from.lat, from.lon),
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.topCenter,
+                    child: Tooltip(
+                      message: from.label,
+                      child: Icon(Icons.place, color: scheme.secondary, size: 32),
                     ),
                   ),
                 for (final p in pins)

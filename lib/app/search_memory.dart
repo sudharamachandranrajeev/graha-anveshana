@@ -150,3 +150,52 @@ final siteConnectionProvider = FutureProvider.family<String?, SourceId>((ref, s)
 /// Records that [s] is connected (on [date]) or not (null).
 Future<void> markConnected(AppDatabase db, SourceId s, String? date) =>
     db.setLocalSetting(_connectKey(s), date ?? '');
+
+/// A named point on the map: a postcode, a town, the user's work.
+typedef NamedPoint = ({double lat, double lon, String label});
+
+const _placesKey = 'anveshana.distance.places';
+
+/// The places the user measured homes from, last used first (at most 6).
+/// A home's page measures from the first by default.
+final distancePlacesProvider = FutureProvider<List<NamedPoint>>((ref) async {
+  ref.watch(revisionProvider);
+  final raw = await ref.watch(sessionProvider).db.localSetting(_placesKey);
+  return placesFromJson(raw);
+});
+
+List<NamedPoint> placesFromJson(String? raw) {
+  if (raw == null || raw.isEmpty) return const [];
+  try {
+    return [
+      for (final p in jsonDecode(raw) as List)
+        if (p case {'lat': final num lat, 'lon': final num lon, 'label': final String label})
+          (lat: lat.toDouble(), lon: lon.toDouble(), label: label),
+    ];
+  } on FormatException {
+    return const [];
+  }
+}
+
+/// [all] with [p] first, the same place (by name) not twice, at most 6.
+List<NamedPoint> placesWith(List<NamedPoint> all, NamedPoint p) =>
+    [p, ...all.where((o) => o.label.toLowerCase() != p.label.toLowerCase())].take(6).toList();
+
+/// Remembers [p] as the place to measure from (first in the list).
+Future<void> rememberPlace(WidgetRef ref, NamedPoint p) => _savePlaces(ref, (all) => placesWith(all, p));
+
+/// Forgets [p].
+Future<void> forgetPlace(WidgetRef ref, NamedPoint p) =>
+    _savePlaces(ref, (all) => all.where((o) => o.label != p.label).toList());
+
+Future<void> _savePlaces(WidgetRef ref, List<NamedPoint> Function(List<NamedPoint> all) change) async {
+  final db = ref.read(sessionProvider).db;
+  final next = change(placesFromJson(await db.localSetting(_placesKey)));
+  await db.setLocalSetting(
+    _placesKey,
+    jsonEncode([
+      for (final p in next) {'lat': p.lat, 'lon': p.lon, 'label': p.label},
+    ]),
+  );
+  ref.read(revisionProvider.notifier).bump();
+}

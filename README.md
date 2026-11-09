@@ -238,7 +238,8 @@ flowchart LR
   browser keeps the site's sign-in cookie on this device only. **Disconnect** signs you out.
   Reading Facebook while signed in is against its terms and could get your account limited.
 - **Maps** use OpenStreetMap tiles. Homes without a map point are placed by postcode through
-  postcodes.io.
+  postcodes.io. Places you measure distances from are looked up there too and kept on this device.
+  **Directions and travel time** opens Google Maps with the two points.
 - **What leaves the device**: your searches (to the sites you search, and the place name to
   postcodes.io or OpenStreetMap), postcodes for area reports, links you add, and Watch requests.
   Nothing else unless you turn on sync.

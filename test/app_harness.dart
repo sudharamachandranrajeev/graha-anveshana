@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:anveshana/app/app.dart';
 import 'package:anveshana/app/providers.dart';
 import 'package:anveshana/app/search_controller.dart';
@@ -6,6 +8,7 @@ import 'package:anveshana/app/session.dart';
 import 'package:anveshana/domain/book.dart';
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -34,8 +37,17 @@ class AppHarness {
   }
 
   /// Starts the app; [overrides] replace providers (e.g. the sites' HTTP
-  /// client). [pageLoader] stands in for the hidden web view.
-  Future<void> run({List<Override> overrides = const [], PageLoader? pageLoader}) async {
+  /// client). [pageLoader] stands in for the hidden web view. [maps] shows
+  /// the maps; their tiles fail to load (no network), which is fine.
+  Future<void> run({List<Override> overrides = const [], PageLoader? pageLoader, bool maps = false}) async {
+    if (maps) {
+      // The map's tile cache asks for a folder; tests have no plugins.
+      final dir = Directory.systemTemp.createTempSync('anveshana-tiles').path;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => dir,
+      );
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -43,7 +55,7 @@ class AppHarness {
           deviceFactsProvider.overrideWith((ref) async => const DeviceFacts()),
           // No web view or map tiles in widget tests.
           pageLoaderProvider.overrideWithValue(pageLoader),
-          inlineMapsProvider.overrideWithValue(false),
+          inlineMapsProvider.overrideWithValue(maps),
           ...overrides,
         ],
         retry: (_, _) => null,

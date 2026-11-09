@@ -15,6 +15,18 @@ const cardsScript = r'''
 (() => {
   const seen = new Set(), out = [];
   const advert = /\/(?:to-rent|for-sale|property-to-rent|property-for-sale|properties|details|property|marketplace\/item)\/[^?#]*?(\d{5,})/;
+  // One advert's own page: that advert, not the others it links to.
+  const self = location.href.match(advert);
+  const main = document.querySelector('main') || document.body;
+  if (self && /details|properties|marketplace\/item/.test(location.pathname)) {
+    const text = (main.innerText || '').trim().slice(0, 1500);
+    if (/£\s?\d/.test(text)) {
+      const img = main.querySelector('img[src^="http"]');
+      const title = (document.querySelector('h1') || {}).innerText || '';
+      return JSON.stringify([{id: self[1], href: location.href.split('?')[0],
+        text: (title ? title + '\n' : '') + text, img: img ? img.src : ''}]);
+    }
+  }
   for (const a of document.querySelectorAll('a[href]')) {
     const m = a.href.match(advert);
     if (!m || seen.has(m[1])) continue;

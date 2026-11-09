@@ -10,6 +10,7 @@ import '../domain/search_request.dart';
 import '../domain/sources.dart';
 import 'browser_page.dart';
 import 'common.dart';
+import 'listing_map.dart';
 import 'look.dart';
 import 'search_page.dart';
 
@@ -124,6 +125,15 @@ class _AdvertPageState extends ConsumerState<AdvertPage> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    ListingMap(
+                      label: h.price == null ? 'Here' : gbp(h.price!),
+                      lat: h.lat,
+                      lon: h.lon,
+                      postcode: h.postcode,
+                      address: l.address,
+                      anchors: anchorPlaces(ref, centre: ref.watch(searchProvider).centre),
+                    ),
                     const SizedBox(height: 16),
                     if (snap.connectionState != ConnectionState.done)
                       const Center(

@@ -46,12 +46,6 @@ const _examples = [
   '3 bed to rent in Enniskillen, pets allowed, no students',
 ];
 
-/// "1.2 mi".
-String miles(double km) {
-  final mi = km / 1.609344;
-  return mi < 10 ? '${mi.toStringAsFixed(1)} mi' : '${mi.round()} mi';
-}
-
 String _labels(Set<String> keys) => [for (final k in keys) SourceId.ofKey(k)?.label ?? k].join(' · ');
 
 /// Saves [h] to the Hunt. Returns the property id.
@@ -137,9 +131,23 @@ Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri
     autoRead: true,
     read: (html, cards) async {
       final page = readOpenPage(s, html, cards, rent: rent);
-      if (page.items.isEmpty) return 'No adverts found on this page. Open a results page first.';
+      final links = '"id":'.allMatches(cards).length;
+      if (page.items.isEmpty) {
+        return links == 0
+            ? 'No adverts found on this page. Open a results page first.'
+            : 'Found $links adverts on this page but could not read them. Use More → Save this page, '
+                  'and send it in, so the reading can be fixed.';
+      }
       final added = ref.read(searchProvider.notifier).addFromPage(s, page);
-      return 'Read ${page.items.length} adverts from ${s.label}; $added new to your results.';
+      final ids = {for (final l in page.items) '${l.source}:${l.sourceId}'};
+      final shown = ref
+          .read(searchProvider)
+          .homes
+          .where((h) => h.copies.any((c) => ids.contains('${c.source}:${c.sourceId}')))
+          .length;
+      final hidden = page.items.length - shown;
+      return 'Read ${page.items.length} adverts from ${s.label}; $added new to your results'
+          '${hidden > 0 ? ', $hidden left out by your filters (price, bedrooms, furnishing, words)' : ''}.';
     },
   );
   await _retryIfBlocked(ref, s);
