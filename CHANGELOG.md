@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1
+
+- Search: More sites links to SpareRoom, Leeds Homes and Doncaster HomeChoice (to rent),
+  Share to Buy and the auction sites (to buy), and Home.co.uk. They open in your browser at the
+  search's town where they can; Search does not read them, as their owners do not allow it.
+
 ## 0.11.0
 
 - Simpler names: Hunt is now **Shortlist**, Researches are **Collections**, and the

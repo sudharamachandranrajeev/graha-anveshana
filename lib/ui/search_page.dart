@@ -8,6 +8,7 @@ import '../app/search_memory.dart';
 import '../domain/catalog.dart';
 import '../domain/catalog_book.dart';
 import '../domain/listing.dart';
+import '../domain/more_sites.dart';
 import '../domain/page_reader.dart';
 import '../domain/pipeline.dart';
 import '../domain/property_search.dart';
@@ -321,6 +322,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     child: SizedBox(width: double.infinity, child: _sites(context, s)),
                   ),
                 ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                sliver: SliverToBoxAdapter(child: Readable(child: MoreSitesTile(q))),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -991,6 +996,36 @@ class SiteConnectTile extends ConsumerWidget {
             )
           : const Icon(Icons.chevron_right),
       onTap: connected ? null : () => connectSite(context, ref, site),
+    );
+  }
+}
+
+/// Sites Search links to but does not read (their owners do not allow it):
+/// each opens in the user's own browser, at the search's town where it can.
+class MoreSitesTile extends StatelessWidget {
+  const MoreSitesTile(this.q, {super.key});
+  final SearchRequest? q;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = this.q;
+    if (q == null || q.area.isEmpty) return const SizedBox.shrink();
+    final links = moreSiteLinks(q);
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      leading: const Icon(Icons.open_in_new),
+      title: Text('More sites (${links.length})'),
+      subtitle: const Text('Open in your browser; Search does not read these'),
+      children: [
+        for (final l in links)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.label),
+            subtitle: Text(l.note),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => openUri(context, l.url),
+          ),
+      ],
     );
   }
 }
