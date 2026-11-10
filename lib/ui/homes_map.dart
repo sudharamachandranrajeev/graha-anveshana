@@ -41,8 +41,17 @@ class HomesMap extends StatefulWidget {
     this.shape = const [],
     this.onDraw,
     this.overlays = const [],
+    this.route = const [],
+    this.onExpand,
   });
   final List<MapHome> homes;
+
+  /// The way by road or path from [from] to the home, drawn in place of the
+  /// straight line; empty: not known.
+  final List<LatLon> route;
+
+  /// When set, the map shows an "Expand" button that calls it.
+  final VoidCallback? onExpand;
 
   /// An area the user drew, shown as a shaded polygon.
   final List<LatLon> shape;
@@ -85,8 +94,8 @@ class _HomesMapState extends State<HomesMap> {
   @override
   void didUpdateWidget(HomesMap old) {
     super.didUpdateWidget(old);
-    // A new place to measure from: fit the camera again to take it in.
-    if (old.from != widget.from) _fitted = false;
+    // A new place to measure from, or its route: fit the camera again.
+    if (old.from != widget.from || old.route.length != widget.route.length) _fitted = false;
     _lookUp();
   }
 
@@ -143,6 +152,7 @@ class _HomesMapState extends State<HomesMap> {
       if (c != null) LatLng(c.lat, c.lon),
       if (from != null) LatLng(from.lat, from.lon),
       ...shape,
+      for (final p in widget.route) LatLng(p.lat, p.lon),
     ];
     _fit(points);
     final missing = widget.homes.length - pins.length;
@@ -184,7 +194,19 @@ class _HomesMapState extends State<HomesMap> {
                   ),
                 ],
               ),
-            if (from != null && pins.length == 1)
+            if (widget.route.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [for (final p in widget.route) LatLng(p.lat, p.lon)],
+                    color: scheme.primary,
+                    strokeWidth: 5,
+                    borderColor: scheme.surface,
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              )
+            else if (from != null && pins.length == 1)
               PolylineLayer(
                 polylines: [
                   Polyline(
@@ -262,6 +284,16 @@ class _HomesMapState extends State<HomesMap> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
+            ),
+          ),
+        if (widget.onExpand != null)
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: FilledButton.tonalIcon(
+              onPressed: widget.onExpand,
+              icon: const Icon(Icons.open_in_full, size: 18),
+              label: const Text('Expand'),
             ),
           ),
         if (widget.onDraw != null)

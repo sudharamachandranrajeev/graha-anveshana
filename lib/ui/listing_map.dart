@@ -8,6 +8,7 @@ import '../app/search_memory.dart';
 import '../domain/listing.dart';
 import '../domain/area_checks.dart';
 import '../domain/research.dart';
+import '../domain/search_request.dart';
 import '../domain/travel.dart';
 import 'area_checks_card.dart';
 import 'common.dart';
@@ -160,31 +161,18 @@ class _ListingMapState extends ConsumerState<ListingMap> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (ref.watch(inlineMapsProvider) && (at != null || _place != null))
-          SizedBox(
-            height: 240,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: HomesMap(
-                homes: [
-                  MapHome(
-                    label: widget.label,
-                    lat: at?.lat,
-                    lon: at?.lon,
-                    postcode: widget.postcode,
-                    address: widget.address,
-                  ),
-                ],
-                from: from,
-                overlays: [
-                  if (_noise case final n?)
-                    TileLayer(
-                      key: ValueKey(n.layer),
-                      userAgentPackageName: 'dev.brahma.anveshana',
-                      wmsOptions: WMSTileLayerOptions(baseUrl: n.url, layers: [n.layer], version: '1.3.0'),
-                    ),
-                ],
-              ),
+          RouteMap(
+            home: MapHome(
+              label: widget.label,
+              lat: at?.lat,
+              lon: at?.lon,
+              postcode: widget.postcode,
+              address: widget.address,
             ),
+            at: at == null || at.rough ? null : (lat: at.lat, lon: at.lon),
+            from: from,
+            mode: _mode ?? TravelMode.car,
+            noise: _noise,
           ),
         if (ref.watch(inlineMapsProvider) && at != null)
           Wrap(
@@ -277,6 +265,174 @@ class _ListingMapState extends ConsumerState<ListingMap> {
         ),
         if (at != null) AreaChecksCard(at: (lat: at.lat, lon: at.lon), rough: at.rough),
       ],
+    );
+  }
+}
+
+TileLayer _noiseLayer(NoiseMap n) => TileLayer(
+  key: ValueKey(n.layer),
+  userAgentPackageName: 'dev.brahma.anveshana',
+  wmsOptions: WMSTileLayerOptions(baseUrl: n.url, layers: [n.layer], version: '1.3.0'),
+);
+
+/// One home on the map with the route to it from [from] by [mode], from the
+/// OpenStreetMap community router (only the two map points are sent). Small
+/// on a home's page, with Expand to open it full screen ([full]).
+class RouteMap extends ConsumerStatefulWidget {
+  const RouteMap({
+    super.key,
+    required this.home,
+    this.at,
+    this.from,
+    this.mode = TravelMode.car,
+    this.noise,
+    this.full = false,
+  });
+  final MapHome home;
+
+  /// The home's exact point; null: not known well enough for a route.
+  final LatLon? at;
+  final NamedPoint? from;
+  final TravelMode mode;
+  final NoiseMap? noise;
+  final bool full;
+
+  @override
+  ConsumerState<RouteMap> createState() => _RouteMapState();
+}
+
+class _RouteMapState extends ConsumerState<RouteMap> {
+  late var _mode = widget.mode;
+  TravelRoute? _route;
+  String _note = '';
+
+  /// The place, point and mode last asked for, so each is asked once.
+  String? _asked;
+
+  @override
+  void didUpdateWidget(RouteMap old) {
+    super.didUpdateWidget(old);
+    if (old.mode != widget.mode) _mode = widget.mode;
+  }
+
+  Future<void> _ask() async {
+    final from = widget.from, at = widget.at;
+    final key = from == null || at == null
+        ? null
+        : '${from.lat},${from.lon}|${at.lat},${at.lon}|${_mode.name}';
+    if (key == _asked) return;
+    _asked = key;
+    setState(() {
+      _route = null;
+      _note = key == null ? '' : 'Finding the route…';
+    });
+    if (key == null) return;
+    String note;
+    TravelRoute? got;
+    try {
+      got = await ref.read(travelTimesProvider).route(_mode, (lat: from!.lat, lon: from.lon), at!);
+      note = got == null ? 'No route found by ${_mode.label.toLowerCase()}.' : '';
+    } on TravelUnavailable catch (e) {
+      note = '$e';
+    }
+    if (!mounted || key != _asked) return;
+    setState(() {
+      _route = got;
+      _note = note;
+    });
+  }
+
+  void _expand() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => RouteMap(
+        home: widget.home,
+        at: widget.at,
+        from: widget.from,
+        mode: _mode,
+        noise: widget.noise,
+        full: true,
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ask();
+    });
+    final t = Theme.of(context).textTheme;
+    final from = widget.from, route = _route;
+    final summary = route != null && from != null
+        ? 'By ${_mode.label.toLowerCase()} from ${from.label}: ${minutesText(route.minutes)}, '
+              '${miles(route.km)} by road or path (no traffic)'
+        : _note;
+    final map = HomesMap(
+      homes: [widget.home],
+      from: from,
+      route: route?.line ?? const [],
+      overlays: [if (widget.noise case final n?) _noiseLayer(n)],
+      onExpand: widget.full ? null : _expand,
+    );
+    if (!widget.full) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: 240,
+            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: map),
+          ),
+          if (summary.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(summary, style: t.bodySmall),
+            ),
+        ],
+      );
+    }
+    final at = widget.at;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(from == null ? widget.home.label : '${widget.home.label} from ${from.label}'),
+      ),
+      body: Column(
+        children: [
+          Expanded(child: map),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (from != null && at != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (final m in TravelMode.values)
+                          ChoiceChip(
+                            avatar: Icon(travelIcon(m), size: 18),
+                            label: Text(m.label),
+                            selected: _mode == m,
+                            onSelected: (_) => setState(() => _mode = m),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: () => openUri(context, directionsUrl(from, at)),
+                          icon: const Icon(Icons.directions_outlined, size: 18),
+                          label: const Text('Directions (bus, train)'),
+                        ),
+                      ],
+                    ),
+                  if (summary.isNotEmpty) Text(summary),
+                  if (from == null)
+                    Text('Add a place in Profile to see the route to this home.', style: t.bodySmall),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

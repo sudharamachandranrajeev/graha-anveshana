@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.1
+
+- Windows: the app now shows in the Start menu as **Graha Anveshana**. Up to 0.12.0 its installer
+  shared an id with other Brahma apps (Bhojana, Udyoga, Vidya), so Windows treated them as one
+  app: it installed into another app's folder and replaced that app's shortcut. 0.12.1 has its
+  own id, installs to its own folder, and removes its old shortcut, exe and uninstall entry.
+  Your data is not touched.
+
+- A home's map shows the route by road or path from the place you picked, with its time and
+  distance (OpenStreetMap community router; only the two map points are sent). Expand opens the
+  map full screen, where you can switch between car, bike and walking, or open Directions for
+  bus and train.
+
 ## 0.12.0
 
 - Search filters: **Must have** (garage, driveway, any parking, garden, en suite, two bathrooms,

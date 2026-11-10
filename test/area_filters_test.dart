@@ -11,6 +11,7 @@ import 'package:anveshana/domain/search_request.dart';
 import 'package:anveshana/domain/travel.dart';
 import 'package:anveshana/ui/area_checks_card.dart';
 import 'package:anveshana/ui/homes_map.dart';
+import 'package:anveshana/ui/listing_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +44,23 @@ List<LatLon> _box(double lat, double lon, double eastM, double northM) {
     (lat: lat, lon: lon),
   ];
 }
+
+final _routeJson = jsonEncode({
+  'code': 'Ok',
+  'routes': [
+    {
+      'duration': 2700,
+      'distance': 55500,
+      'geometry': {
+        'coordinates': [
+          [-1.55, 53.8],
+          [-1.3, 53.6],
+          [-1.13, 53.52],
+        ],
+      },
+    },
+  ],
+});
 
 void main() {
   group('must-haves and never-shows', () {
@@ -148,6 +166,55 @@ void main() {
       expect(minutesText(25), '25 min');
       expect(minutesText(70), '1 h 10 min');
       expect(minutesText(120), '2 h');
+    });
+
+    test('a route: its line, time and distance, asked once', () async {
+      var calls = 0;
+      final times = TravelTimes(
+        MockClient((r) async {
+          calls++;
+          expect(r.url.path, '/routed-car/route/v1/driving/-1.55000,53.80000;-1.13000,53.52000');
+          return http.Response(_routeJson, 200);
+        }),
+        spacing: Duration.zero,
+      );
+      const work = (lat: 53.8, lon: -1.55), home = (lat: 53.52, lon: -1.13);
+      final r = (await times.route(TravelMode.car, work, home))!;
+      expect(r.line, [(lat: 53.8, lon: -1.55), (lat: 53.6, lon: -1.3), (lat: 53.52, lon: -1.13)]);
+      expect((r.minutes, r.km), (45.0, 55.5));
+      await times.route(TravelMode.car, work, home);
+      expect(calls, 1);
+      // The time is also known to the times table.
+      expect(times.known(TravelMode.car, work, home), 45.0);
+    });
+
+    testWidgets('a home\'s map shows the route from the place and expands full screen', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            searchHttpProvider.overrideWithValue(MockClient((_) async => http.Response(_routeJson, 200))),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: RouteMap(
+                home: MapHome(label: '£850', lat: 53.52, lon: -1.13),
+                at: const (lat: 53.52, lon: -1.13),
+                from: const (lat: 53.8, lon: -1.55, label: 'Work'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('By car from Work: 45 min, 34 mi by road or path (no traffic)'), findsOneWidget);
+      await tester.tap(find.text('Expand'));
+      await tester.pumpAndSettle();
+      expect(find.text('£850 from Work'), findsOneWidget);
+      expect(find.text('Directions (bus, train)'), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNWidgets(3));
+      // The full page has no Expand of its own.
+      expect(find.text('Expand'), findsNothing);
     });
 
     test('travel times: a router that is down says so', () async {

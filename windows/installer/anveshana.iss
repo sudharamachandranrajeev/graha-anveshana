@@ -10,7 +10,9 @@
 #define Release "..\..\build\windows\x64\runner\Release"
 
 [Setup]
-AppId={{55825A17-B296-4ED6-A66E-84FB1F5A100C}
+; Graha Anveshana's own id. Up to 0.12.0 it wrongly shared Bhojana's
+; ({55825A17-...}), so Windows treated the apps as one; see [Code] below.
+AppId={{F96051B1-6F25-4804-B685-5FC768E030C1}
 AppName=Graha Anveshana
 AppVersion={#AppVersion}
 AppVerName=Graha Anveshana {#AppVersion}
@@ -44,8 +46,46 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#Release}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\Anveshana"; Filename: "{app}\anveshana.exe"; Comment: "Homes: renting, buying and lettings"
-Name: "{autodesktop}\Anveshana"; Filename: "{app}\anveshana.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Graha Anveshana"; Filename: "{app}\anveshana.exe"; Comment: "Homes: renting, buying and lettings"
+Name: "{autodesktop}\Graha Anveshana"; Filename: "{app}\anveshana.exe"; Tasks: desktopicon
+
+[InstallDelete]
+; Shortcuts from 0.12.0 and before, named "Anveshana" and pointing into the
+; shared folder.
+Type: files; Name: "{userprograms}\Anveshana.lnk"
+Type: files; Name: "{userdesktop}\Anveshana.lnk"
+Type: files; Name: "{commonprograms}\Anveshana.lnk"
+Type: files; Name: "{commondesktop}\Anveshana.lnk"
+
+[Code]
+const
+  OldKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{55825A17-B296-4ED6-A66E-84FB1F5A100C}_is1';
+
+{ 0.12.0 and before installed under the id shared with Bhojana, Udyoga and
+  Vidya, often into another app's folder. Remove only what is Graha
+  Anveshana's: its old exe, and the old uninstall entry when it still names
+  this app (its uninstaller would delete the whole shared folder). Other
+  apps' files are left alone. }
+procedure RemoveOld(Root: Integer);
+var
+  Name, Dir: String;
+begin
+  if RegQueryStringValue(Root, OldKey, 'DisplayName', Name) and (Name = 'Graha Anveshana') then
+  begin
+    if RegQueryStringValue(Root, OldKey, 'InstallLocation', Dir) then
+      DeleteFile(AddBackslash(Dir) + 'anveshana.exe');
+    RegDeleteKeyIncludingSubkeys(Root, OldKey);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+  begin
+    RemoveOld(HKCU);
+    if IsAdminInstallMode then RemoveOld(HKLM);
+  end;
+end;
 
 [Run]
 Filename: "{app}\anveshana.exe"; Description: "{cm:LaunchProgram,Graha Anveshana}"; Flags: nowait postinstall skipifsilent

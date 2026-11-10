@@ -35,6 +35,7 @@ class TravelTimes {
   /// The pause between two requests to the router.
   final Duration spacing;
   final _cache = <String, double?>{};
+  final _routes = <String, TravelRoute?>{};
   DateTime _last = DateTime.fromMillisecondsSinceEpoch(0);
 
   static String _p(LatLon p) => '${p.lon.toStringAsFixed(5)},${p.lat.toStringAsFixed(5)}';
@@ -119,6 +120,49 @@ class TravelTimes {
       }
     }
     return [for (final p in to) _cache[_key(mode, from, p)]];
+  }
+}
+
+/// The way by road or path from one point to another: its line on the map,
+/// minutes and km.
+typedef TravelRoute = ({List<LatLon> line, double minutes, double km});
+
+extension RouteTimes on TravelTimes {
+  /// The route from [from] to [to] by [mode], cached; null where the router
+  /// found none. Throws [TravelUnavailable] when it cannot be reached.
+  Future<TravelRoute?> route(TravelMode mode, LatLon from, LatLon to) async {
+    final key = 'route|${TravelTimes._key(mode, from, to)}';
+    if (_routes.containsKey(key)) return _routes[key];
+    final wait = spacing - DateTime.now().difference(_last);
+    if (wait > Duration.zero) await Future<void>.delayed(wait);
+    _last = DateTime.now();
+    final url = Uri.parse(
+      'https://routing.openstreetmap.de/${mode._server}/route/v1/${mode._profile}/'
+      '${TravelTimes._p(from)};${TravelTimes._p(to)}?overview=simplified&geometries=geojson',
+    );
+    final http.Response r;
+    try {
+      r = await _http.get(url, headers: {'user-agent': routerUserAgent}).timeout(const Duration(seconds: 30));
+    } on Exception {
+      throw const TravelUnavailable('The travel time service did not answer.');
+    }
+    if (r.statusCode != 200) throw TravelUnavailable('The travel time service said ${r.statusCode}.');
+    final j = jsonDecode(r.body);
+    TravelRoute? got;
+    final first = j is Map && j['code'] == 'Ok' ? (j['routes'] as List?)?.firstOrNull : null;
+    if (first case final Map best) {
+      final coords = (best['geometry'] as Map?)?['coordinates'];
+      final line = [
+        if (coords is List)
+          for (final c in coords)
+            if (c case [final num lon, final num lat]) (lat: lat.toDouble(), lon: lon.toDouble()),
+      ];
+      final s = best['duration'], m = best['distance'];
+      if (line.length >= 2 && s is num && m is num) got = (line: line, minutes: s / 60, km: m / 1000);
+    }
+    _routes[key] = got;
+    if (got != null) _cache[TravelTimes._key(mode, from, to)] = got.minutes;
+    return got;
   }
 }
 
