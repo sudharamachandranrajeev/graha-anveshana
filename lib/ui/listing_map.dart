@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../app/search_controller.dart';
 import '../app/search_memory.dart';
 import '../domain/listing.dart';
+import '../domain/area_checks.dart';
 import '../domain/research.dart';
+import '../domain/travel.dart';
+import 'area_checks_card.dart';
 import 'common.dart';
 import 'homes_map.dart';
 
@@ -87,6 +91,36 @@ class _ListingMapState extends ConsumerState<ListingMap> {
     }
   }
 
+  /// The noise map drawn over the map; null: none.
+  NoiseMap? _noise;
+
+  /// The travel mode the user asked times for; null: not asked (nothing is
+  /// sent to the router until then).
+  TravelMode? _mode;
+  Map<String, double?> _times = const {};
+  String _timesNote = '';
+
+  Future<void> _travel(TravelMode mode, List<NamedPoint> to) async {
+    final at = _at;
+    if (at == null || to.isEmpty) return;
+    setState(() {
+      _mode = mode;
+      _timesNote = 'Asking the travel time service…';
+    });
+    try {
+      final got = await ref
+          .read(travelTimesProvider)
+          .minutesToEach(mode, (lat: at.lat, lon: at.lon), [for (final p in to) (lat: p.lat, lon: p.lon)]);
+      if (!mounted || _mode != mode) return;
+      setState(() {
+        _times = {for (final (i, p) in to.indexed) p.label: got[i]};
+        _timesNote = '';
+      });
+    } on TravelUnavailable catch (e) {
+      if (mounted) setState(() => _timesNote = '$e');
+    }
+  }
+
   Future<void> _pick(NamedPoint p) async {
     setState(() => _picked = p);
     await pickPlace(ref, p);
@@ -117,7 +151,9 @@ class _ListingMapState extends ConsumerState<ListingMap> {
     final at = _at;
     String far(NamedPoint p) {
       final d = distanceKm(p.lat, p.lon, at!.lat, at.lon);
-      return '${at.rough ? 'about ' : ''}${miles(d)} (${km(d)})';
+      final mins = _mode == null ? null : _times[p.label];
+      final by = mins == null ? '' : ', ${minutesText(mins)} by ${_mode!.label.toLowerCase()}';
+      return '${at.rough ? 'about ' : ''}${miles(d)} (${km(d)})$by';
     }
 
     return Column(
@@ -139,8 +175,36 @@ class _ListingMapState extends ConsumerState<ListingMap> {
                   ),
                 ],
                 from: from,
+                overlays: [
+                  if (_noise case final n?)
+                    TileLayer(
+                      key: ValueKey(n.layer),
+                      userAgentPackageName: 'dev.brahma.anveshana',
+                      wmsOptions: WMSTileLayerOptions(baseUrl: n.url, layers: [n.layer], version: '1.3.0'),
+                    ),
+                ],
               ),
             ),
+          ),
+        if (ref.watch(inlineMapsProvider) && at != null)
+          Wrap(
+            spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final n in noiseMaps)
+                FilterChip(
+                  avatar: const Icon(Icons.volume_up_outlined, size: 18),
+                  label: Text(n.label),
+                  selected: _noise == n,
+                  onSelected: (on) => setState(() => _noise = on ? n : null),
+                ),
+              if (_noise case final n?)
+                Text(
+                  'Defra noise map (England, ${n.year}), Open Government Licence. '
+                  'Darker red: louder over day, evening and night.',
+                  style: t.bodySmall,
+                ),
+            ],
           ),
         const SizedBox(height: 8),
         Text('Distance from your places', style: t.titleSmall),
@@ -177,7 +241,31 @@ class _ListingMapState extends ConsumerState<ListingMap> {
             Text(
               'Add your places (work, family, a school) in Profile, or here, to see how far this home is.',
               style: t.bodySmall,
+            )
+          else ...[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Travel time:', style: t.bodySmall),
+                for (final m in TravelMode.values)
+                  ChoiceChip(
+                    avatar: Icon(travelIcon(m), size: 18),
+                    label: Text(m.label),
+                    selected: _mode == m,
+                    onSelected: (_) => _travel(m, options),
+                  ),
+              ],
             ),
+            Text(
+              _timesNote.isNotEmpty
+                  ? _timesNote
+                  : 'Times by road or path from the OpenStreetMap community router, without traffic. '
+                        'Only the map points are sent. Bus and train: use Directions.',
+              style: t.bodySmall,
+            ),
+          ],
         ],
         Align(
           alignment: Alignment.centerLeft,
@@ -187,6 +275,7 @@ class _ListingMapState extends ConsumerState<ListingMap> {
             label: const Text('Add a place'),
           ),
         ),
+        if (at != null) AreaChecksCard(at: (lat: at.lat, lon: at.lon), rough: at.rough),
       ],
     );
   }

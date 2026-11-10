@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import 'home_features.dart';
 import 'listing.dart';
 import 'search_request.dart';
 
@@ -284,6 +285,29 @@ double _radiusAtLeast(double miles) => _rightmoveRadii.firstWhere((r) => r >= mi
   _ => (page: Uri.https('www.${s.host}', '/'), cookie: null),
 };
 
+/// Rightmove's own "must have" filter for [q]'s features it knows.
+Set<String> _rightmoveMustHave(SearchRequest q) => {
+  for (final f in q.has)
+    ?switch (f) {
+      HomeFeature.garden => 'garden',
+      HomeFeature.parking || HomeFeature.driveway || HomeFeature.garage => 'parking',
+      _ => null,
+    },
+};
+
+/// Rightmove's own "don't show" filter for [q]'s never-shows it knows.
+Set<String> _rightmoveDontShow(SearchRequest q) => {
+  for (final f in q.never)
+    ?switch (f) {
+      HomeFeature.retirement => 'retirement',
+      HomeFeature.sharedOwnership when !q.rent => 'sharedOwnership',
+      HomeFeature.auction when !q.rent => 'auction',
+      HomeFeature.houseShare when q.rent => 'houseShare',
+      HomeFeature.students when q.rent => 'student',
+      _ => null,
+    },
+};
+
 /// The furnishing asked for, 'furnished' or 'unfurnished', when only one is.
 String? _furnishing(SearchRequest q) =>
     switch ((q.must.contains('furnished'), q.must.contains('unfurnished'))) {
@@ -396,6 +420,8 @@ class SourceReader {
                 'furnished' => 'furnished,partFurnished',
                 _ => 'unfurnished',
               },
+            if (_rightmoveMustHave(q) case final m when m.isNotEmpty) 'mustHave': m.join(','),
+            if (_rightmoveDontShow(q) case final d when d.isNotEmpty) 'dontShow': d.join(','),
             'index': '${page * 24}',
           },
         );

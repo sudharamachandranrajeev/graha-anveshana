@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../db/database.dart';
 import '../domain/pipeline.dart';
+import '../domain/travel.dart';
 
 final _gbp = NumberFormat.currency(locale: 'en_GB', symbol: '£', decimalDigits: 0);
 
@@ -270,3 +271,9 @@ class _NumberInputState extends State<NumberInput> {
     ),
   );
 }
+
+IconData travelIcon(TravelMode m) => switch (m) {
+  TravelMode.car => Icons.directions_car_outlined,
+  TravelMode.bike => Icons.directions_bike_outlined,
+  TravelMode.foot => Icons.directions_walk_outlined,
+};

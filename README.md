@@ -41,13 +41,22 @@ not advice.
   sites shows once. Open any of them to see every photo, the description, the facts and the
   agent, inside the app, and save it to Shortlist or a collection. Throw out a home you do not
   want and it never shows again; **Profile → Trash** brings it back.
+- 🎯 **Only the homes you would live in** – tick must-haves (garden, driveway, en suite, pets
+  allowed…) and never-shows (retirement, shared ownership, auctions, house shares…), draw the
+  area you want on the map, and set "at most 30 minutes by car, bike or on foot to Work".
+- 💷 **The true cost of a flat** – service charge, ground rent and years left on the lease, read
+  from the advert, with what it leaves out and a warning under 80 years.
 - 🧠 **Pick up where you left off** – save a search by name, carry on the last one, or run your
   usual one in a tap. Once you keep three homes in Shortlist, Search puts the homes most like them
   first ("For you"), learnt on your device from their price, bedrooms, district and features.
 - 🏠 **Every home in one list** – homes to rent or buy, grouped by stage: new, liked,
   enquired, viewing, applied, agreed. Add one from Search, an advert link, or type it in.
 - 📍 **How far from your places** – add work, family or a school in **Profile**, and every home
-  in Search and Shortlist shows how far it is from each.
+  in Search and Shortlist shows how far it is from each, and on request how long it takes by car,
+  bike or on foot.
+- 🌳 **Area checks on every home** – schools nearby, road and rail noise maps, where the sun rises
+  and sets and which way the home faces, and the coal mining and radon maps. Each runs only when
+  you tap it.
 - 🗂️ **A collection for every hunt** – keep each hunt or study apart, each with its own catalog.
   Add links, screenshots, photos of a sign, PDF brochures or pasted alert emails, and the app reads
   the price, bedrooms, postcode, council tax band and energy rating for you, on your device. It
@@ -320,6 +329,23 @@ knows towns by name, not postcodes, and often wants you signed in: tap **Connect
 Marketplace** in Profile → Site sign-ins (or **Open Facebook Marketplace** under the search) and
 sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
 other sites.
+</details>
+
+<details>
+<summary><b>What do travel times and area checks send, and to whom?</b></summary>
+
+Only map points, never names or addresses, and only when you ask.
+
+- **Travel time**: the home's and your place's map points go to the OpenStreetMap community
+  router (routing.openstreetmap.de, run by FOSSGIS). Times are by road or path without traffic;
+  for bus and train use **Directions**.
+- **Schools nearby and which way a home faces**: the home's map point goes to OpenStreetMap's
+  Overpass server. A school nearby is not the same as being in its catchment; ask the council.
+  Overpass is a free, shared server and sometimes turns requests away; try again later.
+- **Noise maps**: map tiles of Defra's strategic noise maps (England; roads 2021, rail 2017,
+  Open Government Licence).
+- **Sun**: worked out on your device; nothing is sent.
+- **Coal mining and radon**: links that open the Mining Remediation Authority and UKHSA maps.
 </details>
 
 <details>

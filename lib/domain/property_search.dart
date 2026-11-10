@@ -1,4 +1,5 @@
 import 'catalog.dart';
+import 'home_features.dart';
 import 'listing.dart';
 import 'search_request.dart';
 
@@ -11,6 +12,10 @@ class FoundHome {
   Listing get main => copies.first;
 
   double? km;
+
+  /// Travel time in minutes to the search's [SearchRequest.travelTo] place;
+  /// null until the router has answered.
+  double? minutes;
   double score = 1;
   List<String> misses = const [];
 
@@ -78,6 +83,10 @@ bool meetsRequest(FoundHome h, SearchRequest q) {
   if (q.maxBeds != null && beds != null && beds > q.maxBeds!) return false;
   if (q.radiusMiles != null && h.km != null && h.km! > q.radiusMiles! * 1.609344) return false;
   if (q.mustNot.any((w) => mentions(h.text, w))) return false;
+  if (!passesFeatures(h.text, q.has, q.never, strict: q.strict)) return false;
+  // A drawn area: a home with no map point cannot be placed, so it stays.
+  if (q.shape.isNotEmpty && h.lat != null && !insideShape((lat: h.lat!, lon: h.lon!), q.shape)) return false;
+  if (q.maxMinutes != null && h.minutes != null && h.minutes! > q.maxMinutes!) return false;
   // Furnishing is a hard limit: asked furnished, an advert that says
   // unfurnished is left out, and the other way round.
   final furnishing = furnishingOf(h);

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anveshana/domain/home_features.dart';
 import 'package:anveshana/domain/listing.dart';
 import 'package:anveshana/domain/property_search.dart';
 import 'package:anveshana/domain/search_request.dart';
@@ -219,6 +220,19 @@ void main() {
       expect(find.queryParameters, containsPair('locationIdentifier', 'REGION^42'));
       expect(find.queryParameters, containsPair('index', '24'));
       expect(find.queryParameters, containsPair('maxPrice', '800'));
+      expect(find.queryParameters.containsKey('mustHave'), isFalse);
+
+      // Must-haves and never-shows Rightmove knows go in its own filters.
+      await reader.search(
+        SourceId.rightmove,
+        q.copyWith(
+          has: [HomeFeature.garden, HomeFeature.driveway, HomeFeature.enSuite],
+          never: [HomeFeature.students, HomeFeature.retirement, HomeFeature.auction],
+        ),
+      );
+      expect(asked.last.queryParameters, containsPair('mustHave', 'garden,parking'));
+      // Auctions are for sale only; this search is to rent.
+      expect(asked.last.queryParameters, containsPair('dontShow', 'student,retirement'));
     });
 
     test('a bot check, no sales on OpenRent, and Zoopla go to the browser', () async {

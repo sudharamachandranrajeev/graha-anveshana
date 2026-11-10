@@ -107,6 +107,10 @@ AdvertDetails parseRightmoveAdvert(String html) {
   final lettings = (p['lettings'] as Map?) ?? const {};
   final tenure = _s(_at(p, ['tenure', 'tenureType']));
   final band = _s(_at(p, ['livingCosts', 'councilTaxBand']));
+  // Leasehold material information, when the agent gave it.
+  final years = _at(p, ['tenure', 'yearsRemainingOnLease']);
+  final service = _at(p, ['livingCosts', 'annualServiceCharge']);
+  final groundRent = _at(p, ['livingCosts', 'annualGroundRent']);
   return AdvertDetails(
     description: plainText(_s(_at(p, ['text', 'description']))),
     photos: [
@@ -126,6 +130,9 @@ AdvertDetails parseRightmoveAdvert(String html) {
       if (lettings['minimumTermInMonths'] != null)
         'Minimum term': '${lettings['minimumTermInMonths']} months',
       if (tenure.isNotEmpty) 'Tenure': tenure,
+      if (years is num) 'Lease': '$years years remaining',
+      if (service is num) 'Service charge': '£${service.round()} per annum',
+      if (groundRent is num) 'Ground rent': '£${groundRent.round()} per annum',
       if (band.isNotEmpty) 'Council tax': 'Band $band',
     },
     agent: _s(_at(p, ['customer', 'branchDisplayName'])),

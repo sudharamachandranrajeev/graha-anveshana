@@ -7,6 +7,7 @@ import '../app/search_controller.dart';
 import '../app/search_memory.dart';
 import '../domain/catalog.dart';
 import '../domain/catalog_book.dart';
+import '../domain/home_features.dart';
 import '../domain/listing.dart';
 import '../domain/more_sites.dart';
 import '../domain/page_reader.dart';
@@ -16,6 +17,7 @@ import '../domain/search_request.dart';
 import '../domain/sources.dart';
 import '../domain/taste.dart';
 import '../domain/trash.dart';
+import '../domain/travel.dart';
 import 'advert_page.dart';
 import 'browser_page.dart';
 import 'common.dart';
@@ -350,6 +352,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           key: ValueKey(q.toJson().toString()),
                           centre: s.centre == null ? null : (lat: s.centre!.lat, lon: s.centre!.lon),
                           centreLabel: s.centre?.label ?? '',
+                          shape: q.shape,
+                          onDraw: (shape) =>
+                              ref.read(searchProvider.notifier).refine(q.copyWith(shape: shape)),
                           homes: [
                             for (final h in homes)
                               MapHome(
@@ -581,6 +586,38 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               tooltip: 'Homes that mention "$w" are left out',
               onDeleted: () => c.refine(q.copyWith(mustNot: [...q.mustNot]..remove(w))),
             ),
+          for (final f in q.has)
+            InputChip(
+              avatar: const Icon(Icons.check_box_outlined, size: 18),
+              label: Text(f.label),
+              tooltip: q.strict
+                  ? 'Only homes whose advert says so'
+                  : 'Homes whose advert says they lack it are left out',
+              onPressed: () => _edit(context, q),
+              onDeleted: () => c.refine(q.copyWith(has: [...q.has]..remove(f))),
+            ),
+          for (final f in q.never)
+            InputChip(
+              avatar: const Icon(Icons.block, size: 18),
+              label: Text('No ${f.label.toLowerCase()}'),
+              onPressed: () => _edit(context, q),
+              onDeleted: () => c.refine(q.copyWith(never: [...q.never]..remove(f))),
+            ),
+          if (q.shape.isNotEmpty)
+            InputChip(
+              avatar: const Icon(Icons.draw_outlined, size: 18),
+              label: const Text('Drawn area'),
+              tooltip: 'Only homes inside the area you drew',
+              onDeleted: () => c.refine(q.copyWith(shape: const [])),
+            ),
+          if (q.maxMinutes != null)
+            InputChip(
+              avatar: Icon(travelIcon(TravelMode.of(q.travelMode)), size: 18),
+              label: Text('≤ ${q.maxMinutes} min to ${q.travelTo}'),
+              tooltip: 'Travel time from the routing service; homes not yet timed stay',
+              onPressed: () => _edit(context, q),
+              onDeleted: () => c.refine(q.copyWith(maxMinutes: () => null)),
+            ),
           FilterChip(
             label: Text(q.rent ? 'Show let agreed' : 'Show sold'),
             selected: q.includeGone,
@@ -615,12 +652,30 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       for (final w in c.text.split(','))
         if (w.trim().isNotEmpty) w.trim().toLowerCase(),
     ];
+    final has = {...q.has}, never = {...q.never};
+    var strict = q.strict;
+    final minutes = TextEditingController(text: q.maxMinutes?.toString() ?? '');
+    var mode = q.travelMode;
+    final places = ref.read(profilePlacesProvider).value ?? const <NamedPoint>[];
+    var to = places.any((p) => p.label == q.travelTo) ? q.travelTo : (places.firstOrNull?.label ?? '');
+    Widget picks(StateSetter setState, Iterable<HomeFeature> all, Set<HomeFeature> chosen) => Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final f in all)
+          FilterChip(
+            label: Text(f.label),
+            selected: chosen.contains(f),
+            onSelected: (v) => setState(() => v ? chosen.add(f) : chosen.remove(f)),
+          ),
+      ],
+    );
     SearchRequest? next;
     await showFormDialog(
       context,
       title: 'Change the search',
       action: 'Search',
-      fields: (_) => [
+      fields: (setState) => [
         Field(area, 'Where', hint: 'Town, area or postcode'),
         Field(near, 'Distances from', hint: 'A place or postcode; empty for the area itself'),
         Row(
@@ -640,6 +695,48 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         Field(radius, 'Within', number: true, suffix: 'miles'),
         Field(must, 'Must mention', hint: 'parking, garden'),
         Field(mustNot, 'Must not mention', hint: 'students, shared'),
+        const SizedBox(height: 12),
+        Text('Must have', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 6),
+        picks(setState, HomeFeature.mustHaves, has),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Also hide homes whose advert does not say'),
+          subtitle: const Text('Off: only homes whose advert says they lack it are hidden'),
+          value: strict,
+          onChanged: (v) => setState(() => strict = v),
+        ),
+        Text('Never show', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 6),
+        picks(setState, HomeFeature.neverShows, never),
+        const SizedBox(height: 12),
+        Text('Travel time', style: Theme.of(context).textTheme.titleSmall),
+        if (places.isEmpty)
+          const Text('Add a place in Profile (work, family) to limit homes by travel time to it.')
+        else ...[
+          Row(
+            children: [
+              Expanded(child: Field(minutes, 'At most', number: true, suffix: 'min')),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: mode,
+                  decoration: const InputDecoration(labelText: 'By'),
+                  items: [
+                    for (final m in TravelMode.values) DropdownMenuItem(value: m.name, child: Text(m.label)),
+                  ],
+                  onChanged: (v) => setState(() => mode = v ?? mode),
+                ),
+              ),
+            ],
+          ),
+          DropdownButtonFormField<String>(
+            initialValue: to,
+            decoration: const InputDecoration(labelText: 'To'),
+            items: [for (final p in places) DropdownMenuItem(value: p.label, child: Text(p.label))],
+            onChanged: (v) => setState(() => to = v ?? to),
+          ),
+        ],
       ],
       onSave: () async {
         if (area.text.trim().isEmpty) return 'Say where to search.';
@@ -653,11 +750,23 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           radiusMiles: () => numberIn(radius)?.toDouble(),
           must: words(must),
           mustNot: words(mustNot),
+          has: [
+            for (final f in HomeFeature.mustHaves)
+              if (has.contains(f)) f,
+          ],
+          never: [
+            for (final f in HomeFeature.neverShows)
+              if (never.contains(f)) f,
+          ],
+          strict: strict,
+          maxMinutes: () => places.isEmpty ? null : intIn(minutes),
+          travelMode: mode,
+          travelTo: to,
         );
         return null;
       },
     );
-    for (final c in [area, near, minBeds, maxBeds, minPrice, maxPrice, radius, must, mustNot]) {
+    for (final c in [area, near, minBeds, maxBeds, minPrice, maxPrice, radius, must, mustNot, minutes]) {
       c.dispose();
     }
     if (next != null) await ref.read(searchProvider.notifier).refine(next!);
@@ -724,6 +833,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (s.centreNote.isNotEmpty) Text(s.centreNote, style: t.bodySmall),
+        if (s.travelNote.isNotEmpty) Text(s.travelNote, style: t.bodySmall),
         Text(
           s.busy && s.homes.isEmpty
               ? 'Searching…'
@@ -820,10 +930,14 @@ class _HomeCard extends ConsumerWidget {
       if (h.km != null) miles(h.km!),
     ].join(' · ');
     final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
+    final asked = ref.watch(searchProvider.select((s) => s.request));
     final far = h.lat == null || h.lon == null
         ? ''
-        : [for (final p in places) '${miles(distanceKm(p.lat, p.lon, h.lat!, h.lon!))} from ${p.label}']
-              .join(' · ');
+        : [
+            if (h.minutes != null && asked != null)
+              '${minutesText(h.minutes!)} by ${TravelMode.of(asked.travelMode).label.toLowerCase()} to ${asked.travelTo}',
+            for (final p in places) '${miles(distanceKm(p.lat, p.lon, h.lat!, h.lon!))} from ${p.label}',
+          ].join(' · ');
     final bin = IconButton(
       tooltip: 'Throw out: never show this home again',
       icon: const Icon(Icons.delete_outline),

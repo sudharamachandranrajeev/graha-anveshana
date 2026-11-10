@@ -1,5 +1,9 @@
 import 'catalog.dart';
+import 'home_features.dart';
 import 'listing.dart';
+
+/// A point on the map.
+typedef LatLon = ({double lat, double lon});
 
 /// What the user typed in the search bar, read into filters on the device.
 /// Every part is optional except the words themselves.
@@ -17,6 +21,13 @@ class SearchRequest {
     this.must = const [],
     this.mustNot = const [],
     this.includeGone = false,
+    this.has = const [],
+    this.never = const [],
+    this.strict = false,
+    this.shape = const [],
+    this.maxMinutes,
+    this.travelMode = 'car',
+    this.travelTo = '',
   });
 
   /// The request as typed.
@@ -38,6 +49,20 @@ class SearchRequest {
   /// Also show adverts already let or sold.
   final bool includeGone;
 
+  /// Named features a home must have, and ones it must never be (see
+  /// [HomeFeature]). [strict]: a must-have the advert does not mention also
+  /// leaves the home out.
+  final List<HomeFeature> has, never;
+  final bool strict;
+
+  /// An area drawn on the map; empty: none. Homes outside it are left out.
+  final List<LatLon> shape;
+
+  /// Homes more than [maxMinutes] away by [travelMode] ('car', 'bike' or
+  /// 'foot') from the profile place named [travelTo] are left out.
+  final int? maxMinutes;
+  final String travelMode, travelTo;
+
   bool get isEmpty => area.isEmpty;
 
   SearchRequest copyWith({
@@ -52,6 +77,13 @@ class SearchRequest {
     List<String>? must,
     List<String>? mustNot,
     bool? includeGone,
+    List<HomeFeature>? has,
+    List<HomeFeature>? never,
+    bool? strict,
+    List<LatLon>? shape,
+    int? Function()? maxMinutes,
+    String? travelMode,
+    String? travelTo,
   }) => SearchRequest(
     text: text,
     area: area ?? this.area,
@@ -65,6 +97,13 @@ class SearchRequest {
     must: must ?? this.must,
     mustNot: mustNot ?? this.mustNot,
     includeGone: includeGone ?? this.includeGone,
+    has: has ?? this.has,
+    never: never ?? this.never,
+    strict: strict ?? this.strict,
+    shape: shape ?? this.shape,
+    maxMinutes: maxMinutes == null ? this.maxMinutes : maxMinutes(),
+    travelMode: travelMode ?? this.travelMode,
+    travelTo: travelTo ?? this.travelTo,
   );
 
   Map<String, Object?> toJson() => {
@@ -80,6 +119,16 @@ class SearchRequest {
     if (must.isNotEmpty) 'must': must,
     if (mustNot.isNotEmpty) 'mustNot': mustNot,
     if (includeGone) 'includeGone': true,
+    if (has.isNotEmpty) 'has': [for (final f in has) f.name],
+    if (never.isNotEmpty) 'never': [for (final f in never) f.name],
+    if (strict) 'strict': true,
+    if (shape.isNotEmpty)
+      'shape': [
+        for (final p in shape) [p.lat, p.lon],
+      ],
+    'maxMinutes': ?maxMinutes,
+    if (maxMinutes != null) 'travelMode': travelMode,
+    if (maxMinutes != null && travelTo.isNotEmpty) 'travelTo': travelTo,
   };
 
   factory SearchRequest.fromJson(Map<String, Object?> j) {
@@ -87,6 +136,7 @@ class SearchRequest {
       if (o is List)
         for (final w in o) '$w',
     ];
+    List<HomeFeature> features(Object? o) => [for (final w in words(o)) ?HomeFeature.ofName(w)];
     return SearchRequest(
       text: '${j['text'] ?? ''}',
       area: '${j['area'] ?? ''}',
@@ -100,6 +150,17 @@ class SearchRequest {
       must: words(j['must']),
       mustNot: words(j['mustNot']),
       includeGone: j['includeGone'] == true,
+      has: features(j['has']),
+      never: features(j['never']),
+      strict: j['strict'] == true,
+      shape: [
+        if (j['shape'] case final List s)
+          for (final p in s)
+            if (p case [final num lat, final num lon]) (lat: lat.toDouble(), lon: lon.toDouble()),
+      ],
+      maxMinutes: (j['maxMinutes'] as num?)?.toInt(),
+      travelMode: '${j['travelMode'] ?? 'car'}',
+      travelTo: '${j['travelTo'] ?? ''}',
     );
   }
 
@@ -140,6 +201,21 @@ class SearchRequest {
     final within = radiusMiles == null ? '' : ', within ${_miles(radiusMiles!)} mi';
     return '$beds ${rent ? 'to rent' : 'for sale'} in ${area.isEmpty ? '…' : area}$price$within';
   }
+}
+
+/// Whether [p] lies inside the polygon [shape] (ray casting). Fewer than
+/// three corners: no shape, so everything is inside.
+bool insideShape(LatLon p, List<LatLon> shape) {
+  if (shape.length < 3) return true;
+  var inside = false;
+  for (var i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+    final a = shape[i], b = shape[j];
+    if ((a.lat > p.lat) != (b.lat > p.lat) &&
+        p.lon < (b.lon - a.lon) * (p.lat - a.lat) / (b.lat - a.lat) + a.lon) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }
 
 String _miles(double m) => m == m.roundToDouble() ? '${m.round()}' : '$m';

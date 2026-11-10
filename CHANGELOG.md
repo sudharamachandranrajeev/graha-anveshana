@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.12.0
+
+- Search filters: **Must have** (garage, driveway, any parking, garden, en suite, two bathrooms,
+  ground floor or lift, pets allowed) and **Never show** (retirement, shared ownership, park and
+  holiday homes, auctions, cash buyers only, house shares, student lets), read from each advert's
+  words. Homes whose advert does not say stay, unless you choose to hide them. Rightmove also
+  gets its own garden, parking and "don't show" filters.
+- Draw an area on the Search map; homes outside it are left out.
+- Travel time: "at most N minutes by car, bike or on foot" to one of your places, from the
+  OpenStreetMap community router. On a home's page, tap Car, Bike or Walk for the time to each
+  place. Only map points are sent.
+- Leasehold homes for sale: service charge, ground rent and years left on the lease, a month's
+  cost, what the advert leaves out, and a warning under 80 or 100 years.
+- Area checks on a home's page: schools within a mile (OpenStreetMap, with Ofsted links), where
+  the sun rises and sets through the year and which way the building's long sides face, Defra
+  road and rail noise maps over the map, and links to the coal mining and radon maps.
+- docs/2026-11-10-user-feature-requests.md and docs/2026-11-10-listing-sources-and-repos.md:
+  what home-hunters ask for, and lawful ways to find more listings.
+
 ## 0.11.1
 
 - Search: More sites links to SpareRoom, Leeds Homes and Doncaster HomeChoice (to rent),

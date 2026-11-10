@@ -4,11 +4,13 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../domain/area_checks.dart';
 import '../domain/page_reader.dart';
 import '../domain/property_search.dart';
 import '../domain/research.dart';
 import '../domain/search_request.dart';
 import '../domain/sources.dart';
+import '../domain/travel.dart';
 import '../ui/browser_page.dart' show hiddenPageLoader;
 import 'providers.dart';
 import 'search_memory.dart';
@@ -19,6 +21,14 @@ final searchHttpProvider = Provider<http.Client>((ref) {
   ref.onDispose(c.close);
   return c;
 });
+
+/// Travel times from the OSM community router, cached for the session;
+/// tests replace it with one that does not wait between requests.
+final travelTimesProvider = Provider<TravelTimes>((ref) => TravelTimes(ref.read(searchHttpProvider)));
+
+/// Area checks (schools, building outline) from OpenStreetMap, cached for
+/// the session.
+final areaChecksProvider = Provider<AreaChecks>((ref) => AreaChecks(ref.read(searchHttpProvider)));
 
 /// Loads a page in a hidden web view: its HTML and its advert cards
 /// ([cardsScript]).
@@ -73,8 +83,12 @@ class SearchState {
     this.homes = const [],
     this.read = 0,
     this.sort,
+    this.travelNote = '',
   });
   final SearchRequest? request;
+
+  /// Why travel times are missing (the router could not be reached).
+  final String travelNote;
 
   /// The order the user chose; null: Best match, or For you once the
   /// taste is strong enough (see the Search page).
@@ -118,6 +132,7 @@ class SearchController extends Notifier<SearchState> {
     Map<SourceId, SourceStatus>? sources,
     List<FoundHome>? homes,
     int? read,
+    String? travelNote,
   }) => SearchState(
     request: request ?? state.request,
     centre: centre ?? state.centre,
@@ -126,7 +141,54 @@ class SearchController extends Notifier<SearchState> {
     homes: homes ?? state.homes,
     read: read ?? state.read,
     sort: state.sort,
+    travelNote: travelNote ?? state.travelNote,
   );
+
+  /// Homes already sent to the router for this search.
+  final _timed = <FoundHome>{};
+  var _timingRun = -1;
+
+  /// Times the homes read so far to the search's travel place, when it asks
+  /// for a travel-time limit, then ranks again. Homes without a map point,
+  /// or not yet timed, stay in the list.
+  Future<void> _timeHomes(int run) async {
+    final q = state.request;
+    if (q == null || q.maxMinutes == null || _timingRun == run) return;
+    final places = await ref.read(profilePlacesProvider.future);
+    final to = places.where((p) => p.label == q.travelTo).firstOrNull ?? places.firstOrNull;
+    if (to == null || run != _run) return;
+    _timingRun = run;
+    try {
+      while (run == _run) {
+        final todo = [
+          for (final h in _all)
+            if (h.lat != null && !_timed.contains(h)) h,
+        ];
+        if (todo.isEmpty) break;
+        _timed.addAll(todo);
+        final mins = await ref
+            .read(travelTimesProvider)
+            .minutes(
+              TravelMode.of(q.travelMode),
+              [for (final h in todo) (lat: h.lat!, lon: h.lon!)],
+              (lat: to.lat, lon: to.lon),
+            );
+        if (run != _run) return;
+        for (final (i, h) in todo.indexed) {
+          h.minutes = mins[i];
+        }
+        final c = state.centre;
+        state = _next(
+          homes: rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon),
+          travelNote: '',
+        );
+      }
+    } on TravelUnavailable catch (e) {
+      if (run == _run) state = _next(travelNote: '$e Homes are not limited by travel time.');
+    } finally {
+      if (_timingRun == run) _timingRun = -1;
+    }
+  }
 
   /// Reads [text] into a request and searches. [rent] is used when the words
   /// say neither rent nor buy.
@@ -137,6 +199,7 @@ class SearchController extends Notifier<SearchState> {
   Future<void> refine(SearchRequest q, {HomeSort? sort}) async {
     final run = ++_run;
     _all.clear();
+    _timed.clear();
     final order = sort ?? state.sort ?? await ref.read(searchSortProvider.future);
     if (q.isEmpty) {
       state = SearchState(request: q, centreNote: 'Say where: a town, area or postcode.', sort: order);
@@ -177,6 +240,7 @@ class SearchController extends Notifier<SearchState> {
       homes: state.homes,
       read: state.read,
       sort: sort,
+      travelNote: state.travelNote,
     );
     await rememberSort(ref, sort);
   }
@@ -210,6 +274,7 @@ class SearchController extends Notifier<SearchState> {
       homes: rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon),
       read: _all.length,
     );
+    unawaited(_timeHomes(_run));
     return _all.length - before;
   }
 
@@ -280,6 +345,7 @@ class SearchController extends Notifier<SearchState> {
         homes: rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon),
         read: _all.length,
       );
+      unawaited(_timeHomes(run));
     } on SourceBlocked catch (e) {
       if (run == _run) {
         _set(s, SourceStatus(SourceState.blocked, read: before, url: e.url, page: page, note: '$e'));

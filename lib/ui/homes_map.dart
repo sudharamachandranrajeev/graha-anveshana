@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../domain/listing.dart';
 import '../domain/research.dart';
+import '../domain/search_request.dart';
 import 'common.dart';
 
 /// A home to pin: its own point, else the place to look up (a full
@@ -37,8 +38,21 @@ class HomesMap extends StatefulWidget {
     this.centreLabel = '',
     this.from,
     this.locate,
+    this.shape = const [],
+    this.onDraw,
+    this.overlays = const [],
   });
   final List<MapHome> homes;
+
+  /// An area the user drew, shown as a shaded polygon.
+  final List<LatLon> shape;
+
+  /// When set, the map offers "Draw an area": each tap adds a corner, and
+  /// Done hands the corners back (an empty list clears the area).
+  final ValueChanged<List<LatLon>>? onDraw;
+
+  /// Extra map layers drawn over the tiles (e.g. a noise map).
+  final List<Widget> overlays;
 
   /// A place the home is measured from: marked, with a straight line to the
   /// home (when there is one home).
@@ -58,6 +72,9 @@ class _HomesMapState extends State<HomesMap> {
   final _found = <String, ({double lat, double lon})>{};
   final _asked = <String>{};
   var _fitted = false;
+
+  /// Corners placed so far while drawing; null when not drawing.
+  List<LatLng>? _drawing;
 
   @override
   void initState() {
@@ -119,10 +136,13 @@ class _HomesMapState extends State<HomesMap> {
     final pins = _pins;
     final c = widget.centre;
     final from = widget.from;
+    final shape = [for (final p in widget.shape) LatLng(p.lat, p.lon)];
+    final drawing = _drawing;
     final points = [
       for (final p in pins) p.at,
       if (c != null) LatLng(c.lat, c.lon),
       if (from != null) LatLng(from.lat, from.lon),
+      ...shape,
     ];
     _fit(points);
     final missing = widget.homes.length - pins.length;
@@ -133,12 +153,37 @@ class _HomesMapState extends State<HomesMap> {
           options: MapOptions(
             initialCenter: points.firstOrNull ?? const LatLng(54.0, -2.5),
             initialZoom: points.isEmpty ? 5.5 : 13,
+            onTap: drawing == null ? null : (_, at) => setState(() => drawing.add(at)),
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'dev.brahma.anveshana',
             ),
+            ...widget.overlays,
+            if (drawing == null && shape.length >= 3)
+              PolygonLayer(
+                polygons: [
+                  Polygon(
+                    points: shape,
+                    color: scheme.primary.withValues(alpha: 0.12),
+                    borderColor: scheme.primary,
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
+            if (drawing != null && drawing.isNotEmpty)
+              PolygonLayer(
+                polygons: [
+                  Polygon(
+                    points: drawing,
+                    color: scheme.tertiary.withValues(alpha: 0.15),
+                    borderColor: scheme.tertiary,
+                    borderStrokeWidth: 2,
+                    pattern: StrokePattern.dashed(segments: const [8, 6]),
+                  ),
+                ],
+              ),
             if (from != null && pins.length == 1)
               PolylineLayer(
                 polylines: [
@@ -180,6 +225,19 @@ class _HomesMapState extends State<HomesMap> {
                     height: 30,
                     child: _Pin(p.home, rough: p.rough),
                   ),
+                for (final p in drawing ?? const <LatLng>[])
+                  Marker(
+                    point: p,
+                    width: 14,
+                    height: 14,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.tertiary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: scheme.onTertiary, width: 2),
+                      ),
+                    ),
+                  ),
               ],
             ),
             RichAttributionWidget(
@@ -205,6 +263,70 @@ class _HomesMapState extends State<HomesMap> {
                 ),
               ),
             ),
+          ),
+        if (widget.onDraw != null)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: drawing == null
+                ? Wrap(
+                    spacing: 8,
+                    children: [
+                      if (shape.isNotEmpty)
+                        FilledButton.tonalIcon(
+                          onPressed: () => widget.onDraw!(const []),
+                          icon: const Icon(Icons.layers_clear_outlined),
+                          label: const Text('Clear area'),
+                        ),
+                      FilledButton.tonalIcon(
+                        onPressed: () => setState(() => _drawing = []),
+                        icon: const Icon(Icons.draw_outlined),
+                        label: Text(shape.isEmpty ? 'Draw an area' : 'Draw again'),
+                      ),
+                    ],
+                  )
+                : Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            drawing.length < 3
+                                ? 'Tap the map to put a corner (${drawing.length} of at least 3)'
+                                : '${drawing.length} corners',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            children: [
+                              TextButton(
+                                onPressed: () => setState(() => _drawing = null),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: drawing.isEmpty ? null : () => setState(drawing.removeLast),
+                                child: const Text('Undo'),
+                              ),
+                              FilledButton(
+                                onPressed: drawing.length < 3
+                                    ? null
+                                    : () {
+                                        final done = [
+                                          for (final p in drawing) (lat: p.latitude, lon: p.longitude),
+                                        ];
+                                        setState(() => _drawing = null);
+                                        widget.onDraw!(done);
+                                      },
+                                child: const Text('Done'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
       ],
     );

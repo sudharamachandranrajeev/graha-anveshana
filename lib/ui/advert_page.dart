@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/search_controller.dart';
 import '../domain/advert.dart';
+import '../domain/leasehold.dart';
 import '../domain/listing.dart';
 import '../domain/property_search.dart';
 import '../domain/search_request.dart';
@@ -157,6 +158,7 @@ class _AdvertPageState extends ConsumerState<AdvertPage> {
                             children: [for (final e in d.facts.entries) FigureRow(e.key, e.value)],
                           ),
                         ),
+                      if (!q.rent) LeaseholdCard(readLeasehold(d, thisYear: DateTime.now().year)),
                       SectionCard(
                         title: 'Description',
                         child: SelectableText(d.description.isEmpty ? l.description : d.description),
@@ -296,6 +298,51 @@ class _GalleryState extends State<_Gallery> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A leasehold home's yearly costs on top of the mortgage, and what the
+/// advert leaves out. Nothing for a freehold home.
+class LeaseholdCard extends StatelessWidget {
+  const LeaseholdCard(this.lease, {super.key});
+  final LeaseholdCosts lease;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!lease.leasehold) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    final monthly = lease.monthly;
+    return SectionCard(
+      title: 'Leasehold costs',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FigureRow('Tenure', lease.tenure.isEmpty ? 'Share of freehold' : lease.tenure),
+          if (lease.serviceChargeYear != null)
+            FigureRow('Service charge', '${gbp(lease.serviceChargeYear!)} a year'),
+          if (lease.groundRentYear != null)
+            FigureRow(
+              'Ground rent',
+              lease.groundRentYear == 0 ? 'None (peppercorn)' : '${gbp(lease.groundRentYear!)} a year',
+            ),
+          if (lease.yearsLeft != null) FigureRow('Lease', '${lease.yearsLeft} years left'),
+          if (monthly != null) FigureRow('On top of the mortgage', '${gbp(monthly)} a month'),
+          if (lease.missing.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            StatusLabel(
+              Status.warning,
+              'The advert does not give the ${lease.missing.join(', ')}. Ask the agent.',
+            ),
+          ],
+          for (final w in lease.warnings) ...[const SizedBox(height: 8), StatusLabel(Status.warning, w)],
+          const SizedBox(height: 8),
+          Text(
+            'From the advert. Charges can rise; your solicitor checks the lease itself.',
+            style: t.bodySmall,
+          ),
+        ],
       ),
     );
   }
