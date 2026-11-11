@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/sudharamachandranrajeev/graha-anveshana"><img src="branding/anveshana-512.png" alt="Graha Anveshana" width="140"></a>
+  <a href="https://github.com/sudharamachandranrajeev/graha-anveshana-property-search"><img src="branding/anveshana-512.png" alt="Graha Anveshana" width="140"></a>
   <br>
   Graha Anveshana
   <br>
@@ -9,10 +9,10 @@
 <h4 align="center">Find a home to rent or buy, check the numbers and the area, and keep track of homes you let.</h4>
 
 <p align="center">
-  <a href="https://github.com/sudharamachandranrajeev/graha-anveshana/releases"><img src="https://img.shields.io/github/v/release/sudharamachandranrajeev/graha-anveshana?include_prereleases&color=c8e64a&labelColor=23251d&label=download" alt="Latest release"></a>
+  <a href="https://github.com/sudharamachandranrajeev/graha-anveshana-property-search/releases"><img src="https://img.shields.io/github/v/release/sudharamachandranrajeev/graha-anveshana-property-search?include_prereleases&color=c8e64a&labelColor=23251d&label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/works%20on-Linux%20%7C%20Windows%20%7C%20Android-555" alt="Works on Linux, Windows and Android">
   <img src="https://img.shields.io/badge/your%20data-encrypted-2e7d32" alt="Your data is encrypted">
-  <a href="https://github.com/sudharamachandranrajeev/brahma"><img src="https://img.shields.io/badge/part%20of-Brahma-8a5cf6" alt="Part of Brahma"></a>
+  <a href="https://github.com/sudharamachandranrajeev/brahma-life-suite"><img src="https://img.shields.io/badge/part%20of-Brahma-8a5cf6" alt="Part of Brahma"></a>
 </p>
 
 <p align="center">
@@ -121,7 +121,7 @@ not advice.
 
 ### Step 1 – Download
 
-Open the [releases page](https://github.com/sudharamachandranrajeev/graha-anveshana/releases)
+Open the [releases page](https://github.com/sudharamachandranrajeev/graha-anveshana-property-search/releases)
 and, under the newest release, pick the file for your device:
 
 | Your device | File to download | Works on |
@@ -205,7 +205,7 @@ Node.js for about ten minutes.
 
 1. On the computer, run:
    ```sh
-   git clone https://github.com/sudharamachandranrajeev/brahma.git
+   git clone https://github.com/sudharamachandranrajeev/brahma-life-suite.git
    cd brahma/watch && npm install
    npx wrangler login   # once: allow your Cloudflare account in the browser
    npm run setup        # prints the Watch address, its token and an ntfy topic
@@ -218,7 +218,7 @@ Node.js for about ten minutes.
 ### Step 5 (optional) – Use it on more than one device
 
 Turn on sync in **Settings → Sync**. You need a sync server you own; the
-[Brahma sync server guide](https://github.com/sudharamachandranrajeev/brahma/tree/main/server)
+[Brahma sync server guide](https://github.com/sudharamachandranrajeev/brahma-life-suite/tree/main/server)
 walks you through it. **Write down the recovery key** it shows and keep it safe.
 
 ## 🧭 How it works
@@ -372,7 +372,7 @@ inside the app. Uninstalling on Linux or Windows leaves it in place.
 <details>
 <summary><b>I saved cars in version 0.2.0. Where are they?</b></summary>
 
-Cars moved to their own app, [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana).
+Cars moved to their own app, [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana-car-manager).
 Add them again there from their advert links.
 </details>
 
@@ -384,7 +384,7 @@ Add them again there from their advert links.
 You need [Git](https://git-scm.com) and [Flutter](https://flutter.dev) 3.47.
 
 ```bash
-git clone https://github.com/sudharamachandranrajeev/graha-anveshana
+git clone https://github.com/sudharamachandranrajeev/graha-anveshana-property-search
 cd graha-anveshana
 flutter pub get
 flutter run -d linux        # or windows, or an Android device
@@ -394,7 +394,7 @@ GRAHA_SHOTS=/tmp/shots flutter test test/screenshots_test.dart        # render t
 scripts/make-icons.sh                                                 # app icons from branding/anveshana.svg
 ```
 
-- `brahma_core` comes from the [brahma](https://github.com/sudharamachandranrajeev/brahma) repo.
+- `brahma_core` comes from the [brahma](https://github.com/sudharamachandranrajeev/brahma-life-suite) repo.
   To work on both at once, add a `pubspec_overrides.yaml` (ignored by git) with
   `dependency_overrides: brahma_core: path: ../brahma/core`.
 - CI runs analyse and test on each push. A `v*` tag builds, smoke-tests and publishes the
@@ -426,11 +426,11 @@ Graha Anveshana is one app in the **Brahma** family. They share one sign-in and 
 
 | App | What it does |
 | --- | --- |
-| [brahma](https://github.com/sudharamachandranrajeev/brahma) | The shared core, the all-in-one app and Brahma Watch |
-| [artha](https://github.com/sudharamachandranrajeev/artha) | Money: accounts, spending, bills and investments |
-| [vahana-anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana) | Find a car |
-| [udyoga](https://github.com/sudharamachandranrajeev/udyoga) | Career and job hunting |
-| [vidya](https://github.com/sudharamachandranrajeev/vidya) | Learning, flashcards and focus |
+| [brahma](https://github.com/sudharamachandranrajeev/brahma-life-suite) | The shared core, the all-in-one app and Brahma Watch |
+| [artha](https://github.com/sudharamachandranrajeev/artha-personal-finance) | Money: accounts, spending, bills and investments |
+| [vahana-anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana-car-manager) | Find a car |
+| [udyoga](https://github.com/sudharamachandranrajeev/udyoga-career-manager) | Career and job hunting |
+| [vidya](https://github.com/sudharamachandranrajeev/vidya-learning-manager) | Learning, flashcards and focus |
 
 ## License
 
