@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.14.1
+
+Everything stays inside the app, and search results show where each home is.
+
+- **No more system browser.** Every web page (adverts, Zoopla and Facebook, sign-ins, robot
+  checks, area sites, maps, More sites) opens in the app's own browser. Pages that ask for a new
+  window open in the same view. A build with no in-app browser says so instead of sending you out.
+- **Linux builds with the in-app browser.** The main Linux download is now built with WPE WebKit,
+  so Zoopla and Facebook sign-ins and searches work inside the app. A portable download stays for
+  systems without WPE WebKit.
+- **OpenRent shows every home with its street and photo.** Results past the first twenty used to
+  show as "2 bed flat" with no picture; they now load twenty at a time, with both.
+- **Result cards.** The fullest address any site gives, with its postcode and a place marker; a
+  house tile when a photo will not load; photos that sites load late are now picked up; and the
+  date a rental is available.
+
 ## 0.14.0
 
 Better Search, Shortlist and Dashboard, and fuller Facebook Marketplace reading.

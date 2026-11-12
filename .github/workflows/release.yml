@@ -1,6 +1,6 @@
 # Builds Graha Anveshana for Android, Windows and Linux and checks each one starts. A v*
-# tag publishes a GitHub release (a pre-release for v0.* and tags with a
-# suffix such as -beta.1); running it by hand only builds and tests.
+# tag publishes a GitHub release (a pre-release only for tags with a suffix
+# such as -beta.1); running it by hand only builds and tests.
 
 name: Release
 
@@ -171,11 +171,35 @@ jobs:
 
   linux:
     needs: [version, test]
-    # The oldest supported runner, so the build runs on older glibc too.
-    runs-on: ubuntu-22.04
+    name: Linux ${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The main Linux build: the in-app browser (WPE WebKit), so sites,
+          # sign-ins and robot checks all stay inside the app. Built on Arch
+          # (WPE WebKit 2.40+); runs where WPE WebKit is installed (Arch). The in-app updater installs this one.
+          - variant: browser
+            runs-on: ubuntu-latest
+            container: archlinux:latest
+            suffix: linux-x64
+          # For systems with no WPE WebKit (Ubuntu): no in-app browser.
+          - variant: portable
+            runs-on: ubuntu-22.04
+            container: ""
+            suffix: linux-x64-portable
+    runs-on: ${{ matrix.runs-on }}
+    container: ${{ matrix.container }}
     steps:
+      - name: Build tools (Arch)
+        if: matrix.variant == 'browser'
+        run: |
+          pacman -Syu --noconfirm --needed git curl jq unzip xz which tar clang cmake ninja pkgconf gtk3 libsecret \
+            wpewebkit >/dev/null
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Build tools
+      - name: Build tools (Ubuntu)
+        if: matrix.variant == 'portable'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev liblzma-dev >/dev/null
@@ -185,25 +209,34 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - name: Leave the WPE web view out
-        # Ubuntu has shipped no WPE WebKit since 22.04, so the portable tarball
-        # opens sites in the system browser (Search still reads them in the
-        # app); source builds on a system with WPE WebKit get the in-app browser.
+        if: matrix.variant == 'portable'
+        # Ubuntu has shipped no WPE WebKit since 22.04.
         run: flutter pub add 'anveshana_no_linux_webview:{"path":"packages/no_linux_webview"}'
       - name: Build
         run: |
           flutter build linux --release \
             --build-name=${{ needs.version.outputs.name }} --build-number=${{ needs.version.outputs.build }}
+      - name: The in-app browser is built in
+        if: matrix.variant == 'browser'
+        run: ldd build/linux/x64/release/bundle/lib/libflutter_inappwebview_linux_plugin.so | grep -q libWPEWebKit
       - name: Tarball
         run: |
           version=${{ needs.version.outputs.version }}
-          dir="anveshana-$version-linux-x64"
+          dir="anveshana-$version-${{ matrix.suffix }}"
           mkdir -p dist "$dir"
           cp -r build/linux/x64/release/bundle/. "$dir/"
           cp branding/anveshana-512.png "$dir/anveshana.png"
           cp scripts/install-linux.sh "$dir/install.sh"
-          cat > "$dir/README.txt" <<'EOF'
-          Graha Anveshana for Linux (x86-64). Needs GTK 3, libsecret and a running keyring
-          (GNOME Keyring or KWallet), which hold the database key.
+          if [[ ${{ matrix.variant }} == browser ]]; then
+            needs='GTK 3, libsecret, WPE WebKit (Arch: pacman -S wpewebkit)'
+            extra='Sites, sign-ins and robot checks open in the app'"'"'s own browser.'
+          else
+            needs='GTK 3 and libsecret'
+            extra='This build has no in-app browser (for systems without WPE WebKit, such as Ubuntu and Fedora).'
+          fi
+          cat > "$dir/README.txt" <<EOF
+          Graha Anveshana for Linux (x86-64). Needs $needs and a running keyring
+          (GNOME Keyring or KWallet), which holds the database key. $extra
 
             ./install.sh              adds Graha Anveshana to your app menu (no root needed)
             ./install.sh --uninstall  removes it; your data stays
@@ -212,10 +245,10 @@ jobs:
           Your data: ~/.local/share/dev.brahma.anveshana (encrypted).
           EOF
           sed -i 's/^          //' "$dir/README.txt"
-          tar czf "dist/Graha-Anveshana-$version-linux-x64.tar.gz" "$dir"
+          tar czf "dist/Graha-Anveshana-$version-${{ matrix.suffix }}.tar.gz" "$dir"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: linux
+          name: linux-${{ matrix.variant }}
           path: dist/*
 
   android-smoke:
@@ -259,11 +292,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ["ubuntu:24.04", "fedora:latest", "archlinux:latest"]
+        include:
+          - { image: "ubuntu:24.04", variant: portable }
+          - { image: "fedora:latest", variant: portable }
+          - { image: "archlinux:latest", variant: browser }
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: linux
+          name: linux-${{ matrix.variant }}
           path: dist
       - name: GTK, libsecret, a keyring and Xvfb
         run: |
@@ -275,14 +311,16 @@ jobs:
             dnf install -y -q gtk3 libsecret gnome-keyring dbus-daemon dbus-tools mesa-dri-drivers mesa-libEGL libglvnd-gles \
               xorg-x11-server-Xvfb xorg-x11-xauth util-linux
           else
-            pacman -Syu --noconfirm --needed gtk3 libsecret gnome-keyring dbus mesa xorg-server-xvfb xorg-xauth >/dev/null
+            pacman -Syu --noconfirm --needed gtk3 libsecret gnome-keyring dbus mesa xorg-server-xvfb xorg-xauth \
+              wpewebkit >/dev/null
           fi
       - name: Smoke test
         shell: bash
         run: |
           set -euo pipefail
           tar xzf dist/*.tar.gz
-          app=$(ls -d "$PWD"/anveshana-*-linux-x64)
+          app=$(ls -d "$PWD"/anveshana-*-linux-x64*/)
+          app=${app%/}
           mkdir -p home run
           chmod 700 run
           # Runs the app for 20 s in its own D-Bus session with an unlocked
@@ -329,7 +367,8 @@ jobs:
           path: dist
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: linux
+          pattern: linux-*
+          merge-multiple: true
           path: dist
       - name: Checksums
         run: |

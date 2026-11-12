@@ -131,7 +131,8 @@ and, under the newest release, pick the file for your device:
 
 | Your device | File to download | Works on |
 | --- | --- | --- |
-| 🐧 Linux computer | `Graha-Anveshana-<version>-linux-x64.tar.gz` | Ubuntu 24.04, Fedora, Arch and similar (64-bit x86) |
+| 🐧 Linux computer | `Graha-Anveshana-<version>-linux-x64.tar.gz` | Arch and others with WPE WebKit (64-bit x86). Sites open in the app's own browser |
+| 🐧 Linux without WPE WebKit | `Graha-Anveshana-<version>-linux-x64-portable.tar.gz` | Ubuntu 24.04, Fedora and similar. No in-app browser, so Zoopla and Facebook cannot be read |
 | 🪟 Windows computer | `Graha-Anveshana-<version>-windows-x64-setup.exe` | Windows 10 and 11 |
 | 🤖 Android phone | `Graha-Anveshana-<version>-android.apk` | Android 7 and newer |
 
@@ -142,13 +143,14 @@ Each release also has `SHA256SUMS.txt`, a list of fingerprints to check the file
 <details>
 <summary><b>🐧 Linux</b></summary>
 
-1. Open a terminal in the folder where the download landed.
-2. Unpack it and run the installer as your normal user (not `sudo`):
+1. Install WPE WebKit, the engine for the app's own browser: `sudo pacman -S wpewebkit` (Arch). Skip this for the portable file.
+2. Open a terminal in the folder where the download landed.
+3. Unpack it and run the installer as your normal user (not `sudo`):
    ```sh
    tar -xzf Graha-Anveshana-*-linux-x64.tar.gz
    cd anveshana-*-linux-x64 && ./install.sh
    ```
-3. Open **Graha Anveshana** from your app menu.
+4. Open **Graha Anveshana** from your app menu.
 
 It installs for your user only. It needs GTK 3, libsecret and the desktop keyring (the app that
 stores passwords) running. To remove it later: `./install.sh --uninstall`. Your data stays.

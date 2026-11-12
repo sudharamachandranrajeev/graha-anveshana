@@ -18,13 +18,26 @@ const cardsScript = r'''
   // One advert's own page: that advert, not the others it links to.
   const self = location.href.match(advert);
   const main = document.querySelector('main') || document.body;
+  // A card's photo: the first picture big enough not to be a logo or icon,
+  // read from its lazy-load attributes when the page has not drawn it yet.
+  const photo = (box) => {
+    for (const img of box.querySelectorAll('img')) {
+      if (img.naturalWidth && img.naturalWidth < 80) continue;
+      const set = (img.getAttribute('srcset') || img.getAttribute('data-srcset') || '').split(',')
+        .map((s) => s.trim().split(' ')[0]).filter(Boolean);
+      for (const u of [img.currentSrc, img.getAttribute('data-src'), img.getAttribute('data-lazy-src'), set.pop(), img.src]) {
+        if (u && /^https:\/\//.test(u)) return u;
+        if (u && u.startsWith('//')) return 'https:' + u;
+      }
+    }
+    return '';
+  };
   if (self && /details|properties|marketplace\/item/.test(location.pathname)) {
     const text = (main.innerText || '').trim().slice(0, 1500);
     if (/£\s?\d/.test(text)) {
-      const img = main.querySelector('img[src^="http"]');
       const title = (document.querySelector('h1') || {}).innerText || '';
       return JSON.stringify([{id: self[1], href: location.href.split('?')[0],
-        text: (title ? title + '\n' : '') + text, img: img ? img.src : ''}]);
+        text: (title ? title + '\n' : '') + text, img: photo(main)}]);
     }
   }
   for (const a of document.querySelectorAll('a[href]')) {
@@ -38,8 +51,7 @@ const cardsScript = r'''
     const text = (box.innerText || '').trim();
     if (!/£\s?\d/.test(text) || text.length > 2000) continue;
     seen.add(m[1]);
-    const img = box.querySelector('img[src^="http"]');
-    out.push({id: m[1], href: a.href.split('?')[0], text, img: img ? img.src : ''});
+    out.push({id: m[1], href: a.href.split('?')[0], text, img: photo(box)});
   }
   return JSON.stringify(out);
 })()

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../db/database.dart';
 import '../domain/pipeline.dart';
 import '../domain/travel.dart';
+import 'browser_page.dart';
 
 final _gbp = NumberFormat.currency(locale: 'en_GB', symbol: '£', decimalDigits: 0);
 
@@ -48,8 +49,14 @@ String availableLabel(String from) {
 
 String nowLocal() => DateTime.now().toIso8601String().substring(0, 16);
 
-/// Opens [uri] in the platform's app for it (dialler, messages, browser).
+/// Opens [uri]: web pages in the app's own browser ([openInApp]), never the
+/// system one; phone numbers, e-mail, files and calendar entries in the
+/// device's app for them.
 Future<bool> openUri(BuildContext context, Uri uri) async {
+  if (uri.scheme == 'https' || uri.scheme == 'http') {
+    await openInApp(context, uri);
+    return hasWebView;
+  }
   final ok = await launchUrl(uri, mode: LaunchMode.externalApplication).catchError((_) => false);
   if (!ok && context.mounted) showMessage(context, 'Nothing on this device can open $uri.');
   return ok;

@@ -13,7 +13,7 @@ import 'common.dart';
 
 /// Whether this build has an embedded web view. Linux has one (WPE WebKit)
 /// when built with it; the portable release tarball is built without it
-/// (packages/no_linux_webview) and opens pages in the system browser.
+/// (packages/no_linux_webview) and cannot show sites at all.
 bool get hasWebView =>
     !kIsWeb &&
     (Platform.isAndroid ||
@@ -27,9 +27,10 @@ bool get hasWebView =>
 /// [at] is the address the page is at now.
 typedef PageReader = Future<String> Function(String html, String cards, Uri at);
 
-/// Opens [url] inside the app, or in the system browser where this build
-/// has no web view. [read] adds a button that reads the page into the app;
-/// with [autoRead] it also runs by itself each time a page finishes loading.
+/// Opens [url] inside the app. Sites are never handed to the system
+/// browser: a build with no web view says how to get one instead. [read]
+/// adds a button that reads the page into the app; with [autoRead] it also
+/// runs by itself each time a page finishes loading.
 Future<void> openInApp(
   BuildContext context,
   Uri url, {
@@ -39,8 +40,28 @@ Future<void> openInApp(
   String? cardsScript,
   bool autoRead = false,
 }) async {
-  if (!hasWebView || (url.scheme != 'https' && url.scheme != 'http')) {
+  if (url.scheme != 'https' && url.scheme != 'http') {
     await openUri(context, url);
+    return;
+  }
+  if (!hasWebView) {
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('No in-app browser in this build'),
+        content: Text(
+          'This copy of Graha Anveshana was built without the in-app browser, so it cannot open '
+          '${url.host} or read Zoopla and Facebook. Install WPE WebKit (Arch: pacman -S wpewebkit) and the Linux release with the in-app browser.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => copyText(c, '$url', what: 'Link copied.'),
+            child: const Text('Copy link'),
+          ),
+          FilledButton(onPressed: () => Navigator.of(c).pop(), child: const Text('OK')),
+        ],
+      ),
+    );
     return;
   }
   await Navigator.of(context).push(
@@ -271,12 +292,10 @@ class _BrowserPageState extends State<BrowserPage> {
             tooltip: 'More',
             onSelected: (v) => switch (v) {
               'copy' => copyText(context, '${_at ?? widget.url}', what: 'Link copied.'),
-              'save' => _save(),
-              _ => openUri(context, _at ?? widget.url),
+              _ => _save(),
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'copy', child: Text('Copy link')),
-              const PopupMenuItem(value: 'out', child: Text('Open in your browser')),
               if (widget.cardsScript != null)
                 const PopupMenuItem(value: 'save', child: Text('Save this page (to fix reading it)')),
             ],
@@ -291,7 +310,12 @@ class _BrowserPageState extends State<BrowserPage> {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(url: WebUri.uri(widget.url)),
-        initialSettings: InAppWebViewSettings(javaScriptEnabled: true, useShouldOverrideUrlLoading: true),
+        initialSettings: InAppWebViewSettings(
+          javaScriptEnabled: true,
+          useShouldOverrideUrlLoading: true,
+          supportMultipleWindows: true,
+          javaScriptCanOpenWindowsAutomatically: true,
+        ),
         onWebViewCreated: (c) => _web = c,
         onProgressChanged: (_, p) => setState(() => _progress = p / 100),
         onTitleChanged: (_, t) {
@@ -303,6 +327,13 @@ class _BrowserPageState extends State<BrowserPage> {
           // Results lists are drawn by script after the page loads.
           await Future<void>.delayed(const Duration(seconds: 2));
           if (mounted && !_reading) await _read(auto: true);
+        },
+        // Links and sign-in steps that ask for a new window open here, in
+        // the same view, so nothing leaves the app.
+        onCreateWindow: (c, action) async {
+          final url = action.request.url;
+          if (url != null) await c.loadUrl(urlRequest: URLRequest(url: url));
+          return false;
         },
         shouldOverrideUrlLoading: (_, action) async {
           final url = action.request.url;
