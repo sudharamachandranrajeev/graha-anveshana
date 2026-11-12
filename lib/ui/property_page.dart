@@ -7,6 +7,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
+import '../domain/price_log.dart';
 import '../domain/viewing_checklist.dart';
 import 'browser_page.dart';
 import 'common.dart';
@@ -64,6 +65,7 @@ class PropertyPage extends ConsumerWidget {
         .where((v) => v.propertyId == id)
         .toList();
     final t = Theme.of(context).textTheme;
+    final market = MarketFacts.of(p.meta);
 
     return PageScaffold(
       title: p.address.split(',').first,
@@ -121,8 +123,19 @@ class PropertyPage extends ConsumerWidget {
                 listingStatusLabel(p.listingStatus),
               ),
             Text('Added ${niceDate(p.added)}'),
+            if (market.listedOn != null) Text('On the market since ${niceDate(market.listedOn!)}'),
+            if (market.sqft != null)
+              Text(
+                '${market.sqft} sq ft${p.price == null ? '' : ' · £${(p.price! / market.sqft!).toStringAsFixed(2)} a sq ft'}',
+              ),
+            if (market.seen != null) Text('Last seen in Search ${niceDate(market.seen!)}'),
           ],
         ),
+        if (market.prices.length > 1) ...[
+          const SizedBox(height: 8),
+          Text('Price history', style: t.titleSmall),
+          for (final pt in market.prices) Text('${niceDate(pt.at)}: ${gbp(pt.price)}', style: t.bodySmall),
+        ],
         const SizedBox(height: 16),
         ListingMap(
           key: ValueKey('map-${p.id}'),

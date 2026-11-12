@@ -335,6 +335,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           onTap: () => _list(context, 'Gone', s.gone),
         ),
       ],
+      if (!s.pulse.isEmpty) ...[
+        RowsHeading('The market, from your searches'),
+        if (s.pulse.cutThisWeek.isNotEmpty)
+          ScoreRow(
+            lead: 'Price cuts',
+            value: '${s.pulse.cutThisWeek.length}',
+            detail: 'homes you saved, in the last 7 days',
+            onTap: () => _list(context, 'Price cuts this week', s.pulse.cutThisWeek),
+          ),
+        if (s.pulse.daysToGo != null)
+          ScoreRow(
+            lead: kind == PropertyKind.rent ? 'Time to let' : 'Time to sell',
+            value: '${s.pulse.daysToGo} days',
+            detail: 'at the middle, from first listed to last seen; ${s.pulse.goneFast} within two weeks',
+          ),
+        if (s.pulse.mayBeGone.isNotEmpty)
+          ScoreRow(
+            lead: 'May be gone',
+            value: '${s.pulse.mayBeGone.length}',
+            detail: 'not seen in Search for two weeks',
+            onTap: () => _list(context, 'May be gone', s.pulse.mayBeGone),
+          ),
+      ],
     ];
   }
 

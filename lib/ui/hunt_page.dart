@@ -8,6 +8,7 @@ import '../db/database.dart';
 import '../domain/hunt_filter.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
+import '../domain/price_log.dart';
 import '../domain/portals.dart';
 import '../domain/running_costs.dart';
 import 'common.dart';
@@ -453,6 +454,10 @@ class PropertyCard extends StatelessWidget {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final gone = listingGone(p.listingStatus);
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final market = MarketFacts.of(p.meta);
+    final change = market.changeText;
+    // Still advertised as far as the app knows, but no search has shown it.
+    final stale = !gone && Stage.of(p.stage).active && market.mayBeGone(today());
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
@@ -519,6 +524,16 @@ class PropertyCard extends StatelessWidget {
                                 ),
                               if (quietDays != null && quietDays! >= chaseAfterDays)
                                 StatusLabel(Status.info, 'No reply for $quietDays days: chase'),
+                              if (change != null)
+                                StatusLabel(market.change! < 0 ? Status.good : Status.warning, change),
+                              if (stale)
+                                Hint(
+                                  'hunt.stale',
+                                  child: StatusLabel(
+                                    Status.warning,
+                                    'May be gone: not seen since ${niceDate(market.seen!)}',
+                                  ),
+                                ),
                               if (p.rating > 0)
                                 Text('★' * p.rating, style: t.bodySmall?.copyWith(color: lime)),
                             ],

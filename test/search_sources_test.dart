@@ -36,6 +36,9 @@ final _rightmove = _next({
               {'description': 'Gas central heating'},
             ],
             'letAvailableDate': '2027-01-01T00:00:00Z',
+            'firstVisibleDate': '2026-11-01T10:00:00Z',
+            'listingUpdate': {'listingUpdateReason': 'price_reduced', 'listingUpdateDate': '2026-11-08T09:00:00Z'},
+            'displaySize': '738 sq. ft.',
           },
           {
             'id': 112,
@@ -130,6 +133,9 @@ void main() {
     expect(a.description, contains('parking'));
     expect(a.availableFrom, '2027-01-01');
     expect(page.items[1].status, 'letAgreed');
+    expect((a.listedOn, a.reducedOn, a.sqft), ('2026-11-01', '2026-11-08', 738));
+    final b = page.items[1];
+    expect((b.listedOn, b.reducedOn, b.sqft), (null, null, null));
   });
 
   test('OnTheMarket and OpenRent pages', () {

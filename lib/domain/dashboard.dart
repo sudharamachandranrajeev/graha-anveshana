@@ -1,6 +1,7 @@
 import '../db/database.dart';
 import 'listing.dart' show distanceKm;
 import 'pipeline.dart';
+import 'price_log.dart';
 
 /// "Your hunt so far": every figure on the Dashboard, worked out from the
 /// rows already on the device. Nothing here reads the network or the clock;
@@ -90,6 +91,7 @@ class HuntSummary {
     required this.gone,
     required this.goneBeforeEnquiry,
     required this.todo,
+    this.pulse = const MarketPulse(),
   });
 
   final PropertyKind kind;
@@ -125,10 +127,37 @@ class HuntSummary {
   final List<Property> gone, goneBeforeEnquiry;
   final List<ToDo> todo;
 
+  /// What Search has seen of the homes since they were saved.
+  final MarketPulse pulse;
+
   /// A few plain sentences about the hunt.
   List<String> get insights => _insights(this);
 
   bool get isEmpty => homes.isEmpty;
+}
+
+/// What Search has seen of the saved homes (see MarketFacts).
+class MarketPulse {
+  const MarketPulse({
+    this.cutThisWeek = const [],
+    this.mayBeGone = const [],
+    this.daysToGo,
+    this.goneFast = 0,
+  });
+
+  /// Homes whose price fell in the last seven days.
+  final List<Property> cutThisWeek;
+
+  /// Homes in play, still advertised as far as the app knows, that no
+  /// search has shown for two weeks.
+  final List<Property> mayBeGone;
+
+  /// Of homes that went let or sold: the middle number of days from first
+  /// listed to last seen, and how many went within two weeks.
+  final int? daysToGo;
+  final int goneFast;
+
+  bool get isEmpty => cutThisWeek.isEmpty && mayBeGone.isEmpty && daysToGo == null;
 }
 
 /// Dates as UTC midnights, so day counts do not slip across the clock change.
@@ -410,6 +439,30 @@ HuntSummary summarise({
     }
   }
 
+  final facts = {for (final p in homes) p.id: MarketFacts.of(p.meta)};
+  final weekAgo = now.subtract(const Duration(days: 7));
+  final cut = [
+    for (final p in homes)
+      if (facts[p.id]!.prices case [..., final a, final b]
+          when b.price < a.price && !_day(b.at).isBefore(weekAgo))
+        p,
+  ];
+  final stale = [
+    for (final p in homes)
+      if (Stage.of(p.stage).active && !listingGone(p.listingStatus) && facts[p.id]!.mayBeGone(todayIso)) p,
+  ];
+  final lasted = [
+    for (final p in homes)
+      if (listingGone(p.listingStatus))
+        if (facts[p.id]! case MarketFacts(listedOn: final l?, seen: final s?))
+          _day(s).difference(_day(l)).inDays,
+  ];
+  for (final p in stale) {
+    if (Stage.of(p.stage) != Stage.fresh) {
+      todo.add(ToDo('May be gone, not seen in Search for two weeks: check ${p.address}', propertyId: p.id));
+    }
+  }
+
   final firstAdded = homes.isEmpty
       ? null
       : homes.map((p) => _day(p.added)).reduce((a, b) => a.isBefore(b) ? a : b);
@@ -434,6 +487,12 @@ HuntSummary summarise({
     gone: gone,
     goneBeforeEnquiry: goneBeforeEnquiry,
     todo: todo,
+    pulse: MarketPulse(
+      cutThisWeek: cut,
+      mayBeGone: stale,
+      daysToGo: lasted.isEmpty ? null : _median(lasted),
+      goneFast: lasted.where((d) => d < 14).length,
+    ),
   );
 }
 
@@ -461,6 +520,18 @@ List<String> _insights(HuntSummary s) {
     out.add('Every priced home you saved is ${_gbp(p.low)}.');
   } else if (p != null) {
     out.add('Prices run from ${_gbp(p.low)} to ${_gbp(p.high)}, ${_gbp(p.median)} in the middle.');
+  }
+  final m = s.pulse;
+  if (m.cutThisWeek.isNotEmpty) {
+    out.add(
+      '${_homes(m.cutThisWeek.length)} you saved cut ${m.cutThisWeek.length == 1 ? 'its' : 'their'} price this week.',
+    );
+  }
+  if (m.daysToGo != null) {
+    out.add(
+      'Homes of yours that went ${kind == PropertyKind.rent ? 'let' : 'sold'} were on the market about '
+      '${m.daysToGo} days${m.goneFast > 0 ? '; ${m.goneFast} went within two weeks' : ''}.',
+    );
   }
   final asked = s.enquired.length;
   final viewed = s.funnel[Stage.viewing.index].count;

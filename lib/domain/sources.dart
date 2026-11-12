@@ -100,6 +100,10 @@ String _statusOf(String text, {required bool rent}) {
   return rent ? 'toLet' : 'forSale';
 }
 
+/// The date part of an ISO time ("2026-11-11T11:16:11Z"), or null.
+String? _day(Object? iso) =>
+    iso is String && RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(iso) ? iso.substring(0, 10) : null;
+
 int? _int(Object? o) => switch (o) {
   num n => n.toInt(),
   String s => int.tryParse(s.replaceAll(RegExp(r'[^\d]'), '')),
@@ -138,6 +142,11 @@ SourcePage parseRightmoveSearch(String html, {required bool rent}) {
         agent: '${_at(p, ['customer', 'branchDisplayName']) ?? ''}',
         agentPhone: '${_at(p, ['customer', 'contactTelephone']) ?? ''}',
         image: _at(p, ['images', 0, 'srcUrl']) as String?,
+        listedOn: _day(p['firstVisibleDate']),
+        reducedOn: _at(p, ['listingUpdate', 'listingUpdateReason']) == 'price_reduced'
+            ? _day(_at(p, ['listingUpdate', 'listingUpdateDate']))
+            : null,
+        sqft: sqftIn('${p['displaySize'] ?? ''}'),
         status: _statusOf('${p['displayStatus'] ?? ''}', rent: rent),
         description: [p['summary'] ?? '', ...features].join('\n').trim(),
       ),

@@ -603,6 +603,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               onPressed: () => _edit(context, q),
               onDeleted: () => c.refine(q.copyWith(minPrice: () => null, maxPrice: () => null)),
             ),
+          if (q.minSqft != null)
+            InputChip(
+              label: Text('${q.minSqft}+ sq ft'),
+              onPressed: () => _edit(context, q),
+              onDeleted: () => c.refine(q.copyWith(minSqft: () => null)),
+            ),
           if (q.radiusMiles != null)
             InputChip(
               label: Text('Within ${q.radiusMiles!.toStringAsFixed(q.radiusMiles! % 1 == 0 ? 0 : 1)} mi'),
@@ -696,6 +702,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final minPrice = TextEditingController(text: q.minPrice?.toString() ?? '');
     final maxPrice = TextEditingController(text: q.maxPrice?.toString() ?? '');
     final radius = TextEditingController(text: q.radiusMiles?.toString() ?? '');
+    final size = TextEditingController(text: q.minSqft?.toString() ?? '');
     final must = TextEditingController(text: q.must.join(', '));
     final mustNot = TextEditingController(text: q.mustNot.join(', '));
     List<String> words(TextEditingController c) => [
@@ -743,6 +750,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ],
         ),
         Field(radius, 'Within', number: true, suffix: 'miles'),
+        Field(size, 'At least', number: true, suffix: 'sq ft'),
         Field(must, 'Must mention', hint: 'parking, garden'),
         Field(mustNot, 'Must not mention', hint: 'students, shared'),
         const SizedBox(height: 12),
@@ -798,6 +806,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           minPrice: () => intIn(minPrice),
           maxPrice: () => intIn(maxPrice),
           radiusMiles: () => numberIn(radius)?.toDouble(),
+          minSqft: () => intIn(size),
           must: words(must),
           mustNot: words(mustNot),
           has: [
@@ -906,9 +915,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               onSelected: (v) => ref.read(searchProvider.notifier).setSort(v),
               itemBuilder: (_) => [
                 for (final o in HomeSort.values)
-                  if (o != HomeSort.forYou || taste.count > 0)
-                    if (o != HomeSort.soonest || s.request?.rent != false)
-                      PopupMenuItem(value: o, child: Text(o.label)),
+                  if (switch (o) {
+                    HomeSort.forYou => taste.count > 0,
+                    HomeSort.soonest => s.request?.rent != false,
+                    // Only when some results give it.
+                    HomeSort.perSqft => s.homes.any((h) => h.sqft != null),
+                    HomeSort.newest => s.homes.any((h) => h.listedOn != null),
+                    _ => true,
+                  })
+                    PopupMenuItem(value: o, child: Text(o.label)),
               ],
               child: Chip(avatar: const Icon(Icons.sort, size: 18), label: Text('Sort: ${sort.label}')),
             ),
@@ -979,8 +994,10 @@ class _HomeCard extends ConsumerWidget {
       if (h.beds != null) h.beds == 0 ? 'Studio' : '${h.beds} bed',
       if (l.style.isNotEmpty) l.style,
       if (l.furnished.isNotEmpty) l.furnished,
+      if (h.sqft != null) '${h.sqft} sq ft',
       if (h.km != null) miles(h.km!),
     ].join(' · ');
+    final market = marketLine(h.listedOn, h.reducedOn, today: DateTime.now());
     final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
     final asked = ref.watch(searchProvider.select((s) => s.request));
     final far = h.lat == null || h.lon == null
@@ -1041,6 +1058,7 @@ class _HomeCard extends ConsumerWidget {
           Text(l.address, maxLines: 2, overflow: TextOverflow.ellipsis),
           if (facts.isNotEmpty) Text(facts, style: t.bodySmall),
           if (far.isNotEmpty) Text(far, style: t.bodySmall),
+          if (market != null) Text(market, style: t.bodySmall),
           const SizedBox(height: 4),
           Text(_labels(h.sources), style: t.labelSmall?.copyWith(color: scheme.primary)),
           if (h.misses.isNotEmpty)

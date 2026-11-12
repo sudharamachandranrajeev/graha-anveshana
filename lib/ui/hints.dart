@@ -21,6 +21,9 @@ const anveshanaHints = <String, String>{
   'hunt.distance': 'As the crow flies from the home point in Settings.',
   'hunt.enquiry': 'A first message: is it free, what next, when to view. Your details come from Settings.',
   'hunt.stage': 'Where this property is in your hunt. Calls and messages move it on by themselves.',
+  'hunt.stale':
+      'No search has shown this home for two weeks or more, though its advert was not marked let or sold. '
+      'It may have gone: check with the agent.',
   'hunt.gone': 'The advert says it is let or sold.',
   // Search
   'search.saved': 'Searches Brahma Watch checks for you, and the alerts it sends.',

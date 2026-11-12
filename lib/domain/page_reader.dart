@@ -116,6 +116,7 @@ Listing? _card(SourceId source, Map c, {required bool rent}) {
     image: img.startsWith('https://') ? img : null,
     status: gone ? (rent ? 'letAgreed' : 'saleAgreed') : (rent ? 'toLet' : 'forSale'),
     description: lines.join('\n'),
+    sqft: sqftIn(text),
   );
 }
 

@@ -28,6 +28,7 @@ class SearchRequest {
     this.maxMinutes,
     this.travelMode = 'car',
     this.travelTo = '',
+    this.minSqft,
   });
 
   /// The request as typed.
@@ -63,6 +64,10 @@ class SearchRequest {
   final int? maxMinutes;
   final String travelMode, travelTo;
 
+  /// Homes smaller than this many square feet are left out; homes whose
+  /// advert gives no size stay.
+  final int? minSqft;
+
   bool get isEmpty => area.isEmpty;
 
   /// The same search for the other kind, to rent or for sale. A monthly
@@ -89,6 +94,7 @@ class SearchRequest {
     int? Function()? maxMinutes,
     String? travelMode,
     String? travelTo,
+    int? Function()? minSqft,
   }) => SearchRequest(
     text: text,
     area: area ?? this.area,
@@ -109,6 +115,7 @@ class SearchRequest {
     maxMinutes: maxMinutes == null ? this.maxMinutes : maxMinutes(),
     travelMode: travelMode ?? this.travelMode,
     travelTo: travelTo ?? this.travelTo,
+    minSqft: minSqft == null ? this.minSqft : minSqft(),
   );
 
   Map<String, Object?> toJson() => {
@@ -134,6 +141,7 @@ class SearchRequest {
     'maxMinutes': ?maxMinutes,
     if (maxMinutes != null) 'travelMode': travelMode,
     if (maxMinutes != null && travelTo.isNotEmpty) 'travelTo': travelTo,
+    'minSqft': ?minSqft,
   };
 
   factory SearchRequest.fromJson(Map<String, Object?> j) {
@@ -166,6 +174,7 @@ class SearchRequest {
       maxMinutes: (j['maxMinutes'] as num?)?.toInt(),
       travelMode: '${j['travelMode'] ?? 'car'}',
       travelTo: '${j['travelTo'] ?? ''}',
+      minSqft: (j['minSqft'] as num?)?.toInt(),
     );
   }
 
@@ -347,7 +356,7 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   // miles", "max 2 bedrooms", "under 30 minutes".
   final money =
       r'£?\s*(\d[\d,]*(?:\.\d+)?)\s*([km])?\b'
-      r'(?!\s*(?:miles?\b|mi\b|km\b|kilomet|beds?\b|bedrooms?\b|mins?\b|minutes?\b|hours?\b|hrs?\b|years?\b))';
+      r'(?!\s*(?:miles?\b|mi\b|km\b|kilomet|beds?\b|bedrooms?\b|mins?\b|minutes?\b|hours?\b|hrs?\b|years?\b|sq\b|sq\.|sqft|sqm|square|ft²|ft2|m²|m2\b))';
   int? minPrice, maxPrice;
   final between = RegExp(
     '(?:between\\s*)?$money\\s*(?:-|–|to|and)\\s*$money',
@@ -400,6 +409,20 @@ SearchRequest readRequest(String input, {bool rent = true}) {
     final v = double.parse(within[1]!);
     radius = within[2]!.toLowerCase().startsWith('k') ? v / 1.609344 : v;
     rest = rest.replaceFirst(within[0]!, ' near ');
+  }
+
+  // Floor area: "at least 700 sq ft", "700+ sqft", "over 65 sqm".
+  int? minSqft;
+  final size = RegExp(
+    r'(?:at least|min(?:imum)?|over|above|more than|from)?\s*([\d,]{2,6}(?:\.\d+)?)\s*\+?\s*'
+    r'(sq\.?\s*f(?:ee)?t\.?|sqft|square f(?:ee|oo)t|ft²|sq\.?\s*m(?:etres?)?\b|sqm\b|square met(?:re|er)s?|m²)',
+    caseSensitive: false,
+  ).firstMatch(rest);
+  if (size != null) {
+    final v = double.tryParse(size[1]!.replaceAll(',', '')) ?? 0;
+    final metres = !RegExp(r'f(?:ee|oo)?t|ft', caseSensitive: false).hasMatch(size[2]!);
+    minSqft = (metres ? v * 10.7639 : v).round();
+    rest = rest.replaceFirst(size[0]!, ' ');
   }
 
   // Words it must not mention: "no students", "without stairs", "not ground floor".
@@ -485,6 +508,7 @@ SearchRequest readRequest(String input, {bool rent = true}) {
     must: must,
     mustNot: mustNot,
     includeGone: RegExp(r'\b(?:let agreed|sold stc|under offer)\b', caseSensitive: false).hasMatch(t),
+    minSqft: minSqft,
   );
 }
 

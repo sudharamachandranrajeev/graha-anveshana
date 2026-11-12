@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../domain/area_checks.dart';
+import '../domain/listing.dart';
 import '../domain/page_reader.dart';
 import '../domain/property_search.dart';
 import '../domain/research.dart';
@@ -268,6 +269,7 @@ class SearchController extends Notifier<SearchState> {
     if (q == null) return 0;
     final before = _all.length;
     mergeListings(_all, page.items);
+    unawaited(_noteSaved(page.items));
     final c = state.centre;
     final read = (state.sources[s]?.read ?? 0) + page.items.length;
     state = _next(
@@ -280,6 +282,26 @@ class SearchController extends Notifier<SearchState> {
     );
     unawaited(_timeHomes(_run));
     return _all.length - before;
+  }
+
+  /// Saved homes among [items] are noted as seen today, with their price
+  /// (see PropertyBook.noteSeen). A failure here never stops the search.
+  Future<void> _noteSaved(List<Listing> items) async {
+    try {
+      final saved = await ref.read(savedAdvertsProvider.future);
+      final seen = {
+        for (final l in items)
+          if (saved['${l.source.toLowerCase()}:${l.sourceId}'] case final p?) p.id: l,
+      };
+      if (seen.isEmpty) return;
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      if (await ref.read(sessionProvider).book.noteSeen(seen, today) > 0) {
+        ref.read(revisionProvider.notifier).bump();
+        ref.read(syncProvider.notifier).soon();
+      }
+    } on Object catch (e, st) {
+      AppErrors.record(e, st);
+    }
   }
 
   Future<({Centre? where, String note})> _centre(SearchRequest q) async {
@@ -336,6 +358,7 @@ class SearchController extends Notifier<SearchState> {
       final got = s.readInBrowser ? await _readInBrowser(s, q, page) : await _reader.search(s, q, page: page);
       if (run != _run) return;
       mergeListings(_all, got.items);
+      unawaited(_noteSaved(got.items));
       final c = state.centre;
       state = _next(
         sources: {
