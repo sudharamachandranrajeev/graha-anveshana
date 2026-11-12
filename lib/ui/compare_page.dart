@@ -45,7 +45,7 @@ class ComparePage extends ConsumerWidget {
       ('Distance from home', dist),
       ('Rating', (p) => p.rating == 0 ? '–' : '${p.rating} of 5'),
       ('Advert', (p) => p.listingStatus.isEmpty ? '–' : listingStatusLabel(p.listingStatus)),
-      ('Available', (p) => p.availableFrom == null ? '–' : niceDate(p.availableFrom!)),
+      ('Available', (p) => p.availableFrom == null ? '–' : availableLabel(p.availableFrom!)),
       ('Agent', (p) => contacts[p.agentId]?.name ?? '–'),
       ('Postcode', (p) => p.postcode.isEmpty ? '–' : p.postcode),
     ];

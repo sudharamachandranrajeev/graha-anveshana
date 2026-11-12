@@ -168,6 +168,17 @@ void main() {
       expect(minutesText(120), '2 h');
     });
 
+    test('an answer that is not JSON is the service failing, not a crash', () async {
+      final times = TravelTimes(
+        MockClient((r) async => http.Response('<html>Bad gateway</html>', 200)),
+        spacing: Duration.zero,
+      );
+      const work = (lat: 53.8, lon: -1.55), home = (lat: 53.52, lon: -1.13);
+      expect(times.minutes(TravelMode.bike, [home], work), throwsA(isA<TravelUnavailable>()));
+      expect(times.minutesToEach(TravelMode.bike, home, [work]), throwsA(isA<TravelUnavailable>()));
+      expect(times.route(TravelMode.bike, work, home), throwsA(isA<TravelUnavailable>()));
+    });
+
     test('a route: its line, time and distance, asked once', () async {
       var calls = 0;
       final times = TravelTimes(

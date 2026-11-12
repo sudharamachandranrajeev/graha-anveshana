@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.13.1
+
+Fixes found in a check of Search, the Shortlist and the Dashboard.
+
+- **Search requests read right.**
+  - "2 bed within 3 miles" no longer takes 3 as a price.
+  - "up to 3 bedrooms" sets the most bedrooms, not the fewest.
+  - "under 2 miles" and "no further than 5 miles" set the distance.
+  - "no more than" no longer hides homes that mention "more".
+- **Search stays quick.**
+  - Results show while the place is still being found on the map. They are sorted by distance
+    once it is.
+  - Matching the same home across sites, and leaving out thrown-out homes, is about 20 times
+    faster with a few hundred results.
+- **Undo** after throwing a home out of Search works. Before, it could fail because the card had
+  gone.
+- **Saving homes.**
+  - A home saved again from another site's advert updates the one you have, not a second copy.
+  - A refresh no longer writes over an address or link you corrected.
+  - A rating, note or agent you set no longer undoes a change made meanwhile by a refresh or on
+    another device.
+- **Saved searches.** Saving a different search under a name you already use keeps both, as
+  "name (2)", instead of replacing the first.
+- **Dashboard.**
+  - A viewing whose time has passed asks you to mark it done or cancelled, and clears when you
+    do.
+  - The weekly enquiries count each home once, however many messages you sent about it.
+  - A budget of £0 no longer stops the screen.
+  - Days hunting stays right across the clock change.
+- **Other fixes.**
+  - A home's "available from" date shows as a date, and odd values no longer stop the page.
+  - A travel-time answer that is not what the app expects shows "travel times unavailable"
+    instead of failing.
+  - The Change the search dialog no longer reports an error as it closes.
+
 ## 0.13.0
 
 - **Dashboard**, the new first screen: your hunt so far. It shows:

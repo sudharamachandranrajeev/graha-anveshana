@@ -73,18 +73,21 @@ typedef SavedSearch = ({String id, String name, SearchRequest request, HomeSort?
 /// The saved searches, in the order saved. Synced with the user's other devices.
 final savedSearchesProvider = FutureProvider<List<SavedSearch>>((ref) async {
   ref.watch(revisionProvider);
-  final raw = await ref.watch(sessionProvider).book.pref<List<Object?>>(PrefKeys.savedSearches, const []);
-  return [
-    for (final j in raw)
-      if (j case {'id': final String id, 'name': final String name, 'request': final Map request})
-        (
-          id: id,
-          name: name,
-          request: SearchRequest.fromJson(request.cast()),
-          sort: HomeSort.ofName(j['sort'] as String?),
-        ),
-  ];
+  return savedFromJson(
+    await ref.watch(sessionProvider).book.pref<List<Object?>>(PrefKeys.savedSearches, const []),
+  );
 });
+
+List<SavedSearch> savedFromJson(List<Object?> raw) => [
+  for (final j in raw)
+    if (j case {'id': final String id, 'name': final String name, 'request': final Map request})
+      (
+        id: id,
+        name: name,
+        request: SearchRequest.fromJson(request.cast()),
+        sort: HomeSort.ofName(j['sort'] as String?),
+      ),
+];
 
 Future<void> _putSaved(PropertyBook book, List<SavedSearch> all) => book.setPref(PrefKeys.savedSearches, [
   for (final s in all)
@@ -92,6 +95,8 @@ Future<void> _putSaved(PropertyBook book, List<SavedSearch> all) => book.setPref
 ]);
 
 /// Saves [q] as [name]. The same search saved before is renamed and updated.
+/// A different search never replaces one that has the same name: the new
+/// one is numbered ("Leeds flats (2)").
 Future<void> saveSearch(
   PropertyBook book,
   List<SavedSearch> all,
@@ -99,8 +104,16 @@ Future<void> saveSearch(
   SearchRequest q,
   HomeSort? sort,
 ) {
-  final same = all.where((s) => s.request.sameAs(q) || s.name == name).firstOrNull;
-  final saved = (id: same?.id ?? newId(), name: name, request: q, sort: sort);
+  final same = all.where((s) => s.request.sameAs(q)).firstOrNull;
+  final taken = {
+    for (final s in all)
+      if (s.id != same?.id) s.name,
+  };
+  var unique = name;
+  for (var n = 2; taken.contains(unique); n++) {
+    unique = '$name ($n)';
+  }
+  final saved = (id: same?.id ?? newId(), name: unique, request: q, sort: sort);
   return _putSaved(book, [for (final s in all) s.id == same?.id ? saved : s, if (same == null) saved]);
 }
 

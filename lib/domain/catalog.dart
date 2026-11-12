@@ -322,16 +322,33 @@ String _cleanUrl(String url) {
   return '${u.host.replaceFirst('www.', '')}${u.path.replaceAll(RegExp(r'/+$'), '')}'.toLowerCase();
 }
 
+/// A key's link, postcode and address as [sameHome] compares them, worked
+/// out once per key: matching every pair of a few hundred adverts would
+/// otherwise read each link and address hundreds of times.
+typedef _Clean = ({String url, String postcode, String address, bool numbered});
+final _cleaned = Expando<_Clean>('cleaned');
+
+_Clean _clean(ItemKey k) => _cleaned[k] ??= switch (normaliseAddress(k.address)) {
+  final address => (
+    url: _cleanUrl(k.url),
+    postcode: k.postcode.replaceAll(' ', '').toUpperCase(),
+    address: address,
+    numbered: RegExp(r'\d').hasMatch(address),
+  ),
+};
+
 /// Why [a] and [b] look like the same home, or null.
 MatchReason? sameHome(ItemKey a, ItemKey b) {
   if (a.sourceId != null && a.sourceId!.isNotEmpty && a.source == b.source && a.sourceId == b.sourceId) {
     return MatchReason.sameAdvert;
   }
-  final ua = _cleanUrl(a.url);
-  if (ua.isNotEmpty && ua == _cleanUrl(b.url)) return MatchReason.sameAdvert;
-  final pa = a.postcode.replaceAll(' ', '').toUpperCase(), pb = b.postcode.replaceAll(' ', '').toUpperCase();
-  final na = normaliseAddress(a.address), nb = normaliseAddress(b.address);
-  if (na.isNotEmpty && na == nb && (pa.isEmpty || pb.isEmpty || pa == pb) && RegExp(r'\d').hasMatch(na)) {
+  final ca = _clean(a), cb = _clean(b);
+  if (ca.url.isNotEmpty && ca.url == cb.url) return MatchReason.sameAdvert;
+  final pa = ca.postcode, pb = cb.postcode;
+  if (ca.address.isNotEmpty &&
+      ca.address == cb.address &&
+      (pa.isEmpty || pb.isEmpty || pa == pb) &&
+      ca.numbered) {
     return MatchReason.sameAddress;
   }
   final d = hashDistance(a.imageHash, b.imageHash);

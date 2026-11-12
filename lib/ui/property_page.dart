@@ -114,7 +114,7 @@ class PropertyPage extends ConsumerWidget {
           spacing: 16,
           runSpacing: 4,
           children: [
-            if (p.availableFrom != null) Text('Available ${niceDate(p.availableFrom!)}'),
+            if (p.availableFrom != null) Text('Available ${availableLabel(p.availableFrom!)}'),
             if (p.listingStatus.isNotEmpty)
               StatusLabel(
                 listingGone(p.listingStatus) ? Status.warning : Status.good,
@@ -161,7 +161,7 @@ class PropertyPage extends ConsumerWidget {
                       tooltip: '$i of 5',
                       icon: Icon(i <= p.rating ? Icons.star : Icons.star_border, color: lime),
                       onPressed: () => ref.mutate(
-                        (x) => x.book.save(x.db.properties, p.copyWith(rating: i == p.rating ? 0 : i), p.id),
+                        (x) => x.book.editProperty(p.id, (q) => q.copyWith(rating: i == p.rating ? 0 : i)),
                       ),
                     ),
                 ],
@@ -317,10 +317,9 @@ class PropertyPage extends ConsumerWidget {
             if (found.contains(i.id)) i,
         ]);
         await ref.mutate(
-          (s) => s.book.save(
-            s.db.properties,
-            p.copyWith(notes: p.notes.isEmpty ? note : '${p.notes}\n$note'),
+          (s) => s.book.editProperty(
             p.id,
+            (q) => q.copyWith(notes: q.notes.isEmpty ? note : '${q.notes}\n$note'),
           ),
         );
         return null;
@@ -351,7 +350,7 @@ class PropertyPage extends ConsumerWidget {
       title: 'Notes',
       fields: (_) => [Field(notes, 'Notes', lines: 5, autofocus: true)],
       onSave: () async {
-        await ref.mutate((s) => s.book.save(s.db.properties, p.copyWith(notes: notes.text.trim()), p.id));
+        await ref.mutate((s) => s.book.editProperty(p.id, (q) => q.copyWith(notes: notes.text.trim())));
         return null;
       },
     );
@@ -435,7 +434,7 @@ class _ContactCard extends ConsumerWidget {
     if (picked == null || !context.mounted) return;
     final id = picked.isEmpty ? await editContact(context, ref) : picked;
     if (id != null) {
-      await ref.mutate((s) => s.book.save(s.db.properties, p.copyWith(agentId: Value(id)), p.id));
+      await ref.mutate((s) => s.book.editProperty(p.id, (q) => q.copyWith(agentId: Value(id))));
     }
   }
 

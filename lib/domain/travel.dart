@@ -41,6 +41,15 @@ class TravelTimes {
   static String _p(LatLon p) => '${p.lon.toStringAsFixed(5)},${p.lat.toStringAsFixed(5)}';
   static String _key(TravelMode m, LatLon from, LatLon to) => '${m.name}|${_p(from)}|${_p(to)}';
 
+  /// The answer, or null when it is not JSON (a proxy's error page, say).
+  static Object? _decode(String body) {
+    try {
+      return jsonDecode(body);
+    } on FormatException {
+      return null;
+    }
+  }
+
   /// The cached time from [from] to [to], if asked before.
   double? known(TravelMode m, LatLon from, LatLon to) => _cache[_key(m, from, to)];
 
@@ -71,13 +80,18 @@ class TravelTimes {
         throw const TravelUnavailable('The travel time service did not answer.');
       }
       if (r.statusCode != 200) throw TravelUnavailable('The travel time service said ${r.statusCode}.');
-      final j = jsonDecode(r.body);
-      final rows = j is Map && j['code'] == 'Ok' ? j['durations'] : null;
+      final rows = switch (_decode(r.body)) {
+        {'code': 'Ok', 'durations': final List d} => d,
+        _ => null,
+      };
       if (rows is! List || rows.length != part.length) {
         throw const TravelUnavailable('The travel time service gave no times.');
       }
       for (final (k, p) in part.indexed) {
-        final s = (rows[k] as List?)?.firstOrNull;
+        final s = switch (rows[k]) {
+          [final s, ...] => s,
+          _ => null,
+        };
         _cache[_key(mode, p, to)] = s is num ? s / 60 : null;
       }
     }
@@ -109,8 +123,10 @@ class TravelTimes {
         throw const TravelUnavailable('The travel time service did not answer.');
       }
       if (r.statusCode != 200) throw TravelUnavailable('The travel time service said ${r.statusCode}.');
-      final j = jsonDecode(r.body);
-      final row = j is Map && j['code'] == 'Ok' ? (j['durations'] as List?)?.firstOrNull : null;
+      final row = switch (_decode(r.body)) {
+        {'code': 'Ok', 'durations': [final first, ...]} => first,
+        _ => null,
+      };
       if (row is! List || row.length != missing.length) {
         throw const TravelUnavailable('The travel time service gave no times.');
       }
@@ -147,13 +163,13 @@ extension RouteTimes on TravelTimes {
       throw const TravelUnavailable('The travel time service did not answer.');
     }
     if (r.statusCode != 200) throw TravelUnavailable('The travel time service said ${r.statusCode}.');
-    final j = jsonDecode(r.body);
+    final j = TravelTimes._decode(r.body);
+    // Not JSON is a fault on the way, not "no route": not kept.
+    if (j == null) throw const TravelUnavailable('The travel time service gave no route.');
     TravelRoute? got;
-    final first = j is Map && j['code'] == 'Ok' ? (j['routes'] as List?)?.firstOrNull : null;
-    if (first case final Map best) {
-      final coords = (best['geometry'] as Map?)?['coordinates'];
+    if (j case {'code': 'Ok', 'routes': [final Map best, ...]}) {
       final line = [
-        if (coords is List)
+        if (best['geometry'] case {'coordinates': final List coords})
           for (final c in coords)
             if (c case [final num lon, final num lat]) (lat: lat.toDouble(), lon: lon.toDouble()),
       ];

@@ -73,7 +73,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         if (i.researchId == research.id && i.propertyId != null) i.propertyId!,
                     },
               budget: history
-                  .where((q) => q.rent == (kind == PropertyKind.rent) && q.maxPrice != null)
+                  .where((q) => q.rent == (kind == PropertyKind.rent) && (q.maxPrice ?? 0) > 0)
                   .firstOrNull
                   ?.maxPrice,
               places: [
@@ -160,7 +160,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ]),
       StatStrip([
         StatTile('Enquiries', '${s.enquired.length}', detail: week(s.enquiriesThisWeek)),
-        StatTile('Viewed', '${s.funnel[Stage.viewing.index].count}', detail: week(s.viewingsThisWeek)),
+        StatTile('Viewings', '${s.funnel[Stage.viewing.index].count}', detail: week(s.viewingsThisWeek)),
         StatTile('Days hunting', s.daysHunting == null ? '–' : '${s.daysHunting}'),
       ]),
       if (insights.isNotEmpty)

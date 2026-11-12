@@ -131,9 +131,13 @@ class HuntSummary {
   bool get isEmpty => homes.isEmpty;
 }
 
-DateTime _day(String s) => DateTime.tryParse(s.length >= 10 ? s.substring(0, 10) : s) ?? DateTime(1970);
+/// Dates as UTC midnights, so day counts do not slip across the clock change.
+DateTime _day(String s) {
+  final d = DateTime.tryParse(s.length >= 10 ? s.substring(0, 10) : s);
+  return d == null ? DateTime.utc(1970) : DateTime.utc(d.year, d.month, d.day);
+}
 
-DateTime _monday(DateTime d) => DateTime(d.year, d.month, d.day - (d.weekday - 1));
+DateTime _monday(DateTime d) => DateTime.utc(d.year, d.month, d.day - (d.weekday - 1));
 
 int _median(List<int> xs) {
   final s = [...xs]..sort();
@@ -171,7 +175,9 @@ HuntSummary summarise({
   int? budget,
   List<DashPlace> places = const [],
 }) {
-  final now = DateTime(today.year, today.month, today.day);
+  final now = DateTime.utc(today.year, today.month, today.day);
+  // Viewing times are local wall-clock times.
+  final nowLocal = DateTime(today.year, today.month, today.day);
   final homes = [
     for (final p in properties)
       if (p.kind == kind.name && (only == null || only.contains(p.id))) p,
@@ -227,7 +233,7 @@ HuntSummary summarise({
   // The last twelve weeks, oldest first.
   final thisWeek = _monday(now);
   final weekStarts = [
-    for (var w = 11; w >= 0; w--) DateTime(thisWeek.year, thisWeek.month, thisWeek.day - 7 * w),
+    for (var w = 11; w >= 0; w--) DateTime.utc(thisWeek.year, thisWeek.month, thisWeek.day - 7 * w),
   ];
   int weekOf(DateTime d) {
     final m = _monday(d);
@@ -239,12 +245,17 @@ HuntSummary summarise({
     final w = weekOf(_day(p.added));
     if (w >= 0) added[w]++;
   }
+  // Homes, like the tiles: each home in the week it was first asked about,
+  // and in each week it had a viewing.
+  final firstAsked = <String, String>{};
   for (final i in mine) {
-    final w = i.direction == 'out' ? weekOf(_day(i.at)) : -1;
+    if (i.direction == 'out') firstAsked.putIfAbsent(i.propertyId!, () => i.at);
+  }
+  for (final at in firstAsked.values) {
+    final w = weekOf(_day(at));
     if (w >= 0) asked[w]++;
   }
-  for (final v in seen) {
-    final w = weekOf(_day(v.at));
+  for (final (w, _) in {for (final v in seen) (weekOf(_day(v.at)), v.propertyId)}) {
     if (w >= 0) shown[w]++;
   }
   final weeks = [
@@ -382,15 +393,15 @@ HuntSummary summarise({
       ),
     );
   }
-  final soon = now.add(const Duration(days: 7));
+  final soon = nowLocal.add(const Duration(days: 7));
   for (final v in seen) {
     final at = DateTime.tryParse(v.at);
     if (at == null) continue;
     final p = byId[v.propertyId]!;
-    if (!at.isBefore(now) && at.isBefore(soon) && v.status == 'booked') {
+    if (!at.isBefore(nowLocal) && at.isBefore(soon) && v.status == 'booked') {
       todo.add(ToDo('Viewing ${v.at.replaceFirst('T', ' ')}: ${p.address}', propertyId: p.id));
-    } else if (at.isBefore(now) && v.notes.trim().isEmpty) {
-      todo.add(ToDo('Note how the viewing went: ${p.address}', propertyId: p.id));
+    } else if (at.isBefore(nowLocal) && v.status == 'booked') {
+      todo.add(ToDo('Viewing passed: mark it done or cancelled: ${p.address}', propertyId: p.id));
     }
   }
   for (final p in homes) {
@@ -437,7 +448,7 @@ List<String> _insights(HuntSummary s) {
   final kind = s.kind;
   final out = <String>[];
   final p = s.prices;
-  if (p != null && p.budget != null) {
+  if (p != null && p.budget != null && p.budget! > 0) {
     final ref = p.likedMedian ?? p.median;
     final who = p.likedMedian != null ? 'Homes you like' : 'Homes you saved';
     final diff = ((ref - p.budget!) / p.budget! * 100).round();

@@ -607,7 +607,7 @@ Future<void> _addLink(BuildContext context, WidgetRef ref, ResearchJob r) async 
           kind: 'link',
           title: portal?.address ?? '',
           url: portal?.url.toString() ?? text,
-          source: portal?.portal.name ?? uri.host.replaceFirst('www.', ''),
+          source: portal?.portal.source ?? uri.host.replaceFirst('www.', ''),
           sourceId: portal?.id,
           fields: ItemFields(address: portal?.address ?? ''),
         ),

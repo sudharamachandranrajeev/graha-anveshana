@@ -58,7 +58,11 @@ Future<String?> saveToHunt(BuildContext context, WidgetRef ref, FoundHome h, {re
   String? id;
   final ok = await guarded(context, () async {
     final r = await ref.mutate(
-      (s) => s.book.importListing(h.main, kind: rent ? PropertyKind.rent : PropertyKind.buy),
+      (s) => s.book.importListing(
+        h.main,
+        kind: rent ? PropertyKind.rent : PropertyKind.buy,
+        others: h.copies.skip(1).toList(),
+      ),
     );
     id = r.id;
     if (context.mounted) {
@@ -208,6 +212,26 @@ class SearchPage extends ConsumerStatefulWidget {
 }
 
 class _SearchPageState extends ConsumerState<SearchPage> {
+  Future<void> _throwOut(FoundHome h) async {
+    final t = TrashedHome.of(h, isoDate(DateTime.now()));
+    final messenger = ScaffoldMessenger.of(context);
+    await trashHome(ref, h);
+    if (!mounted) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Thrown out. Profile > Trash brings it back.'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              if (mounted) restoreHome(ref, t);
+            },
+          ),
+        ),
+      );
+  }
+
   final _text = TextEditingController();
   final _focus = FocusNode();
   var _rent = true;
@@ -385,6 +409,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         child: _HomeCard(
                           homes[i],
                           q,
+                          onThrowOut: _throwOut,
                           first: i == 0,
                           likeYours: taste.strong && _likeness(taste, homes[i]) >= 0.75,
                         ),
@@ -766,9 +791,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         return null;
       },
     );
-    for (final c in [area, near, minBeds, maxBeds, minPrice, maxPrice, radius, must, mustNot, minutes]) {
-      c.dispose();
-    }
+    // Not disposed here: the closing dialog still draws them. Nothing else
+    // holds them, so they go with it.
     if (next != null) await ref.read(searchProvider.notifier).refine(next!);
   }
 
@@ -899,10 +923,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
 /// One home in the results.
 class _HomeCard extends ConsumerWidget {
-  const _HomeCard(this.h, this.q, {this.first = false, this.likeYours = false});
+  const _HomeCard(this.h, this.q, {required this.onThrowOut, this.first = false, this.likeYours = false});
   final FoundHome h;
   final SearchRequest q;
   final bool first;
+
+  /// Held by the page: the card is gone by the time Undo is pressed.
+  final Future<void> Function(FoundHome h) onThrowOut;
 
   /// Close to the homes the user keeps (see Taste).
   final bool likeYours;
@@ -941,19 +968,7 @@ class _HomeCard extends ConsumerWidget {
     final bin = IconButton(
       tooltip: 'Throw out: never show this home again',
       icon: const Icon(Icons.delete_outline),
-      onPressed: () async {
-        final t = TrashedHome.of(h, isoDate(DateTime.now()));
-        await trashHome(ref, h);
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: const Text('Thrown out. Profile > Trash brings it back.'),
-              action: SnackBarAction(label: 'Undo', onPressed: () => restoreHome(ref, t)),
-            ),
-          );
-      },
+      onPressed: () => onThrowOut(h),
     );
     final save = PopupMenuButton<String>(
       tooltip: 'Save',

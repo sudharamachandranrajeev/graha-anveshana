@@ -246,6 +246,12 @@ void main() {
     expect(find.text(address), findsNothing);
     expect(find.textContaining('1 in your Trash'), findsOneWidget);
 
+    // Undo works although the card has gone.
+    await app.tapText('Undo');
+    expect(find.text(address), findsOneWidget);
+    await app.tap(find.byTooltip('Throw out: never show this home again'));
+    expect(find.text(address), findsNothing);
+
     // A new search still leaves it out.
     await search();
     expect(find.text(address), findsNothing);

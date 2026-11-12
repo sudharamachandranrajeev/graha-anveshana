@@ -39,6 +39,13 @@ String niceDateTime(String at) =>
     at.length > 10 ? '${niceDate(at.substring(0, 10))}, ${at.substring(11, 16)}' : niceDate(at);
 
 /// Now as local yyyy-MM-ddTHH:mm.
+/// When a home is free: a date ("3 Jan 2027") or the advert's own words
+/// ("now", "1st March"), which some sites give instead of a date.
+String availableLabel(String from) {
+  final d = RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(from) ? DateTime.tryParse(from.substring(0, 10)) : null;
+  return d == null ? from : niceDate(from.substring(0, 10));
+}
+
 String nowLocal() => DateTime.now().toIso8601String().substring(0, 16);
 
 /// Opens [uri] in the platform's app for it (dialler, messages, browser).

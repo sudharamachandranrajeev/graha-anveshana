@@ -12,6 +12,10 @@ enum Portal {
   const Portal(this.label, this.host);
   final String label, host;
 
+  /// The id its adverts carry in Listing.source, the same as Search's
+  /// (SourceId.key): "onthemarket", not "onTheMarket".
+  String get source => name.toLowerCase();
+
   /// OpenRent lists lettings only.
   bool get lettingsOnly => this == openRent;
 }
