@@ -298,7 +298,8 @@ SearchRequest readRequest(String input, {bool rent = true}) {
 
   // Bedrooms: "studio", "2 bed", "2-3 bed", "2+ beds", "at least two bedrooms".
   int? minBeds, maxBeds;
-  final n = r'(\d|one|two|three|four|five|six|seven)';
+  // Whole numbers only: "10 bed" is ten, not the 0 of 10.
+  final n = r'\b(\d{1,2}|one|two|three|four|five|six|seven)';
   int num(String s) => int.tryParse(s) ?? _numbers[s.toLowerCase()]!;
   final range = RegExp(
     '$n\\s*(?:-|–|to)\\s*$n\\s*-?\\s*bed(?:room)?s?\\b',
@@ -306,6 +307,10 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   ).firstMatch(t);
   final atLeast = RegExp(
     '(?:at least|min(?:imum)?|minimum of)\\s*$n\\s*-?\\s*bed(?:room)?s?\\b',
+    caseSensitive: false,
+  ).firstMatch(t);
+  final atMost = RegExp(
+    '(?:up to|upto|at most|max(?:imum)?|no more than)\\s*$n\\s*-?\\s*bed(?:room)?s?\\b',
     caseSensitive: false,
   ).firstMatch(t);
   final plus = RegExp('$n\\s*\\+\\s*-?\\s*bed(?:room)?s?\\b', caseSensitive: false).firstMatch(t);
@@ -317,6 +322,9 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   } else if (atLeast != null) {
     minBeds = num(atLeast[1]!);
     used(atLeast);
+  } else if (atMost != null) {
+    maxBeds = num(atMost[1]!);
+    used(atMost);
   } else if (plus != null) {
     minBeds = num(plus[1]!);
     used(plus);
@@ -330,7 +338,11 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   }
 
   // Price: "under £700", "£600-£800", "from £500", "£700", "250k".
-  final money = r'£?\s*(\d[\d,]*(?:\.\d+)?)\s*([km])?\b';
+  // A number followed by a distance, rooms or time is not money: "up to 3
+  // miles", "max 2 bedrooms", "under 30 minutes".
+  final money =
+      r'£?\s*(\d[\d,]*(?:\.\d+)?)\s*([km])?\b'
+      r'(?!\s*(?:miles?\b|mi\b|km\b|kilomet|beds?\b|bedrooms?\b|mins?\b|minutes?\b|hours?\b|hrs?\b|years?\b))';
   int? minPrice, maxPrice;
   final between = RegExp(
     '(?:between\\s*)?$money\\s*(?:-|–|to|and)\\s*$money',
@@ -375,7 +387,8 @@ SearchRequest readRequest(String input, {bool rent = true}) {
   // Distance: "within 2 miles", "within 3km", "2 mile radius".
   double? radius;
   final within = RegExp(
-    r'(?:within|in a|inside)?\s*(\d+(?:\.\d+)?)\s*(miles?|mi|km|kilomet(?:re|er)s?)\b(?:\s*radius)?(?:\s*(?:of|from))?',
+    r'(?:within|in a|inside|up to|upto|under|less than|no more than|no further than|at most|max(?:imum)?)?'
+    r'\s*(\d+(?:\.\d+)?)\s*(miles?|mi|km|kilomet(?:re|er)s?)\b(?:\s*radius)?(?:\s*(?:of|from))?',
     caseSensitive: false,
   ).firstMatch(rest);
   if (within != null) {
@@ -390,6 +403,19 @@ SearchRequest readRequest(String input, {bool rent = true}) {
     r'\b(?:no|without|not|avoid|excluding)\s+([a-z][a-z-]+)',
     caseSensitive: false,
   ).allMatches(rest).toList()) {
+    // "no more than", "not less than": a comparison, not a word to avoid.
+    if (const {
+      'more',
+      'less',
+      'fewer',
+      'further',
+      'longer',
+      'than',
+      'over',
+      'under',
+    }.contains(m[1]!.toLowerCase())) {
+      continue;
+    }
     mustNot.add(m[1]!.toLowerCase());
     rest = rest.replaceFirst(m[0]!, ' ');
   }

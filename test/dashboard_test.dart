@@ -151,7 +151,7 @@ void main() {
       ],
       log: [said('i1', property: 'a', at: '2026-11-10T09:00')],
     );
-    expect(s.weeks.last.start, DateTime(2026, 11, 9));
+    expect(s.weeks.last.start, DateTime.utc(2026, 11, 9));
     expect(s.weeks.last.added, 1);
     expect(s.weeks[10].added, 1);
     expect(s.addedThisWeek, 1);
@@ -250,7 +250,8 @@ void main() {
       ],
       views: [
         viewing('v1', 'a', '2026-11-14T11:00'),
-        viewing('v2', 'a', '2026-11-08T11:00', status: 'done'),
+        viewing('v2', 'a', '2026-11-08T11:00'),
+        viewing('v4', 'a', '2026-11-07T11:00', status: 'done'),
         viewing('v3', 'a', '2026-11-13T11:00', status: 'cancelled'),
       ],
     );
@@ -259,7 +260,7 @@ void main() {
       [
         'Follow up: a Sample Street (due 2026-11-10)',
         'Viewing 2026-11-14 11:00: a Sample Street',
-        'Note how the viewing went: a Sample Street',
+        'Viewing passed: mark it done or cancelled: a Sample Street',
         'Liked, not asked about yet: b Sample Street',
       ],
     );
@@ -275,5 +276,31 @@ void main() {
     expect(district('BT74 1AA'), 'BT74');
     expect(district('ls11ab'), 'LS1');
     expect(district('  '), isNull);
+  });
+
+  test('a budget of 0 is no budget', () {
+    final s = run(homes: [home('a', price: 600)], budget: 0);
+    expect(s.insights.first, 'Every priced home you saved is £600.');
+  });
+
+  test('weeks count homes: five calls about one home are one enquiry', () {
+    final s = run(
+      homes: [home('a', stage: 'enquired')],
+      log: [for (var i = 0; i < 5; i++) said('i$i', property: 'a', at: '2026-11-1${i}T09:00')],
+    );
+    expect(s.enquiriesThisWeek, 1);
+    expect(s.enquired, hasLength(1));
+  });
+
+  test('days hunting holds across the clock change', () {
+    final s = summarise(
+      kind: PropertyKind.rent,
+      properties: [home('a', added: '2026-03-28')],
+      interactions: const [],
+      viewings: const [],
+      contacts: const [],
+      today: DateTime(2026, 3, 30),
+    );
+    expect(s.daysHunting, 2);
   });
 }

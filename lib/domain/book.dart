@@ -122,55 +122,84 @@ class PropertyBook {
   }
 
   /// Adds an advert, or refreshes the one already saved (price, status,
-  /// photo), keeping the user's stage, rating and notes. Returns its id and
-  /// whether it was new.
-  Future<({String id, bool added})> importListing(Listing l, {PropertyKind? kind, String? today}) =>
-      db.transaction(() async {
-        final existing =
-            await (db.select(db.properties)
-                  ..where((p) => p.source.equals(l.source) & p.sourceId.equals(l.sourceId) & p.deleted.not())
-                  ..limit(1))
-                .getSingleOrNull();
-        final agentId = await agentFor(l);
-        final meta = <String, Object?>{
-          if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
-          if (l.description.isNotEmpty) 'description': l.description,
-          if (l.heating.isNotEmpty) 'heating': l.heating,
-          if (l.priceSuffix.isNotEmpty) 'priceSuffix': l.priceSuffix,
-        };
-        final id = existing?.id ?? newId();
-        final row = PropertiesCompanion(
-          id: Value(id),
-          address: Value(l.address),
-          postcode: Value(
-            l.postcode.isNotEmpty ? l.postcode : (postcodeIn(l.address) ?? existing?.postcode ?? ''),
-          ),
-          lat: Value(l.lat ?? existing?.lat),
-          lon: Value(l.lon ?? existing?.lon),
-          kind: Value(existing?.kind ?? (kind ?? (l.isRental ? PropertyKind.rent : PropertyKind.buy)).name),
-          price: Value(l.price ?? existing?.price),
-          beds: Value(l.beds ?? existing?.beds),
-          baths: Value(l.baths ?? existing?.baths),
-          style: Value(l.style.isNotEmpty ? l.style : existing?.style ?? ''),
-          furnished: Value(l.furnished.isNotEmpty ? l.furnished : existing?.furnished ?? ''),
-          availableFrom: Value(l.availableFrom ?? existing?.availableFrom),
-          source: Value(l.source),
-          sourceId: Value(l.sourceId),
-          url: Value(l.url),
-          imageUrl: Value(l.image ?? existing?.imageUrl),
-          listingStatus: Value(l.status),
-          agentId: Value(existing?.agentId ?? agentId),
-          added: Value(existing?.added ?? today ?? DateTime.now().toIso8601String().substring(0, 10)),
-          meta: Value(jsonEncode(meta)),
-        );
-        await save(db.properties, row, id);
-        return (id: id, added: existing == null);
-      });
+  /// photo), keeping the user's stage, rating and notes, and the address,
+  /// postcode and link once saved (the user may have corrected them).
+  /// [others] are the same home's adverts on other sites (from Search): a
+  /// home saved from any of them is found again, and their details fill
+  /// gaps in [l]'s. Returns its id and whether it was new.
+  Future<({String id, bool added})> importListing(
+    Listing l, {
+    PropertyKind? kind,
+    String? today,
+    List<Listing> others = const [],
+  }) => db.transaction(() async {
+    Property? existing;
+    for (final c in [l, ...others]) {
+      // Sources were once saved as "onTheMarket" from pasted links.
+      existing ??=
+          await (db.select(db.properties)
+                ..where(
+                  (p) =>
+                      p.source.lower().equals(c.source.toLowerCase()) &
+                      p.sourceId.equals(c.sourceId) &
+                      p.deleted.not(),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+    }
+    T? first<T extends Object>(T? Function(Listing c) f) => [l, ...others].map(f).nonNulls.firstOrNull;
+    String firstText(String Function(Listing c) f) =>
+        [l, ...others].map(f).where((v) => v.isNotEmpty).firstOrNull ?? '';
+    final agentId = await agentFor(l);
+    final meta = <String, Object?>{
+      if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
+      if (l.description.isNotEmpty) 'description': l.description,
+      if (l.heating.isNotEmpty) 'heating': l.heating,
+      if (l.priceSuffix.isNotEmpty) 'priceSuffix': l.priceSuffix,
+    };
+    final id = existing?.id ?? newId();
+    final row = PropertiesCompanion(
+      id: Value(id),
+      address: Value(existing?.address ?? l.address),
+      postcode: Value(
+        existing != null && existing.postcode.isNotEmpty
+            ? existing.postcode
+            : (firstText((c) => c.postcode).isNotEmpty
+                  ? firstText((c) => c.postcode)
+                  : (postcodeIn(l.address) ?? '')),
+      ),
+      lat: Value(first((c) => c.lat) ?? existing?.lat),
+      lon: Value(first((c) => c.lon) ?? existing?.lon),
+      kind: Value(existing?.kind ?? (kind ?? (l.isRental ? PropertyKind.rent : PropertyKind.buy)).name),
+      price: Value(first((c) => c.price) ?? existing?.price),
+      beds: Value(first((c) => c.beds) ?? existing?.beds),
+      baths: Value(first((c) => c.baths) ?? existing?.baths),
+      style: Value(l.style.isNotEmpty ? l.style : existing?.style ?? ''),
+      furnished: Value(l.furnished.isNotEmpty ? l.furnished : existing?.furnished ?? ''),
+      availableFrom: Value(first((c) => c.availableFrom) ?? existing?.availableFrom),
+      // Found through another site's copy: it keeps the advert it was saved from.
+      source: Value(existing?.source ?? l.source),
+      sourceId: Value(existing?.sourceId ?? l.sourceId),
+      url: Value(existing != null && existing.url.isNotEmpty ? existing.url : l.url),
+      imageUrl: Value(first((c) => c.image) ?? existing?.imageUrl),
+      listingStatus: Value(l.status),
+      agentId: Value(existing?.agentId ?? agentId),
+      added: Value(existing?.added ?? today ?? DateTime.now().toIso8601String().substring(0, 10)),
+      meta: Value(jsonEncode(meta)),
+    );
+    await save(db.properties, row, id);
+    return (id: id, added: existing == null);
+  });
 
-  Future<void> setStage(String propertyId, Stage stage) async {
-    final p = await (db.select(db.properties)..where((p) => p.id.equals(propertyId))).getSingle();
-    await save(db.properties, p.copyWith(stage: stage.id), p.id);
-  }
+  Future<void> setStage(String propertyId, Stage stage) =>
+      editProperty(propertyId, (p) => p.copyWith(stage: stage.id));
+
+  /// Changes a home as it is now in the database, not as a page last drew
+  /// it, so a change from a refresh or another device is not written over.
+  Future<void> editProperty(String id, Property Function(Property p) change) => db.transaction(() async {
+    final p = await (db.select(db.properties)..where((p) => p.id.equals(id))).getSingle();
+    await save(db.properties, change(p), id);
+  });
 
   /// Records a call, message or note.
   Future<String> log({

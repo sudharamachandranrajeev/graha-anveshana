@@ -35,7 +35,10 @@ class FoundHome {
   bool get gone => copies.every((c) => c.status.contains('Agreed') || c.status == 'sold');
 }
 
-ItemKey _key(Listing l) => ItemKey(
+/// One key per advert, so [sameHome]'s cleaned fields are kept with it.
+final _keys = Expando<ItemKey>('key');
+
+ItemKey _key(Listing l) => _keys[l] ??= ItemKey(
   id: '${l.source}:${l.sourceId}',
   url: l.url,
   source: l.source,

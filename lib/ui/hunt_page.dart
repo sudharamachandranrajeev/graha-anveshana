@@ -173,6 +173,11 @@ class _HuntPageState extends ConsumerState<HuntPage> {
             final hidden = mine.where((p) => !filter.matches(p)).length;
             mine.removeWhere((p) => !filter.matches(p));
             double? dist(Property p) => distanceFromHome(home, p.lat, p.lon);
+            // Grouped once, not searched again for each card.
+            final logOf = <String, List<Interaction>>{};
+            for (final i in log) {
+              if (i.propertyId case final id?) (logOf[id] ??= []).add(i);
+            }
             final inPlay = mine.where((p) => Stage.of(p.stage).active).toList();
             final top = ([
               ...inPlay.where((p) => p.rating > 0),
@@ -214,7 +219,7 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                             share: dearest > 0 && p.price != null ? p.price! / dearest : null,
                             quietDays: stage == Stage.enquired || stage == Stage.viewing
                                 ? daysWithoutReply([
-                                    for (final i in log.where((i) => i.propertyId == p.id))
+                                    for (final i in logOf[p.id] ?? const <Interaction>[])
                                       (channel: i.channel, direction: i.direction, at: i.at),
                                   ], today())
                                 : null,
@@ -379,7 +384,9 @@ Future<void> editProperty(
       final pc = postcode.text.trim().isEmpty ? postcodeIn(address.text) : postcodeIn(postcode.text);
       if (p == null && advert != null) {
         final all = await ref.read(propertiesProvider.future);
-        final dup = all.where((x) => x.source == advert.portal.name && x.sourceId == advert.id).firstOrNull;
+        final dup = all
+            .where((x) => x.source.toLowerCase() == advert.portal.source && x.sourceId == advert.id)
+            .firstOrNull;
         if (dup != null) return 'This advert is already in your list: ${dup.address}.';
       }
       await ref.mutate((s) async {
@@ -395,7 +402,7 @@ Future<void> editProperty(
             beds: Value(intIn(beds)),
             style: Value(style.text.trim()),
             url: Value(url.text.trim()),
-            source: p == null && advert != null ? Value(advert.portal.name) : const Value.absent(),
+            source: p == null && advert != null ? Value(advert.portal.source) : const Value.absent(),
             sourceId: p == null && advert != null ? Value(advert.id) : const Value.absent(),
             added: Value(p?.added ?? today()),
             meta: Value(

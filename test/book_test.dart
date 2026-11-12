@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:anveshana/db/database.dart';
 import 'package:anveshana/domain/book.dart';
 import 'package:anveshana/domain/contact_links.dart';
@@ -90,5 +91,77 @@ void main() {
     expect((await book.applicant()).moveIn, 'in March');
     final pref = await (db.select(db.prefs)..where((p) => p.id.equals(PrefKeys.home))).getSingle();
     expect(pref.id, startsWith('anveshana.'));
+  });
+
+  test('a corrected address and link survive a refresh of the advert', () async {
+    final id = (await book.importListing(advert())).id;
+    final p = await only();
+    await book.save(
+      db.properties,
+      p.copyWith(address: 'Flat 1, 3 Made Up Road', url: 'https://example.com/mine'),
+      id,
+    );
+    await book.importListing(advert(price: 640));
+    final after = await only();
+    expect(
+      (after.address, after.url, after.price),
+      ('Flat 1, 3 Made Up Road', 'https://example.com/mine', 640),
+    );
+  });
+
+  test('a home saved from one site is found again through its copy on another', () async {
+    const rm = Listing(
+      source: 'rightmove',
+      sourceId: '9001',
+      url: 'https://example.com/rm/9001',
+      address: 'Sample Street',
+    );
+    const otm = Listing(
+      source: 'onthemarket',
+      sourceId: '7001',
+      url: 'https://example.com/otm/7001',
+      address: 'Sample Street',
+      beds: 2,
+      image: 'https://example.com/7001.jpg',
+    );
+    final first = await book.importListing(rm);
+    // The next search answered from OnTheMarket first.
+    final again = await book.importListing(otm, others: [rm]);
+    expect(again, (id: first.id, added: false));
+    final p = await only();
+    expect(
+      (p.source, p.sourceId, p.beds, p.imageUrl),
+      ('rightmove', '9001', 2, 'https://example.com/7001.jpg'),
+    );
+  });
+
+  test('a pasted OnTheMarket link saved before 0.13.1 matches Search\'s copy', () async {
+    await book.importListing(
+      const Listing(
+        source: 'onTheMarket',
+        sourceId: '7002',
+        url: 'https://example.com/7002',
+        address: 'Sample Street',
+      ),
+    );
+    final r = await book.importListing(
+      const Listing(
+        source: 'onthemarket',
+        sourceId: '7002',
+        url: 'https://example.com/7002',
+        address: 'Sample Street',
+      ),
+    );
+    expect(r.added, isFalse);
+  });
+
+  test('a change to one field keeps what changed elsewhere since the page drew', () async {
+    await book.importListing(advert(), today: '2026-10-21');
+    final drawn = await only();
+    // A refresh or another device changes the home after the page drew it.
+    await book.save(db.properties, drawn.copyWith(price: const Value(600), rating: 3), drawn.id);
+    await book.editProperty(drawn.id, (p) => p.copyWith(notes: 'Quiet street'));
+    final p = await only();
+    expect((p.price, p.rating, p.notes), (600, 3, 'Quiet street'));
   });
 }

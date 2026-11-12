@@ -215,19 +215,23 @@ class SearchController extends Notifier<SearchState> {
       },
     );
     await recordSearch(ref, q);
-    final centre = await _centre(q);
     if (run != _run) return;
-    state = SearchState(
-      request: q,
-      centre: centre.where,
-      centreNote: centre.note,
-      sources: state.sources,
-      sort: state.sort,
-    );
-    await Future.wait([
+    // The sites are read while the place is looked up, so a slow map service
+    // does not hold the results back; they are ranked again when it answers.
+    final reads = Future.wait([
       for (final s in SourceId.values)
         if (!off.contains(s)) _read(run, s, 0),
     ]);
+    final centre = await _centre(q);
+    if (run == _run) {
+      final c = centre.where;
+      state = _next(
+        centre: c,
+        centreNote: centre.note,
+        homes: rankHomes(_all, q, centreLat: c?.lat, centreLon: c?.lon),
+      );
+    }
+    await reads;
   }
 
   /// Shows the results in [sort] order, and remembers it for next time.

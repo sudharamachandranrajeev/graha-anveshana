@@ -42,4 +42,20 @@ void main() {
     expect(readRequest('cheap 1 bedroom flat Belfast bt9 £700').area, 'BT9');
     expect(readRequest('2 bed to rent in Leeds').area, 'Leeds');
   });
+
+  test('distances, rooms and times are not read as prices', () {
+    final miles = readRequest('2 bed to rent in Leeds up to 3 miles from the station');
+    expect((miles.area, miles.near, miles.maxPrice, miles.radiusMiles), ('Leeds', 'station', null, 3));
+    final rooms = readRequest('flat to rent in Leeds max 2 bedrooms');
+    expect((rooms.minBeds, rooms.maxBeds, rooms.maxPrice), (null, 2, null));
+    final both = readRequest('house to rent in York up to 3 bedrooms under £1200');
+    expect((both.maxBeds, both.maxPrice), (3, 1200));
+    final compare = readRequest('2 bed to rent in Leeds under £900 no more than 2 miles from work');
+    expect((compare.area, compare.near, compare.maxPrice, compare.radiusMiles), ('Leeds', 'work', 900, 2));
+    expect(compare.mustNot, isEmpty);
+  });
+
+  test('ten bedrooms are ten', () {
+    expect(readRequest('10 bed house for sale in York').minBeds, 10);
+  });
 }

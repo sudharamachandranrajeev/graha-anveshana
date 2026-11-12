@@ -30,6 +30,8 @@ class TrashedHome {
 
   String get id => keys.first;
 
+  static final _listings = Expando<Listing>('listing');
+
   factory TrashedHome.of(FoundHome h, String today) => TrashedHome(
     keys: [for (final c in h.copies) '${c.source}:${c.sourceId}'],
     address: h.main.address,
@@ -45,7 +47,8 @@ class TrashedHome {
   );
 
   /// The advert it was, to match the same home listed again or elsewhere.
-  Listing get listing => Listing(
+  /// Made once: Search checks every home against every thrown-out one.
+  Listing get listing => _listings[this] ??= Listing(
     source: source,
     sourceId: id.substring(id.indexOf(':') + 1),
     url: url,
