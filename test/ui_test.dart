@@ -203,6 +203,10 @@ void main() {
     await app.tapText('Add to Shortlist');
     final rows = (await tester.runAsync(() => app.session.db.select(app.session.db.properties).get()))!;
     expect((rows.single.source, rows.single.price, rows.single.kind), ('rightmove', 650, 'rent'));
+    // Back on the results, the card says it is on the Shortlist.
+    await app.tap(find.byType(BackButton));
+    expect(find.text('Shortlist: New'), findsOneWidget);
+    expect(find.byTooltip('Saved: update it, or add to a collection'), findsOneWidget);
     await app.close();
   });
 

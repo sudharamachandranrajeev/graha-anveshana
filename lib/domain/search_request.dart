@@ -65,6 +65,11 @@ class SearchRequest {
 
   bool get isEmpty => area.isEmpty;
 
+  /// The same search for the other kind, to rent or for sale. A monthly
+  /// rent and a sale price are not on one scale, so the price limits go.
+  SearchRequest withRent(bool rent) =>
+      rent == this.rent ? this : copyWith(rent: rent, minPrice: () => null, maxPrice: () => null);
+
   SearchRequest copyWith({
     String? area,
     bool? rent,
@@ -536,3 +541,42 @@ const _filler = {
   'available',
   'family',
 };
+
+/// Something in [q] that was likely read wrong, with the search it
+/// probably meant ([fix]; null when there is no one obvious fix).
+typedef OddReading = ({String text, SearchRequest? fix});
+
+/// The readings of [q] worth a second look: a sale price on a rent search
+/// and the other way round, prices and bedrooms the wrong way round, and
+/// numbers no home has.
+List<OddReading> oddReadings(SearchRequest q) {
+  final lo = q.minPrice, hi = q.maxPrice, top = hi ?? lo;
+  return [
+    if (q.rent && top != null && top >= 20000)
+      (text: '${_gbp(top)} looks like a sale price.', fix: q.copyWith(rent: false)),
+    if (!q.rent && top != null && top >= 1000 && top < 5000)
+      (text: '${_gbp(top)} looks like a monthly rent.', fix: q.copyWith(rent: true)),
+    // "under 250" on a sale search: most likely thousands.
+    if (!q.rent && top != null && top > 0 && top < 1000)
+      (
+        text: '${_gbp(top)} is very low for a sale price.',
+        fix: q.copyWith(
+          minPrice: () => lo == null ? null : lo * 1000,
+          maxPrice: () => hi == null ? null : hi * 1000,
+        ),
+      ),
+    if (lo != null && hi != null && lo > hi)
+      (
+        text: 'The lowest price is above the highest.',
+        fix: q.copyWith(minPrice: () => hi, maxPrice: () => lo),
+      ),
+    if (q.minBeds != null && q.maxBeds != null && q.minBeds! > q.maxBeds!)
+      (
+        text: 'The fewest bedrooms is above the most.',
+        fix: q.copyWith(minBeds: () => q.maxBeds, maxBeds: () => q.minBeds),
+      ),
+    if ((q.minBeds ?? 0) > 10) (text: '${q.minBeds} bedrooms is more than almost any home has.', fix: null),
+  ];
+}
+
+String _gbp(int n) => '£${n.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+$)'), (_) => ',')}';

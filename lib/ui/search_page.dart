@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
+import '../db/database.dart';
 import '../app/search_controller.dart';
 import '../app/search_memory.dart';
 import '../domain/catalog.dart';
@@ -472,7 +473,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               setState(() => _rent = v.first);
               final q = ref.read(searchProvider).request;
               if (q != null && q.rent != _rent) {
-                ref.read(searchProvider.notifier).refine(q.copyWith(rent: _rent));
+                ref.read(searchProvider.notifier).refine(q.withRent(_rent));
               }
             },
           ),
@@ -669,6 +670,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             label: const Text('Save search'),
             onPressed: () => _save(context, q, ref.read(searchProvider).sort),
           ),
+          // Readings worth a second look, with the search likely meant.
+          for (final o in oddReadings(q))
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  StatusLabel(Status.warning, o.text),
+                  if (o.fix case final fix?)
+                    TextButton(onPressed: () => c.refine(fix), child: Text('Search ${fix.label} instead')),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -976,21 +990,29 @@ class _HomeCard extends ConsumerWidget {
               '${minutesText(h.minutes!)} by ${TravelMode.of(asked.travelMode).label.toLowerCase()} to ${asked.travelTo}',
             for (final p in places) '${miles(distanceKm(p.lat, p.lon, h.lat!, h.lon!))} from ${p.label}',
           ].join(' · ');
+    // Already saved from one of this home's adverts.
+    final savedAll = ref.watch(savedAdvertsProvider).value ?? const <String, Property>{};
+    final saved = [for (final c in h.copies) ?savedAll['${c.source.toLowerCase()}:${c.sourceId}']]
+        .firstOrNull;
     final bin = IconButton(
       tooltip: 'Throw out: never show this home again',
       icon: const Icon(Icons.delete_outline),
       onPressed: () => onThrowOut(h),
     );
     final save = PopupMenuButton<String>(
-      tooltip: 'Save',
-      icon: const Icon(Icons.bookmark_add_outlined),
+      tooltip: saved == null ? 'Save' : 'Saved: update it, or add to a collection',
+      icon: Icon(saved == null ? Icons.bookmark_add_outlined : Icons.bookmark),
       onSelected: (v) =>
           v == 'hunt' ? saveToHunt(context, ref, h, rent: q.rent) : saveToResearch(context, ref, h, q),
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: 'hunt', child: Text('Add to Shortlist')),
-        PopupMenuItem(value: 'research', child: Text('Add to a collection')),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'hunt',
+          child: Text(saved == null ? 'Add to Shortlist' : 'Update it in your Shortlist'),
+        ),
+        const PopupMenuItem(value: 'research', child: Text('Add to a collection')),
       ],
     );
+    final stage = saved == null ? null : Stage.of(saved.stage);
     final body = Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -1004,7 +1026,13 @@ class _HomeCard extends ConsumerWidget {
                   style: t.titleMedium,
                 ),
               ),
-              if (likeYours) const StatusLabel(Status.good, 'Like ones you keep'),
+              if (stage != null)
+                StatusLabel(
+                  stage.active ? Status.info : Status.warning,
+                  'Shortlist: ${stage.label(PropertyKind.of(saved!.kind))}',
+                )
+              else if (likeYours)
+                const StatusLabel(Status.good, 'Like ones you keep'),
               if (h.gone) StatusLabel(Status.warning, q.rent ? 'Let agreed' : 'Sold'),
               first ? TourTarget('search.save', child: save) : save,
               bin,
