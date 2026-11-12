@@ -349,7 +349,7 @@ jobs:
         run: |
           tag=${GITHUB_REF#refs/tags/}
           flags=()
-          [[ $tag == *-* || $tag == v0.* ]] && flags+=(--prerelease)
+          [[ $tag == *-* ]] && flags+=(--prerelease)
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/* --clobber
           else
