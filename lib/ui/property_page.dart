@@ -18,6 +18,7 @@ import 'hunt_page.dart';
 import 'invest_page.dart';
 import 'price_check_card.dart';
 import 'research_page.dart';
+import 'viewing_plan_page.dart';
 
 const channelLabels = {
   'call': 'Call',
@@ -224,14 +225,20 @@ class PropertyPage extends ConsumerWidget {
                         },
                         onTap: v.status == 'done' ? () => _viewingOutcome(context, ref, p, v) : null,
                         trailing: PopupMenuButton<String>(
-                          tooltip: 'Booked, done or cancelled',
-                          onSelected: (s) => s == 'done'
-                              ? _viewingOutcome(context, ref, p, v)
-                              : ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'booked', child: Text('Booked')),
-                            PopupMenuItem(value: 'done', child: Text('Done')),
-                            PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                          tooltip: 'Viewing: done, cancelled or add to calendar',
+                          onSelected: (s) => switch (s) {
+                            'done' => _viewingOutcome(context, ref, p, v),
+                            'calendar' => addToCalendar(context, (viewing: v, home: p)),
+                            _ => ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(value: 'booked', child: Text('Booked')),
+                            const PopupMenuItem(value: 'done', child: Text('Done')),
+                            const PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                            if (v.status == 'booked') ...[
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(value: 'calendar', child: Text('Add to calendar')),
+                            ],
                           ],
                         ),
                       ),

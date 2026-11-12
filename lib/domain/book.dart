@@ -223,6 +223,13 @@ class PropertyBook {
   Future<void> setStage(String propertyId, Stage stage) =>
       editProperty(propertyId, (p) => p.copyWith(stage: stage.id));
 
+  /// Moves several homes to [stage] at once.
+  Future<void> setStages(Iterable<String> ids, Stage stage) => db.transaction(() async {
+    for (final id in ids) {
+      await setStage(id, stage);
+    }
+  });
+
   /// Changes a home as it is now in the database, not as a page last drew
   /// it, so a change from a refresh or another device is not written over.
   Future<void> editProperty(String id, Property Function(Property p) change) => db.transaction(() async {

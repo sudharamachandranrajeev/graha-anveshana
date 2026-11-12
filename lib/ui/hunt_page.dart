@@ -5,17 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
+import '../domain/book.dart' show HomePoint;
+import '../domain/catalog_book.dart';
 import '../domain/hunt_filter.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import '../domain/price_log.dart';
 import '../domain/portals.dart';
 import '../domain/running_costs.dart';
+import '../domain/viewing_plan.dart';
 import 'common.dart';
 import 'compare_page.dart';
 import 'homes_map.dart';
 import 'look.dart';
 import 'property_page.dart';
+import 'viewing_plan_page.dart';
 
 class HuntPage extends ConsumerStatefulWidget {
   const HuntPage({super.key});
@@ -47,13 +51,32 @@ class _HuntPageState extends ConsumerState<HuntPage> {
     ),
   );
 
+  /// Homes picked for a bulk action; the Shortlist is in picking mode
+  /// while [_picking] is on.
+  final _picked = <String>{};
+  var _picking = false;
+
+  void _pick(String id) => setState(() {
+    _picking = true;
+    _picked.contains(id) ? _picked.remove(id) : _picked.add(id);
+  });
+
+  void _endPicking() => setState(() {
+    _picking = false;
+    _picked.clear();
+  });
+
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeProvider).value;
     final log = ref.watch(interactionsProvider).value ?? const <Interaction>[];
+    final views = ref.watch(viewingsProvider).value ?? const <Viewing>[];
+    final props = ref.watch(propertiesProvider);
+    final all = props.value ?? const <Property>[];
+    // A home picked and then removed elsewhere is no longer picked.
+    _picked.retainWhere((id) => all.any((p) => p.id == id && p.kind == kind.name));
     return PageScaffold(
       title: 'Shortlist',
-      banner: 'page.hunt',
       actions: [
         HintIconButton(
           'hunt.compare',
@@ -62,176 +85,409 @@ class _HuntPageState extends ConsumerState<HuntPage> {
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ComparePage(kind))),
         ),
         IconButton(
-          tooltip: 'Map',
-          icon: const Icon(Icons.map_outlined),
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HuntMapPage(kind))),
+          tooltip: 'Pick homes to move, compare or add to a collection',
+          isSelected: _picking,
+          icon: const Icon(Icons.checklist),
+          onPressed: () => _picking ? _endPicking() : setState(() => _picking = true),
         ),
-        HintIconButton(
-          'hunt.watch',
-          icon: Icons.notifications_active_outlined,
-          label: 'Check Brahma Watch',
-          onPressed: () => _checkWatch(context, ref),
-        ),
-      ],
-      fab: Hint(
-        'hunt.add',
-        child: FloatingActionButton.extended(
-          heroTag: null,
-          onPressed: () => _add(context, ref, kind),
-          icon: const Icon(Icons.add_home_outlined),
-          label: const Text('Add'),
-        ),
-      ),
-      children: [
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            SegmentedButton<PropertyKind>(
-              segments: const [
-                ButtonSegment(
-                  value: PropertyKind.rent,
-                  label: Text('To rent'),
-                  icon: Icon(Icons.key_outlined),
-                ),
-                ButtonSegment(
-                  value: PropertyKind.buy,
-                  label: Text('To buy'),
-                  icon: Icon(Icons.sell_outlined),
-                ),
-              ],
-              selected: {kind},
-              onSelectionChanged: (s) => setState(() => kind = s.first),
+        PopupMenuButton<String>(
+          tooltip: 'More',
+          onSelected: (v) => switch (v) {
+            'viewings' => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const ViewingPlanPage())),
+            'share' => _share(context, all, views),
+            'map' => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HuntMapPage(kind))),
+            _ => _checkWatch(context, ref),
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'viewings',
+              child: ListTile(leading: Icon(Icons.event_note_outlined), title: Text('Viewings, day by day')),
             ),
-            FilterChip(
-              label: const Text('Not for us'),
-              selected: showDropped,
-              onSelected: (v) => setState(() => showDropped = v),
+            PopupMenuItem(
+              value: 'share',
+              child: ListTile(leading: Icon(Icons.ios_share), title: Text('Share the shortlist')),
             ),
-            SizedBox(
-              width: 240,
-              child: TextField(
-                controller: words,
-                onChanged: (_) => _setFilter(),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  prefixIcon: Icon(Icons.search),
-                  labelText: 'Find',
-                  helperText: 'Address, postcode or notes. -word hides',
-                ),
-              ),
+            PopupMenuItem(
+              value: 'map',
+              child: ListTile(leading: Icon(Icons.map_outlined), title: Text('Map')),
             ),
-            DropdownButton<int?>(
-              value: filter.minBeds,
-              hint: const Text('Any beds'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Any beds')),
-                for (final b in [1, 2, 3, 4]) DropdownMenuItem(value: b, child: Text('$b+ beds')),
-              ],
-              onChanged: (b) => b == null ? _setFilter(clearBeds: true) : _setFilter(minBeds: b),
-            ),
-            DropdownButton<HuntSort>(
-              value: sort,
-              items: [for (final s in HuntSort.values) DropdownMenuItem(value: s, child: Text(s.label))],
-              onChanged: (s) => setState(() => sort = s ?? sort),
-            ),
-            SizedBox(
-              width: 140,
-              child: TextField(
-                controller: maxPrice,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => _setFilter(),
-                decoration: InputDecoration(
-                  isDense: true,
-                  prefixText: '£',
-                  labelText: kind == PropertyKind.rent ? 'Most a month' : 'Most',
-                ),
+            PopupMenuItem(
+              value: 'watch',
+              child: ListTile(
+                leading: Icon(Icons.notifications_active_outlined),
+                title: Text('Check Brahma Watch'),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        AsyncView(
-          ref.watch(propertiesProvider),
-          builder: (all) {
-            final mine = all.where((p) => p.kind == kind.name).toList();
-            if (mine.isEmpty) {
-              return EmptyState(
-                icon: Icons.travel_explore,
-                title: kind == PropertyKind.rent ? 'No homes to rent yet' : 'No homes to buy yet',
-                message:
-                    'Paste a PropertyPal link, type one in, or set up a search and let Brahma Watch bring new '
-                    'listings here.',
-                actions: [
-                  FilledButton(
-                    onPressed: () => _add(context, ref, kind),
-                    child: const Text('Add a property'),
+      ],
+      fab: _picking
+          ? null
+          : Hint(
+              'hunt.add',
+              child: FloatingActionButton.extended(
+                heroTag: null,
+                onPressed: () => _add(context, ref, kind),
+                icon: const Icon(Icons.add_home_outlined),
+                label: const Text('Add'),
+              ),
+            ),
+      // Built as it scrolls, so a long shortlist stays quick.
+      body: AsyncView(
+        props,
+        builder: (all) {
+          final rows = [
+            const HintBanner('page.hunt'),
+            _picking ? _pickBar(context, all) : _filters(),
+            const SizedBox(height: 12),
+            ..._homes(context, all, home, log),
+          ];
+          return ListView.builder(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 96 + MediaQuery.paddingOf(context).bottom),
+            itemCount: rows.length,
+            itemBuilder: (_, i) => Readable(child: rows[i]),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _filters() => Wrap(
+    spacing: 12,
+    runSpacing: 8,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      SegmentedButton<PropertyKind>(
+        segments: const [
+          ButtonSegment(value: PropertyKind.rent, label: Text('To rent'), icon: Icon(Icons.key_outlined)),
+          ButtonSegment(value: PropertyKind.buy, label: Text('To buy'), icon: Icon(Icons.sell_outlined)),
+        ],
+        selected: {kind},
+        onSelectionChanged: (s) => setState(() => kind = s.first),
+      ),
+      FilterChip(
+        label: const Text('Not for us'),
+        selected: showDropped,
+        onSelected: (v) => setState(() => showDropped = v),
+      ),
+      SizedBox(
+        width: 240,
+        child: TextField(
+          controller: words,
+          onChanged: (_) => _setFilter(),
+          decoration: const InputDecoration(
+            isDense: true,
+            prefixIcon: Icon(Icons.search),
+            labelText: 'Find',
+            helperText: 'Address, postcode or notes. -word hides',
+          ),
+        ),
+      ),
+      DropdownButton<int?>(
+        value: filter.minBeds,
+        hint: const Text('Any beds'),
+        items: [
+          const DropdownMenuItem(value: null, child: Text('Any beds')),
+          for (final b in [1, 2, 3, 4]) DropdownMenuItem(value: b, child: Text('$b+ beds')),
+        ],
+        onChanged: (b) => b == null ? _setFilter(clearBeds: true) : _setFilter(minBeds: b),
+      ),
+      DropdownButton<HuntSort>(
+        value: sort,
+        items: [for (final s in HuntSort.values) DropdownMenuItem(value: s, child: Text(s.label))],
+        onChanged: (s) => setState(() => sort = s ?? sort),
+      ),
+      SizedBox(
+        width: 140,
+        child: TextField(
+          controller: maxPrice,
+          keyboardType: TextInputType.number,
+          onChanged: (_) => _setFilter(),
+          decoration: InputDecoration(
+            isDense: true,
+            prefixText: '£',
+            labelText: kind == PropertyKind.rent ? 'Most a month' : 'Most',
+          ),
+        ),
+      ),
+    ],
+  );
+
+  /// The cards, under their stage headings, after the summary.
+  List<Widget> _homes(BuildContext context, List<Property> all, HomePoint? home, List<Interaction> log) {
+    final mine = all.where((p) => p.kind == kind.name).toList();
+    if (mine.isEmpty) {
+      return [
+        EmptyState(
+          icon: Icons.travel_explore,
+          title: kind == PropertyKind.rent ? 'No homes to rent yet' : 'No homes to buy yet',
+          message:
+              'Paste a PropertyPal link, type one in, or set up a search and let Brahma Watch bring new '
+              'listings here.',
+          actions: [
+            FilledButton(onPressed: () => _add(context, ref, kind), child: const Text('Add a property')),
+          ],
+        ),
+      ];
+    }
+    final hidden = mine.where((p) => !filter.matches(p)).length;
+    mine.removeWhere((p) => !filter.matches(p));
+    double? dist(Property p) => distanceFromHome(home, p.lat, p.lon);
+    // Grouped once, not searched again for each card.
+    final logOf = <String, List<Interaction>>{};
+    for (final i in log) {
+      if (i.propertyId case final id?) (logOf[id] ??= []).add(i);
+    }
+    final inPlay = mine.where((p) => Stage.of(p.stage).active).toList();
+    final top = ([
+      ...inPlay.where((p) => p.rating > 0),
+    ]..sort((a, b) => b.rating.compareTo(a.rating))).firstOrNull;
+    final dearest = mine.map((p) => p.price ?? 0).fold(0, (a, b) => a > b ? a : b);
+    final closest = inPlay.map(dist).nonNulls.fold<double?>(null, (a, b) => a == null || b < a ? b : a);
+    final day = today();
+    return [
+      FigureCard(
+        eyebrow: kind == PropertyKind.rent ? 'To rent · in play' : 'To buy · in play',
+        value: '${inPlay.length}',
+        caption: top == null ? 'Rate the ones you like' : 'Top rated: ${top.address.split(',').first}',
+        detail: closest == null ? null : 'Closest is ${km(closest)} from home',
+      ),
+      if (hidden > 0)
+        Padding(padding: const EdgeInsets.only(top: 8), child: Text('$hidden hidden by the filters.')),
+      for (final stage in Stage.values)
+        if (stage.active || showDropped)
+          ...() {
+            final rows = mine.where((p) => Stage.of(p.stage) == stage).toList()
+              ..sort((a, b) => sort.compare(a, b, dist));
+            if (rows.isEmpty) return const <Widget>[];
+            return [
+              _StageHeading('${stage.label(kind)} (${rows.length})'),
+              for (final p in rows)
+                PropertyCard(
+                  p,
+                  distance: dist(p),
+                  best: top != null && p.id == top.id,
+                  share: dearest > 0 && p.price != null ? p.price! / dearest : null,
+                  quietDays: stage == Stage.enquired || stage == Stage.viewing
+                      ? daysWithoutReply([
+                          for (final i in logOf[p.id] ?? const <Interaction>[])
+                            (channel: i.channel, direction: i.direction, at: i.at),
+                        ], day)
+                      : null,
+                  picked: _picking ? _picked.contains(p.id) : null,
+                  onPick: () => _pick(p.id),
+                ),
+            ];
+          }(),
+    ];
+  }
+
+  /// What can be done to the picked homes at once.
+  Widget _pickBar(BuildContext context, List<Property> all) {
+    final picked = [
+      for (final p in all)
+        if (_picked.contains(p.id)) p,
+    ];
+    final none = picked.isEmpty;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              none ? 'Tap homes to pick them' : '${picked.length} picked',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            PopupMenuButton<Stage>(
+              enabled: !none,
+              tooltip: 'Move the picked homes',
+              onSelected: (s) => _moveTo(context, picked, s),
+              itemBuilder: (_) => [
+                for (final s in Stage.values)
+                  PopupMenuItem(value: s, child: Text('Move to ${s.label(kind)}')),
+              ],
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: Text('Move to…'),
+              ),
+            ),
+            TextButton(
+              onPressed: none ? null : () => _toCollection(context, picked),
+              child: const Text('Add to a collection'),
+            ),
+            TextButton(
+              onPressed: picked.length < 2
+                  ? null
+                  : () =>
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (_) => ComparePage(kind, ids: {..._picked}))),
+              child: const Text('Compare'),
+            ),
+            TextButton(
+              onPressed: none ? null : () => _moveTo(context, picked, Stage.dropped),
+              child: Text(Stage.dropped.label(kind)),
+            ),
+            TextButton(onPressed: _endPicking, child: const Text('Done')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Moves [homes] to [stage], with Undo.
+  Future<void> _moveTo(BuildContext context, List<Property> homes, Stage stage) async {
+    final before = {for (final p in homes) p.id: Stage.of(p.stage)};
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await guarded(context, () => ref.mutate((s) => s.book.setStages(before.keys, stage))) || !mounted) {
+      return;
+    }
+    _endPicking();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Moved ${homes.length == 1 ? '1 home' : '${homes.length} homes'} to ${stage.label(kind)}.',
+        ),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => ref.mutate((s) async {
+            for (final MapEntry(key: id, value: old) in before.entries) {
+              await s.book.setStage(id, old);
+            }
+          }),
+        ),
+      ),
+    );
+  }
+
+  /// Adds [homes] to a collection the user picks, or a new one.
+  Future<void> _toCollection(BuildContext context, List<Property> homes) async {
+    final collections = (await ref.read(researchesProvider.future)).where((r) => !r.archived).toList();
+    if (!context.mounted) return;
+    final pick = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('Add to which collection?')),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('A new collection'),
+              onTap: () => Navigator.pop(sheet, ''),
+            ),
+            for (final r in collections)
+              ListTile(
+                leading: const Icon(Icons.collections_bookmark_outlined),
+                title: Text(r.name),
+                onTap: () => Navigator.pop(sheet, r.id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (pick == null || !context.mounted) return;
+    var id = pick;
+    if (id.isEmpty) {
+      final name = TextEditingController();
+      final made = await showFormDialog(
+        context,
+        title: 'New collection',
+        action: 'Make it',
+        fields: (_) => [Field(name, 'Name', autofocus: true)],
+        onSave: () async {
+          if (name.text.trim().isEmpty) return 'Give it a name.';
+          id = await ref.mutate((s) => s.book.createResearch(name.text.trim(), kind: kind.name));
+          return null;
+        },
+      );
+      if (!made || !context.mounted) return;
+    }
+    var added = 0;
+    if (await guarded(context, () async => added = await ref.mutate((s) => s.book.addHomes(id, homes))) &&
+        context.mounted) {
+      _endPicking();
+      final skipped = homes.length - added;
+      showMessage(
+        context,
+        'Added ${added == 1 ? '1 home' : '$added homes'} to the collection.'
+        '${skipped > 0 ? ' $skipped already in it.' : ''}',
+      );
+    }
+  }
+
+  /// The homes in play, or the picked ones, as text to copy or email.
+  Future<void> _share(BuildContext context, List<Property> all, List<Viewing> views) {
+    final latest = <String, Viewing>{};
+    for (final v in views) {
+      if (v.status != 'done' || Impression.of(v.rating) == null) continue;
+      if (latest[v.propertyId] case final had? when had.at.compareTo(v.at) >= 0) continue;
+      latest[v.propertyId] = v;
+    }
+    final text = shortlistText(
+      _picked.isEmpty
+          ? all
+          : [
+              for (final p in all)
+                if (_picked.contains(p.id)) p,
+            ],
+      kind,
+      impressions: {for (final MapEntry(:key, :value) in latest.entries) key: Impression.of(value.rating)!},
+      today: today(),
+    );
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Share the shortlist', style: Theme.of(sheet).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              const Text('Prices, sizes, your ratings and advert links. No agents, phone numbers or notes.'),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheet).height * 0.45),
+                child: SingleChildScrollView(child: SelectableText(text, style: tabular)),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => openUri(
+                      sheet,
+                      Uri(
+                        scheme: 'mailto',
+                        query:
+                            'subject=${Uri.encodeComponent('Homes on my shortlist')}'
+                            '&body=${Uri.encodeComponent(text)}',
+                      ),
+                    ),
+                    icon: const Icon(Icons.email_outlined),
+                    label: const Text('Email'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () => copyText(sheet, text, what: 'Shortlist copied.'),
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy'),
                   ),
                 ],
-              );
-            }
-            final hidden = mine.where((p) => !filter.matches(p)).length;
-            mine.removeWhere((p) => !filter.matches(p));
-            double? dist(Property p) => distanceFromHome(home, p.lat, p.lon);
-            // Grouped once, not searched again for each card.
-            final logOf = <String, List<Interaction>>{};
-            for (final i in log) {
-              if (i.propertyId case final id?) (logOf[id] ??= []).add(i);
-            }
-            final inPlay = mine.where((p) => Stage.of(p.stage).active).toList();
-            final top = ([
-              ...inPlay.where((p) => p.rating > 0),
-            ]..sort((a, b) => b.rating.compareTo(a.rating))).firstOrNull;
-            final dearest = mine.map((p) => p.price ?? 0).fold(0, (a, b) => a > b ? a : b);
-            final closest = inPlay
-                .map(dist)
-                .nonNulls
-                .fold<double?>(null, (a, b) => a == null || b < a ? b : a);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FigureCard(
-                  eyebrow: kind == PropertyKind.rent ? 'To rent · in play' : 'To buy · in play',
-                  value: '${inPlay.length}',
-                  caption: top == null
-                      ? 'Rate the ones you like'
-                      : 'Top rated: ${top.address.split(',').first}',
-                  detail: closest == null ? null : 'Closest is ${km(closest)} from home',
-                ),
-                if (hidden > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text('$hidden hidden by the filters.'),
-                  ),
-                for (final stage in Stage.values)
-                  if (stage.active || showDropped)
-                    ...() {
-                      final rows = mine.where((p) => Stage.of(p.stage) == stage).toList()
-                        ..sort((a, b) => sort.compare(a, b, dist));
-                      if (rows.isEmpty) return const <Widget>[];
-                      return [
-                        _StageHeading('${stage.label(kind)} (${rows.length})'),
-                        for (final p in rows)
-                          PropertyCard(
-                            p,
-                            distance: dist(p),
-                            best: top != null && p.id == top.id,
-                            share: dearest > 0 && p.price != null ? p.price! / dearest : null,
-                            quietDays: stage == Stage.enquired || stage == Stage.viewing
-                                ? daysWithoutReply([
-                                    for (final i in logOf[p.id] ?? const <Interaction>[])
-                                      (channel: i.channel, direction: i.direction, at: i.at),
-                                  ], today())
-                                : null,
-                          ),
-                      ];
-                    }(),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -439,8 +695,22 @@ class _StageHeading extends StatelessWidget {
 /// or price large on the right. [best] underlines the top-rated in lime;
 /// [share] draws its price against the dearest in the list.
 class PropertyCard extends StatelessWidget {
-  const PropertyCard(this.p, {super.key, this.distance, this.best = false, this.share, this.quietDays});
+  const PropertyCard(
+    this.p, {
+    super.key,
+    this.distance,
+    this.best = false,
+    this.share,
+    this.quietDays,
+    this.picked,
+    this.onPick,
+  });
   final Property p;
+
+  /// Whether it is picked for a bulk action; null when not picking, so a
+  /// tap opens the home. A long press picks it either way.
+  final bool? picked;
+  final VoidCallback? onPick;
 
   /// Days since you wrote to the agent with no reply; null when not waiting.
   final int? quietDays;
@@ -469,7 +739,10 @@ class PropertyCard extends StatelessWidget {
               )
             : null,
         child: InkWell(
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PropertyPage(p.id))),
+          onTap: picked != null
+              ? onPick
+              : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PropertyPage(p.id))),
+          onLongPress: onPick,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -478,6 +751,12 @@ class PropertyCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (picked != null)
+                      Checkbox(
+                        value: picked,
+                        onChanged: (_) => onPick?.call(),
+                        semanticLabel: 'Pick ${p.address}',
+                      ),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: SizedBox(

@@ -61,7 +61,7 @@ void main() {
     await app.open(seed: seed);
     await app.run();
     await app.tap(find.textContaining('Viewing passed').first);
-    await app.tap(find.byTooltip('Booked, done or cancelled'));
+    await app.tap(find.byTooltip('Viewing: done, cancelled or add to calendar'));
     await app.tapText('Done');
     expect(find.text('How was the viewing?'), findsOneWidget);
     await app.tapText('Loved it');

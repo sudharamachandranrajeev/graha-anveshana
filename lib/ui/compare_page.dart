@@ -5,25 +5,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/pipeline.dart';
+import '../domain/price_log.dart';
 import '../domain/price_check.dart';
 import '../domain/running_costs.dart';
 import 'common.dart';
 import 'look.dart';
 import 'property_page.dart';
 
-/// The homes you are seriously considering, side by side: shortlisted up to
-/// agreed. Homes are columns so each fact reads across.
-class ComparePage extends ConsumerWidget {
-  const ComparePage(this.kind, {super.key});
+/// Homes side by side: those picked on the Shortlist, else every home in
+/// play from Liked on, with New ones too when asked. Homes are columns so
+/// each fact reads across.
+class ComparePage extends ConsumerStatefulWidget {
+  const ComparePage(this.kind, {super.key, this.ids});
   final PropertyKind kind;
 
+  /// The homes picked to compare; null: the whole shortlist.
+  final Set<String>? ids;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ComparePage> createState() => _ComparePageState();
+}
+
+class _ComparePageState extends ConsumerState<ComparePage> {
+  var _withNew = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = widget.kind, ids = widget.ids;
     final home = ref.watch(homeProvider).value;
     final contacts = {for (final c in ref.watch(contactsProvider).value ?? const <Contact>[]) c.id: c};
+    final all = ref.watch(propertiesProvider).value ?? const <Property>[];
+    bool inPlay(Property p) => p.kind == kind.name && Stage.of(p.stage).active;
+    final fresh = all.where((p) => inPlay(p) && Stage.of(p.stage) == Stage.fresh).length;
     final rows = [
-      for (final p in ref.watch(propertiesProvider).value ?? const <Property>[])
-        if (p.kind == kind.name && Stage.of(p.stage).active && Stage.of(p.stage) != Stage.fresh) p,
+      for (final p in all)
+        if (ids != null ? ids.contains(p.id) : inPlay(p) && (_withNew || Stage.of(p.stage) != Stage.fresh)) p,
     ]..sort((a, b) => (a.price ?? 1 << 40).compareTo(b.price ?? 1 << 40));
     final rent = kind == PropertyKind.rent;
 
@@ -42,6 +58,13 @@ class ComparePage extends ConsumerWidget {
       ('Bedrooms', (p) => p.beds == null ? '–' : (p.beds == 0 ? 'Studio' : '${p.beds}')),
       ('Bathrooms', (p) => p.baths == null ? '–' : '${p.baths}'),
       ('Type', (p) => p.style.isEmpty ? '–' : p.style),
+      (
+        'Floor area',
+        (p) => switch (MarketFacts.of(p.meta).sqft) {
+          final a? => '$a sq ft',
+          null => '–',
+        },
+      ),
       ('Distance from home', dist),
       ('Rating', (p) => p.rating == 0 ? '–' : '${p.rating} of 5'),
       ('Advert', (p) => p.listingStatus.isEmpty ? '–' : listingStatusLabel(p.listingStatus)),
@@ -53,11 +76,26 @@ class ComparePage extends ConsumerWidget {
     return PageScaffold(
       title: 'Compare',
       children: [
+        if (ids == null && fresh > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FilterChip(
+                label: Text('Include New ($fresh)'),
+                selected: _withNew,
+                onSelected: (v) => setState(() => _withNew = v),
+              ),
+            ),
+          ),
         if (rows.length < 2)
-          const EmptyState(
+          EmptyState(
             icon: Icons.compare_arrows,
             title: 'Shortlist two or more',
-            message: 'Homes you liked, enquired about, viewed, applied for or agreed show here side by side.',
+            message: ids != null
+                ? 'Pick two or more homes on the Shortlist to compare them.'
+                : 'Homes you liked, enquired about, viewed, applied for or agreed show here side by side. '
+                      '${fresh > 0 ? 'Tap Include New to add the ones you have not sorted yet.' : ''}',
           )
         else
           SectionCard(
