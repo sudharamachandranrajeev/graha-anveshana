@@ -30,6 +30,23 @@ class FoundHome {
   double? get lon => copies.map((c) => c.lon).nonNulls.firstOrNull;
   String? get availableFrom => copies.map((c) => c.availableFrom).nonNulls.firstOrNull;
   String get postcode => copies.map((c) => c.postcode).where((p) => p.isNotEmpty).firstOrNull ?? '';
+
+  /// Where it is, for the list: the fullest address any site gives (one
+  /// naming a postcode, else one naming a street and a place), with the
+  /// postcode added when the address leaves it out.
+  String get address {
+    int rank(String a) => (postcodeIn(a) != null ? 2 : 0) + (a.contains(',') ? 1 : 0);
+    final best = copies
+        .map((c) => c.address.trim())
+        .where((a) => a.isNotEmpty)
+        .fold<String?>(null, (b, a) => b == null || rank(a) > rank(b) ? a : b);
+    final pc = postcode;
+    if (best == null) return pc;
+    return pc.isEmpty || postcodeIn(best) != null || best.toUpperCase().contains(pc.split(' ').first)
+        ? best
+        : '$best, $pc';
+  }
+
   String get text =>
       copies.map((c) => '${c.address}\n${c.style}\n${c.furnished}\n${c.description}').join('\n');
   bool get gone => copies.every((c) => c.status.contains('Agreed') || c.status == 'sold');

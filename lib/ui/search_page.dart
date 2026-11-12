@@ -980,15 +980,19 @@ class _HomeCard extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final l = h.main;
     final wide = MediaQuery.sizeOf(context).width > 600;
+    // No photo, or one that will not load (an expired link): a plain tile
+    // with a house, never an empty box.
+    final noPhoto = ColoredBox(
+      color: scheme.surfaceContainerHighest,
+      child: Icon(Icons.home_outlined, color: scheme.onSurfaceVariant),
+    );
     final picture = h.image == null
-        ? ColoredBox(
-            color: scheme.surfaceContainerHighest,
-            child: Icon(Icons.home_outlined, color: scheme.onSurfaceVariant),
-          )
+        ? noPhoto
         : Image.network(
             h.image!,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => ColoredBox(color: scheme.surfaceContainerHighest),
+            loadingBuilder: (_, child, progress) => progress == null ? child : noPhoto,
+            errorBuilder: (_, _, _) => noPhoto,
           );
     final facts = [
       if (h.beds != null) h.beds == 0 ? 'Studio' : '${h.beds} bed',
@@ -996,6 +1000,7 @@ class _HomeCard extends ConsumerWidget {
       if (l.furnished.isNotEmpty) l.furnished,
       if (h.sqft != null) '${h.sqft} sq ft',
       if (h.km != null) miles(h.km!),
+      if (q.rent && h.availableFrom != null) 'Available ${availableLabel(h.availableFrom!)}',
     ].join(' · ');
     final market = marketLine(h.listedOn, h.reducedOn, today: DateTime.now());
     final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
@@ -1055,7 +1060,14 @@ class _HomeCard extends ConsumerWidget {
               bin,
             ],
           ),
-          Text(l.address, maxLines: 2, overflow: TextOverflow.ellipsis),
+          if (h.address.isNotEmpty)
+            Row(
+              children: [
+                Icon(Icons.place_outlined, size: 16, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Expanded(child: Text(h.address, maxLines: 2, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
           if (facts.isNotEmpty) Text(facts, style: t.bodySmall),
           if (far.isNotEmpty) Text(far, style: t.bodySmall),
           if (market != null) Text(market, style: t.bodySmall),

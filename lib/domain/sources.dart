@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'home_features.dart';
 import 'listing.dart';
+import 'property_search.dart';
 import 'search_request.dart';
 
 /// The property sites the Search tab reads, inside the app. Each is read only
@@ -274,6 +275,66 @@ SourcePage parseOpenRentSearch(String html) {
   return (items: out, more: false);
 }
 
+/// OpenRent results per page: as many as the site loads at once.
+const openRentBatch = 20;
+
+/// [items] with the title (which names the street) and photo OpenRent's
+/// `/search/propertiesbyid` answer [json] gives for each.
+List<Listing> withOpenRentCards(List<Listing> items, String json) {
+  final Object? raw;
+  try {
+    raw = jsonDecode(json);
+  } on FormatException {
+    return items;
+  }
+  final cards = {
+    if (raw is List)
+      for (final c in raw)
+        if (c is Map && c['id'] != null) '${c['id']}': c,
+  };
+  return [
+    for (final l in items)
+      switch (cards[l.sourceId]) {
+        final Map c => _withCard(
+          l,
+          title: '${c['title'] ?? ''}'.trim(),
+          image: switch (c['imageUrl']) {
+            final String s when s.startsWith('//') => 'https:$s',
+            final String s when s.startsWith('https://') => s,
+            _ => null,
+          },
+        ),
+        _ => l,
+      },
+  ];
+}
+
+Listing _withCard(Listing l, {required String title, String? image}) => Listing(
+  source: l.source,
+  sourceId: l.sourceId,
+  url: l.url,
+  address: title.isEmpty ? l.address : title,
+  postcode: title.isEmpty ? l.postcode : (postcodeIn(title) ?? l.postcode),
+  price: l.price,
+  priceSuffix: l.priceSuffix,
+  beds: l.beds,
+  baths: l.baths,
+  style: l.style,
+  furnished: l.furnished,
+  heating: l.heating,
+  availableFrom: l.availableFrom,
+  lat: l.lat,
+  lon: l.lon,
+  agent: l.agent,
+  agentPhone: l.agentPhone,
+  image: image ?? l.image,
+  status: l.status,
+  description: title.isEmpty ? l.description : '$title\n${l.description}',
+  listedOn: l.listedOn,
+  reducedOn: l.reducedOn,
+  sqft: l.sqft,
+);
+
 String _unescape(String s) => s
     .replaceAll('&amp;', '&')
     .replaceAll('&#39;', "'")
@@ -401,6 +462,9 @@ class SourceReader {
   final http.Client _http;
   final _rightmoveAreas = <String, String>{};
 
+  /// OpenRent's matches for an area page, kept while its pages are read.
+  final _openRentFound = <String, List<Listing>>{};
+
   Future<String> _get(SourceId source, Uri url) async {
     final http.Response r;
     try {
@@ -481,9 +545,36 @@ class SourceReader {
         return parseOnTheMarketSearch(html, rent: q.rent);
       case SourceId.openRent:
         if (!q.rent) throw const SourceSkipped('OpenRent lists homes to rent only.');
-        if (page > 0) return (items: const <Listing>[], more: false);
+        // The area page lists every match, but only the first twenty with a
+        // title and photo: the rest come a page at a time, as on the site.
         final url = Uri.https('www.openrent.co.uk', '/properties-to-rent/${_slug(q.area)}', {'term': q.area});
-        return parseOpenRentSearch(await _get(source, url));
+        final key = '$url';
+        if (page == 0 || !_openRentFound.containsKey(key)) {
+          _openRentFound[key] = [
+            for (final l in parseOpenRentSearch(await _get(source, url)).items)
+              if (meetsRequest(FoundHome(l), q)) l,
+          ];
+        }
+        final all = _openRentFound[key]!;
+        final start = page * openRentBatch;
+        if (start >= all.length) return (items: const <Listing>[], more: false);
+        final end = (start + openRentBatch).clamp(0, all.length);
+        var items = all.sublist(start, end);
+        final bare = [
+          for (final l in items)
+            if (l.image == null) l.sourceId,
+        ];
+        if (bare.isNotEmpty) {
+          final cards = Uri.https('www.openrent.co.uk', '/search/propertiesbyid', {'ids': bare});
+          try {
+            items = withOpenRentCards(items, await _get(source, cards));
+          } on SourceSkipped {
+            // The homes still show, with their price and map point.
+          } on SourceBlocked {
+            // As above.
+          }
+        }
+        return (items: items, more: end < all.length);
       case SourceId.zoopla || SourceId.facebook:
         // These answer plain HTTP with a robot check: the search page opens
         // in the browser instead.

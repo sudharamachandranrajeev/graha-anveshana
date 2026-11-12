@@ -259,6 +259,62 @@ void main() {
     });
   });
 
+  test('OpenRent: homes past the first twenty get their title and photo, a page at a time', () async {
+    // 45 matches; the area page has a card for the first only.
+    final ids = [for (var i = 0; i < 45; i++) 600 + i];
+    String col(String name, String v) => 'var $name = [${List.filled(ids.length, v).join(',')}];';
+    final page =
+        '<script>var PROPERTYIDS = [${ids.join(',')}];\n'
+        '${col('prices', '700')}\n${col('bedrooms', '2')}\n${col('islivelistBool', '1')}\n</script>'
+        '<a href="/property-to-rent/exampletown/x/600" class="search-property-card">'
+        '<img src="//images.example/600.jpg" alt="2 Bed Flat, Card Street, EX1" /></a>';
+    final asked = <Uri>[];
+    final reader = SourceReader(
+      MockClient((r) async {
+        asked.add(r.url);
+        if (r.url.path == '/search/propertiesbyid') {
+          return http.Response(
+            jsonEncode([
+              for (final id in r.url.queryParametersAll['ids']!)
+                {
+                  'id': int.parse(id),
+                  'title': '2 Bed Flat, Road $id, EX2',
+                  'imageUrl': '//images.example/$id.jpg',
+                },
+            ]),
+            200,
+          );
+        }
+        return http.Response(page, 200);
+      }),
+    );
+    final q = readRequest('2 bed to rent in Exampletown');
+    final first = await reader.search(SourceId.openRent, q);
+    expect((first.items.length, first.more), (openRentBatch, true));
+    expect(first.items.first.address, '2 Bed Flat, Card Street, EX1');
+    expect(first.items[1].address, '2 Bed Flat, Road 601, EX2');
+    expect(first.items[1].image, 'https://images.example/601.jpg');
+    // The card already known is not asked for again.
+    expect(asked.last.queryParametersAll['ids'], isNot(contains('600')));
+    final last = await reader.search(SourceId.openRent, q, page: 2);
+    expect((last.items.length, last.more), (5, false));
+    expect(last.items.every((l) => l.image != null), isTrue);
+    // Later pages reuse the area page read for the first.
+    expect(asked.where((u) => u.path != '/search/propertiesbyid'), hasLength(1));
+  });
+
+  test('a result shows the fullest address its sites give, with the postcode', () {
+    Listing ad(String source, String address, {String postcode = ''}) =>
+        Listing(source: source, sourceId: '1', url: '', address: address, postcode: postcode);
+    final h = FoundHome(ad('openrent', '2 bed flat'))
+      ..copies.add(ad('rightmove', 'Castle Street, Exampletown', postcode: 'EX1 1AA'));
+    expect(h.address, 'Castle Street, Exampletown, EX1 1AA');
+    expect(
+      FoundHome(ad('zoopla', 'Flat 1, Castle Street, EX1 1AA')).address,
+      'Flat 1, Castle Street, EX1 1AA',
+    );
+  });
+
   test('listings keep their postcode when the site gives one', () {
     expect(postcodeIn('Flat 1, EX1 1AA'), 'EX1 1AA');
   });
