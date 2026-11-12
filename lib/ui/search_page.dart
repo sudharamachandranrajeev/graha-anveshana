@@ -1223,17 +1223,17 @@ class MoreSitesTile extends StatelessWidget {
     final links = moreSiteLinks(q);
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
-      leading: const Icon(Icons.open_in_new),
+      leading: const Icon(Icons.travel_explore),
       title: Text('More sites (${links.length})'),
-      subtitle: const Text('Open in your browser; Search does not read these'),
+      subtitle: const Text('Open in the app; Search does not read these yet'),
       children: [
         for (final l in links)
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(l.label),
             subtitle: Text(l.note),
-            trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => openUri(context, l.url),
+            trailing: const Icon(Icons.chevron_right, size: 18),
+            onTap: () => openInApp(context, l.url, title: l.label),
           ),
       ],
     );
