@@ -1,6 +1,6 @@
 # Builds Graha Anveshana for Android, Windows and Linux and checks each one starts. A v*
-# tag publishes a GitHub release (a pre-release for v0.* and tags with a
-# suffix such as -beta.1); running it by hand only builds and tests.
+# tag publishes a GitHub release (a pre-release only for tags with a suffix
+# such as -beta.1); running it by hand only builds and tests.
 
 name: Release
 
