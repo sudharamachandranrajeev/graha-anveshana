@@ -224,19 +224,29 @@ AdvertDetails parseOpenRentAdvert(String html) {
       facts[label] = value;
     }
   }
-  // The photo folder is the landlord's listing number, not the advert's;
-  // the first photo on the page is the advert's own, so its folder is kept
-  // and any other homes' photos further down are not.
+  // The advert's gallery: every photo the page opens full size, whatever
+  // folder it is in (a landlord's photos can come from older listings).
+  final gallery = {
+    for (final g in RegExp(
+      '<a[^>]+href="((?:https:)?//imagescdn\\.openrent\\.co\\.uk/listings/\\d+/[^"]+)"[^>]*data-pswp-width',
+    ).allMatches(html))
+      g.group(1)!.startsWith('//') ? 'https:${g.group(1)}' : g.group(1)!,
+  }.toList();
+  // No gallery: the photo folder is the landlord's listing number, not the
+  // advert's; the first photo on the page is the advert's own, so its
+  // folder is kept and any other homes' photos further down are not.
   final all = [
     for (final p in RegExp(
       '(?:https:)?//imagescdn\\.openrent\\.co\\.uk/listings/(\\d+)/[^"\'\\s)]+',
     ).allMatches(html))
       (folder: p.group(1)!, url: p.group(0)!.startsWith('//') ? 'https:${p.group(0)}' : p.group(0)!),
   ];
-  final photos = {
-    for (final p in all)
-      if (p.folder == all.first.folder && !p.url.contains('_thumb')) p.url,
-  }.toList();
+  final photos = gallery.isNotEmpty
+      ? gallery
+      : {
+          for (final p in all)
+            if (p.folder == all.first.folder && !p.url.contains('_thumb')) p.url,
+        }.toList();
   if (m == null && photos.isEmpty) throw const FormatException('No advert on that OpenRent page');
   return AdvertDetails(
     description: m == null ? '' : plainText(m.group(1)!),

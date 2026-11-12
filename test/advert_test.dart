@@ -81,6 +81,28 @@ void main() {
     expect(o.facts, {'Deposit': '£800.00', 'Furnishing': 'Unfurnished'});
   });
 
+  test('OpenRent: every photo in the gallery, whatever folder it is in (#8)', () {
+    // Made-up page shaped like OpenRent's: a share picture from one folder,
+    // a gallery mixing folders, and another home's picture further down.
+    const page = '''
+<meta property="og:image" content="http://imagescdn.openrent.co.uk/listings/900/share.JPG"/>
+<div class="swiper"><div class="swiper-wrapper">
+<div class="swiper-slide"><a href="//imagescdn.openrent.co.uk/listings/900/share.JPG" data-pswp-width="1440">
+<img src="//imagescdn.openrent.co.uk/listings/900/share.JPG"></a></div>
+<div class="swiper-slide"><a href="//imagescdn.openrent.co.uk/listings/901/a.JPG" data-pswp-width="1440">
+<img loading=lazy src="//imagescdn.openrent.co.uk/listings/901/a.JPG"></a></div>
+<div class="swiper-slide"><a href="//imagescdn.openrent.co.uk/listings/802/b.JPG" data-pswp-width="640">
+<img loading=lazy src="//imagescdn.openrent.co.uk/listings/802/b.JPG"></a></div>
+</div></div>
+<div class="description">Two bed terrace.</div>
+<img src="//imagescdn.openrent.co.uk/listings/555/other-home.JPG">''';
+    expect(parseOpenRentAdvert(page).photos, [
+      'https://imagescdn.openrent.co.uk/listings/900/share.JPG',
+      'https://imagescdn.openrent.co.uk/listings/901/a.JPG',
+      'https://imagescdn.openrent.co.uk/listings/802/b.JPG',
+    ]);
+  });
+
   test('a page with no advert is an error, not an empty advert', () {
     expect(() => parseRightmoveAdvert('<html></html>'), throwsFormatException);
     expect(() => parseOnTheMarketAdvert('<html></html>'), throwsFormatException);
