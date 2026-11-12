@@ -82,6 +82,13 @@ Listing? _card(SourceId source, Map c, {required bool rent}) {
   final weekly = RegExp(r'pw|week', caseSensitive: false).hasMatch(m.group(3) ?? '');
   final price = (weekly ? amount * 52 / 12 : amount).round();
   final beds = RegExp(r'\b(\d{1,2})\s*bed', caseSensitive: false).firstMatch(text);
+  final baths = RegExp(r'\b(\d{1,2})\s*bath', caseSensitive: false).firstMatch(text);
+  // The kind of home, as the card names it ("2 beds 1 bath Flat").
+  final style = RegExp(
+    r'\b(detached house|semi-detached house|terraced house|end of terrace house|townhouse|bungalow|'
+    r'maisonette|apartment|flat|house|studio|cottage|room)\b',
+    caseSensitive: false,
+  ).firstMatch(text);
   final studio = RegExp(r'\bstudio\b', caseSensitive: false).hasMatch(text);
   // The address: the first line naming a postcode, else the first with a
   // comma that is not the price or a feature list.
@@ -101,9 +108,15 @@ Listing? _card(SourceId source, Map c, {required bool rent}) {
     price: price > 0 ? price : null,
     priceSuffix: rent ? 'pcm' : '',
     beds: studio ? 0 : (beds == null ? null : int.parse(beds.group(1)!)),
+    baths: baths == null ? null : int.parse(baths.group(1)!),
+    style: switch (style?.group(1)) {
+      final String k => '${k[0].toUpperCase()}${k.substring(1).toLowerCase()}',
+      null => '',
+    },
     image: img.startsWith('https://') ? img : null,
     status: gone ? (rent ? 'letAgreed' : 'saleAgreed') : (rent ? 'toLet' : 'forSale'),
     description: lines.join('\n'),
+    sqft: sqftIn(text),
   );
 }
 

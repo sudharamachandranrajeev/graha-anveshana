@@ -42,6 +42,26 @@ enum Stage {
   bool get active => this != dropped;
 }
 
+/// What the user thought of a home after viewing it. Kept in the
+/// viewing's rating (5, 3 or 1), so it syncs with the viewing; 0 is no
+/// verdict yet.
+enum Impression {
+  loved('Loved it', 5),
+  maybe('Maybe', 3),
+  no('Not for me', 1);
+
+  const Impression(this.label, this.rating);
+  final String label;
+  final int rating;
+
+  static Impression? of(int rating) => switch (rating) {
+    >= 4 => loved,
+    3 => maybe,
+    1 || 2 => no,
+    _ => null,
+  };
+}
+
 /// Readable advert status ("toLet" -> "To let").
 String listingStatusLabel(String key) => switch (key) {
   'toLet' => 'To let',

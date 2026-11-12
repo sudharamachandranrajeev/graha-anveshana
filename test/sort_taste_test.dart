@@ -214,6 +214,26 @@ void main() {
         ('facebook', '1234567890123456', 850, 2, 'Leeds, United Kingdom'),
       );
       expect(cardsScript, contains(r'marketplace\/item'));
+      expect((l.baths, l.style), (1, 'Flat'));
+    });
+
+    test('Marketplace: a town Facebook names by number is remembered and used', () {
+      final q = readRequest('2 bed to rent in Bishop Auckland');
+      expect(marketplaceSlug(q.area), 'bishopauckland');
+      expect(browserSearchUrl(SourceId.facebook, q).path, '/marketplace/bishopauckland/propertyrentals');
+      final picked = Uri.parse(
+        'https://www.facebook.com/marketplace/108095519210311/propertyrentals?exact=false',
+      );
+      expect(marketplacePlaceIn(picked), '108095519210311');
+      expect(
+        browserSearchUrl(SourceId.facebook, q, places: {'bishopauckland': '108095519210311'}).path,
+        '/marketplace/108095519210311/propertyrentals',
+      );
+      expect(marketplacePlaceIn(Uri.parse('https://www.facebook.com/marketplace/item/123/')), isNull);
+      expect(marketplacePlaceIn(Uri.parse('https://www.facebook.com/marketplace/leeds/vehicles')), isNull);
+      expect(SourceId.ofUrl(picked), SourceId.facebook);
+      expect(SourceId.ofUrl(Uri.parse('https://m.facebook.com/x')), SourceId.facebook);
+      expect(SourceId.ofUrl(Uri.parse('https://notfacebook.com/')), isNull);
     });
   });
 }

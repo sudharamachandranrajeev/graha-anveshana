@@ -7,6 +7,7 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
+import '../domain/price_log.dart';
 import '../domain/viewing_checklist.dart';
 import 'browser_page.dart';
 import 'common.dart';
@@ -17,6 +18,7 @@ import 'hunt_page.dart';
 import 'invest_page.dart';
 import 'price_check_card.dart';
 import 'research_page.dart';
+import 'viewing_plan_page.dart';
 
 const channelLabels = {
   'call': 'Call',
@@ -64,6 +66,7 @@ class PropertyPage extends ConsumerWidget {
         .where((v) => v.propertyId == id)
         .toList();
     final t = Theme.of(context).textTheme;
+    final market = MarketFacts.of(p.meta);
 
     return PageScaffold(
       title: p.address.split(',').first,
@@ -121,8 +124,19 @@ class PropertyPage extends ConsumerWidget {
                 listingStatusLabel(p.listingStatus),
               ),
             Text('Added ${niceDate(p.added)}'),
+            if (market.listedOn != null) Text('On the market since ${niceDate(market.listedOn!)}'),
+            if (market.sqft != null)
+              Text(
+                '${market.sqft} sq ft${p.price == null ? '' : ' · £${(p.price! / market.sqft!).toStringAsFixed(2)} a sq ft'}',
+              ),
+            if (market.seen != null) Text('Last seen in Search ${niceDate(market.seen!)}'),
           ],
         ),
+        if (market.prices.length > 1) ...[
+          const SizedBox(height: 8),
+          Text('Price history', style: t.titleSmall),
+          for (final pt in market.prices) Text('${niceDate(pt.at)}: ${gbp(pt.price)}', style: t.bodySmall),
+        ],
         const SizedBox(height: 16),
         ListingMap(
           key: ValueKey('map-${p.id}'),
@@ -202,14 +216,29 @@ class PropertyPage extends ConsumerWidget {
                           _ => Icons.event_outlined,
                         }),
                         title: Text(niceDateTime(v.at)),
-                        subtitle: v.notes.isEmpty ? null : Text(v.notes),
+                        subtitle: switch ([
+                          if (v.status == 'done') ?Impression.of(v.rating)?.label,
+                          if (v.notes.isNotEmpty) v.notes,
+                        ]) {
+                          [] => null,
+                          final lines => Text(lines.join(' · ')),
+                        },
+                        onTap: v.status == 'done' ? () => _viewingOutcome(context, ref, p, v) : null,
                         trailing: PopupMenuButton<String>(
-                          onSelected: (s) =>
-                              ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'booked', child: Text('Booked')),
-                            PopupMenuItem(value: 'done', child: Text('Done')),
-                            PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                          tooltip: 'Viewing: done, cancelled or add to calendar',
+                          onSelected: (s) => switch (s) {
+                            'done' => _viewingOutcome(context, ref, p, v),
+                            'calendar' => addToCalendar(context, (viewing: v, home: p)),
+                            _ => ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(value: 'booked', child: Text('Booked')),
+                            const PopupMenuItem(value: 'done', child: Text('Done')),
+                            const PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                            if (v.status == 'booked') ...[
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(value: 'calendar', child: Text('Add to calendar')),
+                            ],
                           ],
                         ),
                       ),
@@ -351,6 +380,63 @@ class PropertyPage extends ConsumerWidget {
       fields: (_) => [Field(notes, 'Notes', lines: 5, autofocus: true)],
       onSave: () async {
         await ref.mutate((s) => s.book.editProperty(p.id, (q) => q.copyWith(notes: notes.text.trim())));
+        return null;
+      },
+    );
+  }
+
+  /// After a viewing: what the user thought, a rating for the home and
+  /// notes. The Dashboard sums these up.
+  Future<void> _viewingOutcome(BuildContext context, WidgetRef ref, Property p, Viewing v) {
+    var verdict = v.status == 'done' ? Impression.of(v.rating) : null;
+    var rating = p.rating;
+    var setAside = false;
+    final notes = TextEditingController(text: v.notes);
+    return showFormDialog(
+      context,
+      title: 'How was the viewing?',
+      fields: (setState) => [
+        SegmentedButton<Impression>(
+          emptySelectionAllowed: true,
+          segments: [for (final x in Impression.values) ButtonSegment(value: x, label: Text(x.label))],
+          selected: {?verdict},
+          onSelectionChanged: (s) => setState(() {
+            verdict = s.firstOrNull;
+            if (verdict != Impression.no) setAside = false;
+          }),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text('Rate the home'),
+            for (var i = 1; i <= 5; i++)
+              IconButton(
+                tooltip: '$i of 5',
+                icon: Icon(i <= rating ? Icons.star : Icons.star_border, color: lime),
+                onPressed: () => setState(() => rating = i == rating ? 0 : i),
+              ),
+          ],
+        ),
+        Field(notes, 'What you liked or did not', lines: 3),
+        if (verdict == Impression.no && Stage.of(p.stage) != Stage.dropped)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: setAside,
+            title: Text('Move it to ${Stage.dropped.label(PropertyKind.of(p.kind))}'),
+            onChanged: (x) => setState(() => setAside = x ?? false),
+          ),
+      ],
+      onSave: () async {
+        await ref.mutate(
+          (s) => s.book.recordViewing(
+            v.id,
+            impression: verdict,
+            notes: notes.text,
+            rating: rating == p.rating ? null : rating,
+            setAside: setAside,
+          ),
+        );
         return null;
       },
     );

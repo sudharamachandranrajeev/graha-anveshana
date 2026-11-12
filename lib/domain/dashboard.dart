@@ -1,6 +1,7 @@
 import '../db/database.dart';
 import 'listing.dart' show distanceKm;
 import 'pipeline.dart';
+import 'price_log.dart';
 
 /// "Your hunt so far": every figure on the Dashboard, worked out from the
 /// rows already on the device. Nothing here reads the network or the clock;
@@ -90,6 +91,9 @@ class HuntSummary {
     required this.gone,
     required this.goneBeforeEnquiry,
     required this.todo,
+    this.pulse = const MarketPulse(),
+    this.verdicts = const [],
+    this.pace,
   });
 
   final PropertyKind kind;
@@ -125,10 +129,78 @@ class HuntSummary {
   final List<Property> gone, goneBeforeEnquiry;
   final List<ToDo> todo;
 
+  /// What Search has seen of the homes since they were saved.
+  final MarketPulse pulse;
+
+  /// The latest verdict on each home viewed, newest first.
+  final List<ViewingVerdict> verdicts;
+
+  /// How the hunt is going against the date set to move by; null: none set.
+  final Pace? pace;
+
   /// A few plain sentences about the hunt.
   List<String> get insights => _insights(this);
 
   bool get isEmpty => homes.isEmpty;
+}
+
+/// What the user aims for, set on the Dashboard for renting and buying
+/// apart: the most to pay, and the day to move by (yyyy-MM-dd).
+typedef HuntGoal = ({int? budget, String? moveBy});
+
+/// The goal for [kind] in [all], the JSON kept for both kinds.
+HuntGoal goalIn(Map<String, Object?> all, PropertyKind kind) => switch (all[kind.name]) {
+  {'budget': final num? b, 'moveBy': final String? d} => (budget: b?.round(), moveBy: d),
+  {'budget': final num? b} => (budget: b?.round(), moveBy: null),
+  {'moveBy': final String? d} => (budget: null, moveBy: d),
+  _ => (budget: null, moveBy: null),
+};
+
+/// [all] with [kind]'s goal set to [goal].
+Map<String, Object?> withGoal(Map<String, Object?> all, PropertyKind kind, HuntGoal goal) => {
+  ...all,
+  kind.name: {'budget': ?goal.budget, 'moveBy': ?goal.moveBy},
+};
+
+/// A home's verdict from its latest viewing that has one.
+typedef ViewingVerdict = ({Property home, Impression verdict, String notes, String at});
+
+/// Days to the move-by date and where the hunt will be by then at the
+/// pace so far.
+class Pace {
+  const Pace({required this.daysLeft, required this.viewed, required this.projected});
+
+  /// Negative once the day has passed.
+  final int daysLeft;
+
+  /// Homes viewed so far, and about how many by the day at this pace
+  /// (null when it is too early in the hunt to tell).
+  final int viewed;
+  final int? projected;
+}
+
+/// What Search has seen of the saved homes (see MarketFacts).
+class MarketPulse {
+  const MarketPulse({
+    this.cutThisWeek = const [],
+    this.mayBeGone = const [],
+    this.daysToGo,
+    this.goneFast = 0,
+  });
+
+  /// Homes whose price fell in the last seven days.
+  final List<Property> cutThisWeek;
+
+  /// Homes in play, still advertised as far as the app knows, that no
+  /// search has shown for two weeks.
+  final List<Property> mayBeGone;
+
+  /// Of homes that went let or sold: the middle number of days from first
+  /// listed to last seen, and how many went within two weeks.
+  final int? daysToGo;
+  final int goneFast;
+
+  bool get isEmpty => cutThisWeek.isEmpty && mayBeGone.isEmpty && daysToGo == null;
 }
 
 /// Dates as UTC midnights, so day counts do not slip across the clock change.
@@ -173,6 +245,7 @@ HuntSummary summarise({
   required DateTime today,
   Set<String>? only,
   int? budget,
+  String? moveBy,
   List<DashPlace> places = const [],
 }) {
   final now = DateTime.utc(today.year, today.month, today.day);
@@ -410,9 +483,55 @@ HuntSummary summarise({
     }
   }
 
+  final facts = {for (final p in homes) p.id: MarketFacts.of(p.meta)};
+  final weekAgo = now.subtract(const Duration(days: 7));
+  final cut = [
+    for (final p in homes)
+      if (facts[p.id]!.prices case [..., final a, final b]
+          when b.price < a.price && !_day(b.at).isBefore(weekAgo))
+        p,
+  ];
+  final stale = [
+    for (final p in homes)
+      if (Stage.of(p.stage).active && !listingGone(p.listingStatus) && facts[p.id]!.mayBeGone(todayIso)) p,
+  ];
+  final lasted = [
+    for (final p in homes)
+      if (listingGone(p.listingStatus))
+        if (facts[p.id]! case MarketFacts(listedOn: final l?, seen: final s?))
+          _day(s).difference(_day(l)).inDays,
+  ];
+  for (final p in stale) {
+    if (Stage.of(p.stage) != Stage.fresh) {
+      todo.add(ToDo('May be gone, not seen in Search for two weeks: check ${p.address}', propertyId: p.id));
+    }
+  }
+
+  final verdicts = <ViewingVerdict>[];
+  for (final v in [...seen]..sort((a, b) => b.at.compareTo(a.at))) {
+    final verdict = Impression.of(v.rating);
+    if (v.status != 'done' || verdict == null || verdicts.any((x) => x.home.id == v.propertyId)) continue;
+    verdicts.add((home: byId[v.propertyId]!, verdict: verdict, notes: v.notes.trim(), at: v.at));
+  }
+
   final firstAdded = homes.isEmpty
       ? null
       : homes.map((p) => _day(p.added)).reduce((a, b) => a.isBefore(b) ? a : b);
+  final daysHunting = firstAdded == null ? null : now.difference(firstAdded).inDays;
+
+  Pace? pace;
+  if (moveBy != null && DateTime.tryParse(moveBy) != null) {
+    final left = _day(moveBy).difference(now).inDays;
+    final viewed = funnel[Stage.viewing.index].count;
+    pace = Pace(
+      daysLeft: left,
+      viewed: viewed,
+      // A week of hunting is the least to judge a pace by.
+      projected: left < 0 || daysHunting == null || daysHunting < 7
+          ? null
+          : viewed + (viewed / daysHunting * left).round(),
+    );
+  }
   return HuntSummary(
     kind: kind,
     homes: homes,
@@ -422,7 +541,7 @@ HuntSummary summarise({
     addedThisWeek: added.last,
     enquiriesThisWeek: asked.last,
     viewingsThisWeek: shown.last,
-    daysHunting: firstAdded == null ? null : now.difference(firstAdded).inDays,
+    daysHunting: daysHunting,
     funnel: funnel,
     dropped: dropped,
     weeks: weeks,
@@ -434,6 +553,14 @@ HuntSummary summarise({
     gone: gone,
     goneBeforeEnquiry: goneBeforeEnquiry,
     todo: todo,
+    verdicts: verdicts,
+    pace: pace,
+    pulse: MarketPulse(
+      cutThisWeek: cut,
+      mayBeGone: stale,
+      daysToGo: lasted.isEmpty ? null : _median(lasted),
+      goneFast: lasted.where((d) => d < 14).length,
+    ),
   );
 }
 
@@ -443,6 +570,8 @@ String _gbp(int v) {
 }
 
 String _homes(int n) => n == 1 ? '1 home' : '$n homes';
+
+String _days(int n) => n == 1 ? '1 day' : '$n days';
 
 List<String> _insights(HuntSummary s) {
   final kind = s.kind;
@@ -461,6 +590,39 @@ List<String> _insights(HuntSummary s) {
     out.add('Every priced home you saved is ${_gbp(p.low)}.');
   } else if (p != null) {
     out.add('Prices run from ${_gbp(p.low)} to ${_gbp(p.high)}, ${_gbp(p.median)} in the middle.');
+  }
+  if (s.pace case final pace?) {
+    if (pace.daysLeft < 0) {
+      out.add('The day you set to move by has passed. Set a new one at the top of this page.');
+    } else {
+      final when = pace.daysLeft == 0
+          ? 'Today is the day you set to move by.'
+          : '${_days(pace.daysLeft)} to the day you set to move by.';
+      out.add(switch (pace.projected) {
+        null => when,
+        0 => '$when At this pace you will not have viewed a home by then: book a viewing.',
+        final n => '$when At this pace you will have viewed about ${_homes(n)} by then.',
+      });
+    }
+  }
+  if (s.verdicts.isNotEmpty) {
+    int count(Impression v) => s.verdicts.where((x) => x.verdict == v).length;
+    out.add(
+      'After viewing ${_homes(s.verdicts.length)}: ${count(Impression.loved)} loved, '
+      '${count(Impression.maybe)} maybe, ${count(Impression.no)} not for you.',
+    );
+  }
+  final m = s.pulse;
+  if (m.cutThisWeek.isNotEmpty) {
+    out.add(
+      '${_homes(m.cutThisWeek.length)} you saved cut ${m.cutThisWeek.length == 1 ? 'its' : 'their'} price this week.',
+    );
+  }
+  if (m.daysToGo != null) {
+    out.add(
+      'Homes of yours that went ${kind == PropertyKind.rent ? 'let' : 'sold'} were on the market about '
+      '${m.daysToGo} days${m.goneFast > 0 ? '; ${m.goneFast} went within two weeks' : ''}.',
+    );
   }
   final asked = s.enquired.length;
   final viewed = s.funnel[Stage.viewing.index].count;

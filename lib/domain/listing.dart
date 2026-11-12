@@ -27,6 +27,9 @@ class Listing {
     this.image,
     this.status = '',
     this.description = '',
+    this.listedOn,
+    this.reducedOn,
+    this.sqft,
   });
 
   final String source;
@@ -48,6 +51,13 @@ class Listing {
   /// toLet, letAgreed, forSale, saleAgreed...
   final String status;
   final String description;
+
+  /// When the site first showed it, and last cut its price (yyyy-MM-dd);
+  /// null when the site does not say.
+  final String? listedOn, reducedOn;
+
+  /// Floor area in square feet, when the advert gives it.
+  final int? sqft;
 
   /// For rent rather than for sale.
   bool get isRental =>
@@ -135,6 +145,26 @@ Listing listingFromWatch(Map<String, Object?> j) => Listing(
   image: j['image'] as String?,
   status: '${j['status'] ?? ''}',
 );
+
+/// The floor area [text] gives, in square feet: "738 sq. ft.", "1,050 sq
+/// ft", or "65 m²" / "65 sqm" (converted). Null when it gives none, or an
+/// area no home has.
+int? sqftIn(String text) {
+  final ft = RegExp(
+    r'([\d,]{2,6})\s*(?:sq\.?\s*f(?:ee)?t\.?|sqft|ft²|ft2)',
+    caseSensitive: false,
+  ).firstMatch(text);
+  final m = RegExp(
+    r'([\d,]{2,5}(?:\.\d+)?)\s*(?:sq\.?\s*m(?:etres?|eters?)?\b|sqm\b|m²|m2\b)',
+    caseSensitive: false,
+  ).firstMatch(text);
+  final n = ft != null
+      ? int.tryParse(ft.group(1)!.replaceAll(',', ''))
+      : m == null
+      ? null
+      : ((double.tryParse(m.group(1)!.replaceAll(',', '')) ?? 0) * 10.7639).round();
+  return n != null && n >= 100 && n <= 20000 ? n : null;
+}
 
 final _postcode = RegExp(r'\b([A-Z]{1,2}[0-9][A-Z0-9]?) ?([0-9][A-Z]{2})\b', caseSensitive: false);
 

@@ -58,4 +58,35 @@ void main() {
   test('ten bedrooms are ten', () {
     expect(readRequest('10 bed house for sale in York').minBeds, 10);
   });
+
+  group('odd readings', () {
+    test('a sale price on a rent search, and a rent on a sale search', () {
+      final sale = oddReadings(readRequest('2 bed to rent in Leeds under £250000')).single;
+      expect(sale.text, '£250,000 looks like a sale price.');
+      expect(sale.fix!.rent, isFalse);
+      final rent = oddReadings(readRequest('house for sale in York under £1200')).single;
+      expect(rent.text, '£1,200 looks like a monthly rent.');
+      expect((rent.fix!.rent, rent.fix!.maxPrice), (true, 1200));
+    });
+
+    test('a tiny sale price is read in thousands', () {
+      const q = SearchRequest(area: 'York', rent: false, maxPrice: 250);
+      expect(oddReadings(q).single.fix!.maxPrice, 250000);
+    });
+
+    test('limits the wrong way round are swapped', () {
+      const q = SearchRequest(area: 'Leeds', minPrice: 900, maxPrice: 600, minBeds: 3, maxBeds: 1);
+      final fixes = [for (final o in oddReadings(q)) o.fix!];
+      expect((fixes[0].minPrice, fixes[0].maxPrice), (600, 900));
+      expect((fixes[1].minBeds, fixes[1].maxBeds), (1, 3));
+    });
+
+    test('a plain request has nothing odd; switching kind drops the price', () {
+      final q = readRequest('2 bed to rent in Leeds under £900');
+      expect(oddReadings(q), isEmpty);
+      final sale = q.withRent(false);
+      expect((sale.rent, sale.maxPrice, sale.minBeds, sale.area), (false, null, 2, 'Leeds'));
+      expect(identical(q.withRent(true), q), isTrue);
+    });
+  });
 }

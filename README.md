@@ -336,7 +336,9 @@ running and unlocked, then start the app again.
 Ireland) directly, and Zoopla and Facebook Marketplace in a hidden in-app browser. Marketplace
 knows towns by name, not postcodes, and often wants you signed in: tap **Connect Facebook
 Marketplace** in Profile → Site sign-ins (or **Open Facebook Marketplace** under the search) and
-sign in once. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
+sign in once. If Marketplace does not know your town by name, open Facebook Marketplace under the
+search, pick the town there, and tap **Add these homes to my results**. The app remembers that
+town for next time. Brahma Watch alerts work with PropertyPal searches and with the alert emails from the
 other sites.
 </details>
 
@@ -366,9 +368,10 @@ Only map points, never names or addresses, and only when you ask.
   Ireland only, and OpenRent has homes to rent only.
 - **"Open Rightmove" (or another site)**: the site asked to check you are not a robot. Tap it,
   pass the check on the site's page inside the app, then tap **Add these homes to my results**.
-- **Linux download**: the portable Linux build has no built-in web view (most Linux systems do
-  not ship one), so Zoopla, Facebook Marketplace and robot checks open in your usual browser. Search itself still works
-  in the app.
+- **Linux download**: the portable Linux build has no built-in web view, because most Linux
+  systems do not ship one. It cannot sign in to Zoopla or Facebook Marketplace, so Search does
+  not read them, and robot checks open in your usual browser. Search reads every other site in
+  the app. Use the Android or Windows app for Zoopla and Facebook.
 </details>
 
 <details>

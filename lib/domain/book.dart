@@ -7,6 +7,7 @@ import '../db/database.dart';
 import 'contact_links.dart';
 import 'listing.dart';
 import 'pipeline.dart';
+import 'price_log.dart';
 
 /// Pref keys. The prefs table is shared by every Brahma app, so Anveshana's
 /// keys carry its prefix.
@@ -24,6 +25,12 @@ abstract final class PrefKeys {
 
   /// Homes thrown out of Search, a JSON list (see TrashedHome).
   static const trash = 'anveshana.search.trash';
+
+  /// Marketplace places the user picked, by town: {slug: place}.
+  static const marketplacePlaces = 'anveshana.search.marketplacePlaces';
+
+  /// The Dashboard's budget and move-by date for renting and buying.
+  static const huntGoals = 'anveshana.dashboard.goals';
 }
 
 /// Where distances are measured from (the user's home or work).
@@ -151,12 +158,17 @@ class PropertyBook {
     String firstText(String Function(Listing c) f) =>
         [l, ...others].map(f).where((v) => v.isNotEmpty).firstOrNull ?? '';
     final agentId = await agentFor(l);
-    final meta = <String, Object?>{
-      if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
-      if (l.description.isNotEmpty) 'description': l.description,
-      if (l.heating.isNotEmpty) 'heating': l.heating,
-      if (l.priceSuffix.isNotEmpty) 'priceSuffix': l.priceSuffix,
-    };
+    final day = today ?? DateTime.now().toIso8601String().substring(0, 10);
+    final meta = withSeen(
+      {
+        if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
+        if (l.description.isNotEmpty) 'description': l.description,
+        if (l.heating.isNotEmpty) 'heating': l.heating,
+        if (l.priceSuffix.isNotEmpty) 'priceSuffix': l.priceSuffix,
+      },
+      l,
+      day,
+    );
     final id = existing?.id ?? newId();
     final row = PropertiesCompanion(
       id: Value(id),
@@ -184,15 +196,39 @@ class PropertyBook {
       imageUrl: Value(first((c) => c.image) ?? existing?.imageUrl),
       listingStatus: Value(l.status),
       agentId: Value(existing?.agentId ?? agentId),
-      added: Value(existing?.added ?? today ?? DateTime.now().toIso8601String().substring(0, 10)),
+      added: Value(existing?.added ?? day),
       meta: Value(jsonEncode(meta)),
     );
     await save(db.properties, row, id);
     return (id: id, added: existing == null);
   });
 
+  /// Notes that Search showed saved homes again on [today]: [seen] maps a
+  /// home's id to the advert it was seen in. Writes only homes whose price,
+  /// or day last seen, changed. Returns how many were written.
+  Future<int> noteSeen(Map<String, Listing> seen, String today) => db.transaction(() async {
+    var n = 0;
+    for (final MapEntry(key: id, value: l) in seen.entries) {
+      final p = await (db.select(db.properties)..where((p) => p.id.equals(id))).getSingleOrNull();
+      if (p == null) continue;
+      final before = (jsonDecode(p.meta) as Map).cast<String, Object?>();
+      final after = withSeen(before, l, today);
+      if (jsonEncode(after) == jsonEncode(before)) continue;
+      await save(db.properties, p.copyWith(meta: jsonEncode(after)), id);
+      n++;
+    }
+    return n;
+  });
+
   Future<void> setStage(String propertyId, Stage stage) =>
       editProperty(propertyId, (p) => p.copyWith(stage: stage.id));
+
+  /// Moves several homes to [stage] at once.
+  Future<void> setStages(Iterable<String> ids, Stage stage) => db.transaction(() async {
+    for (final id in ids) {
+      await setStage(id, stage);
+    }
+  });
 
   /// Changes a home as it is now in the database, not as a page last drew
   /// it, so a change from a refresh or another device is not written over.
@@ -237,6 +273,29 @@ class PropertyBook {
   }
 
   /// Books a viewing and moves the property to Viewing.
+  /// Marks viewing [viewingId] done with what the user thought of the
+  /// home. [rating] (1 to 5) rates the home itself; [setAside] moves it to
+  /// "Not for us".
+  Future<void> recordViewing(
+    String viewingId, {
+    Impression? impression,
+    String notes = '',
+    int? rating,
+    bool setAside = false,
+  }) => db.transaction(() async {
+    final v = await (db.select(db.viewings)..where((v) => v.id.equals(viewingId))).getSingle();
+    await save(
+      db.viewings,
+      v.copyWith(status: 'done', rating: impression?.rating ?? 0, notes: notes.trim()),
+      v.id,
+    );
+    if (rating == null && !setAside) return;
+    await editProperty(
+      v.propertyId,
+      (p) => p.copyWith(rating: rating ?? p.rating, stage: setAside ? Stage.dropped.id : p.stage),
+    );
+  });
+
   Future<String> bookViewing(String propertyId, String at, {String notes = ''}) async {
     final id = newId();
     await save(

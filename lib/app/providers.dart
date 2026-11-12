@@ -57,6 +57,22 @@ final propertiesProvider = _rows<$PropertiesTable, Property>(
   ],
 );
 
+/// Saved homes by their advert ("source:id", lower case), for Search to
+/// show which results are on the Shortlist already.
+final savedAdvertsProvider = FutureProvider<Map<String, Property>>(
+  (ref) async => {
+    for (final p in await ref.watch(propertiesProvider.future))
+      if (p.sourceId case final id? when id.isNotEmpty) '${p.source.toLowerCase()}:$id': p,
+  },
+);
+
+/// The budget and move-by date set on the Dashboard, for both kinds
+/// (see goalIn).
+final huntGoalsProvider = FutureProvider<Map<String, Object?>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.pref<Map<String, Object?>>(PrefKeys.huntGoals, const {});
+});
+
 final contactsProvider = _rows<$ContactsTable, Contact>(
   (db) => db.contacts,
   orderBy: [(c) => OrderingTerm(expression: c.name)],

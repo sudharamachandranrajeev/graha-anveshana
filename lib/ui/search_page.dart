@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
+import '../db/database.dart';
 import '../app/search_controller.dart';
 import '../app/search_memory.dart';
 import '../domain/catalog.dart';
@@ -141,7 +142,10 @@ Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri
     title: s.label,
     cardsScript: cardsScript,
     autoRead: true,
-    read: (html, cards) async {
+    read: (html, cards, at) async {
+      // The town the user picked on Marketplace is used for it next time.
+      final area = ref.read(searchProvider).request?.area ?? '';
+      if (s == SourceId.facebook) await rememberMarketplacePlace(ref, area, at);
       final page = readOpenPage(s, html, cards, rent: rent);
       final links = '"id":'.allMatches(cards).length;
       if (page.items.isEmpty) {
@@ -183,7 +187,7 @@ Future<void> connectSite(BuildContext context, WidgetRef ref, SourceId s) async 
     signIn.page,
     title: 'Connect ${s.label}',
     readLabel: "Done: I'm signed in",
-    read: (_, _) async {
+    read: (_, _, _) async {
       if (await isSignedIn(s) == false) {
         return 'Not signed in to ${s.label} yet. Sign in on this page first.';
       }
@@ -194,6 +198,14 @@ Future<void> connectSite(BuildContext context, WidgetRef ref, SourceId s) async 
   );
   await _retryIfBlocked(ref, s);
 }
+
+/// What the user should know before connecting [s], or null.
+String? siteRisk(SourceId s) => switch (s) {
+  SourceId.facebook =>
+    'Facebook does not allow apps to collect its pages. The app reads Marketplace only when you '
+        'search, as you, but Facebook may still ask you to confirm it is you, or limit your account.',
+  _ => null,
+};
 
 /// Disconnects [s]: signs out of it in the app and forgets the connection.
 Future<void> disconnectSite(WidgetRef ref, SourceId s) async {
@@ -461,7 +473,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               setState(() => _rent = v.first);
               final q = ref.read(searchProvider).request;
               if (q != null && q.rent != _rent) {
-                ref.read(searchProvider.notifier).refine(q.copyWith(rent: _rent));
+                ref.read(searchProvider.notifier).refine(q.withRent(_rent));
               }
             },
           ),
@@ -591,6 +603,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               onPressed: () => _edit(context, q),
               onDeleted: () => c.refine(q.copyWith(minPrice: () => null, maxPrice: () => null)),
             ),
+          if (q.minSqft != null)
+            InputChip(
+              label: Text('${q.minSqft}+ sq ft'),
+              onPressed: () => _edit(context, q),
+              onDeleted: () => c.refine(q.copyWith(minSqft: () => null)),
+            ),
           if (q.radiusMiles != null)
             InputChip(
               label: Text('Within ${q.radiusMiles!.toStringAsFixed(q.radiusMiles! % 1 == 0 ? 0 : 1)} mi'),
@@ -658,6 +676,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             label: const Text('Save search'),
             onPressed: () => _save(context, q, ref.read(searchProvider).sort),
           ),
+          // Readings worth a second look, with the search likely meant.
+          for (final o in oddReadings(q))
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  StatusLabel(Status.warning, o.text),
+                  if (o.fix case final fix?)
+                    TextButton(onPressed: () => c.refine(fix), child: Text('Search ${fix.label} instead')),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -671,6 +702,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final minPrice = TextEditingController(text: q.minPrice?.toString() ?? '');
     final maxPrice = TextEditingController(text: q.maxPrice?.toString() ?? '');
     final radius = TextEditingController(text: q.radiusMiles?.toString() ?? '');
+    final size = TextEditingController(text: q.minSqft?.toString() ?? '');
     final must = TextEditingController(text: q.must.join(', '));
     final mustNot = TextEditingController(text: q.mustNot.join(', '));
     List<String> words(TextEditingController c) => [
@@ -718,6 +750,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ],
         ),
         Field(radius, 'Within', number: true, suffix: 'miles'),
+        Field(size, 'At least', number: true, suffix: 'sq ft'),
         Field(must, 'Must mention', hint: 'parking, garden'),
         Field(mustNot, 'Must not mention', hint: 'students, shared'),
         const SizedBox(height: 12),
@@ -773,6 +806,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           minPrice: () => intIn(minPrice),
           maxPrice: () => intIn(maxPrice),
           radiusMiles: () => numberIn(radius)?.toDouble(),
+          minSqft: () => intIn(size),
           must: words(must),
           mustNot: words(mustNot),
           has: [
@@ -881,9 +915,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               onSelected: (v) => ref.read(searchProvider.notifier).setSort(v),
               itemBuilder: (_) => [
                 for (final o in HomeSort.values)
-                  if (o != HomeSort.forYou || taste.count > 0)
-                    if (o != HomeSort.soonest || s.request?.rent != false)
-                      PopupMenuItem(value: o, child: Text(o.label)),
+                  if (switch (o) {
+                    HomeSort.forYou => taste.count > 0,
+                    HomeSort.soonest => s.request?.rent != false,
+                    // Only when some results give it.
+                    HomeSort.perSqft => s.homes.any((h) => h.sqft != null),
+                    HomeSort.newest => s.homes.any((h) => h.listedOn != null),
+                    _ => true,
+                  })
+                    PopupMenuItem(value: o, child: Text(o.label)),
               ],
               child: Chip(avatar: const Icon(Icons.sort, size: 18), label: Text('Sort: ${sort.label}')),
             ),
@@ -954,8 +994,10 @@ class _HomeCard extends ConsumerWidget {
       if (h.beds != null) h.beds == 0 ? 'Studio' : '${h.beds} bed',
       if (l.style.isNotEmpty) l.style,
       if (l.furnished.isNotEmpty) l.furnished,
+      if (h.sqft != null) '${h.sqft} sq ft',
       if (h.km != null) miles(h.km!),
     ].join(' · ');
+    final market = marketLine(h.listedOn, h.reducedOn, today: DateTime.now());
     final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
     final asked = ref.watch(searchProvider.select((s) => s.request));
     final far = h.lat == null || h.lon == null
@@ -965,21 +1007,29 @@ class _HomeCard extends ConsumerWidget {
               '${minutesText(h.minutes!)} by ${TravelMode.of(asked.travelMode).label.toLowerCase()} to ${asked.travelTo}',
             for (final p in places) '${miles(distanceKm(p.lat, p.lon, h.lat!, h.lon!))} from ${p.label}',
           ].join(' · ');
+    // Already saved from one of this home's adverts.
+    final savedAll = ref.watch(savedAdvertsProvider).value ?? const <String, Property>{};
+    final saved = [for (final c in h.copies) ?savedAll['${c.source.toLowerCase()}:${c.sourceId}']]
+        .firstOrNull;
     final bin = IconButton(
       tooltip: 'Throw out: never show this home again',
       icon: const Icon(Icons.delete_outline),
       onPressed: () => onThrowOut(h),
     );
     final save = PopupMenuButton<String>(
-      tooltip: 'Save',
-      icon: const Icon(Icons.bookmark_add_outlined),
+      tooltip: saved == null ? 'Save' : 'Saved: update it, or add to a collection',
+      icon: Icon(saved == null ? Icons.bookmark_add_outlined : Icons.bookmark),
       onSelected: (v) =>
           v == 'hunt' ? saveToHunt(context, ref, h, rent: q.rent) : saveToResearch(context, ref, h, q),
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: 'hunt', child: Text('Add to Shortlist')),
-        PopupMenuItem(value: 'research', child: Text('Add to a collection')),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'hunt',
+          child: Text(saved == null ? 'Add to Shortlist' : 'Update it in your Shortlist'),
+        ),
+        const PopupMenuItem(value: 'research', child: Text('Add to a collection')),
       ],
     );
+    final stage = saved == null ? null : Stage.of(saved.stage);
     final body = Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -993,7 +1043,13 @@ class _HomeCard extends ConsumerWidget {
                   style: t.titleMedium,
                 ),
               ),
-              if (likeYours) const StatusLabel(Status.good, 'Like ones you keep'),
+              if (stage != null)
+                StatusLabel(
+                  stage.active ? Status.info : Status.warning,
+                  'Shortlist: ${stage.label(PropertyKind.of(saved!.kind))}',
+                )
+              else if (likeYours)
+                const StatusLabel(Status.good, 'Like ones you keep'),
               if (h.gone) StatusLabel(Status.warning, q.rent ? 'Let agreed' : 'Sold'),
               first ? TourTarget('search.save', child: save) : save,
               bin,
@@ -1002,6 +1058,7 @@ class _HomeCard extends ConsumerWidget {
           Text(l.address, maxLines: 2, overflow: TextOverflow.ellipsis),
           if (facts.isNotEmpty) Text(facts, style: t.bodySmall),
           if (far.isNotEmpty) Text(far, style: t.bodySmall),
+          if (market != null) Text(market, style: t.bodySmall),
           const SizedBox(height: 4),
           Text(_labels(h.sources), style: t.labelSmall?.copyWith(color: scheme.primary)),
           if (h.misses.isNotEmpty)
@@ -1103,16 +1160,28 @@ class SiteConnectTile extends ConsumerWidget {
     final since = ref.watch(siteConnectionProvider(site)).value;
     final signedIn = ref.watch(_signedInProvider(site)).value;
     final connected = since != null && signedIn != false;
+    // How the site did in this session's last search.
+    final last = ref.watch(searchProvider.select((x) => x.request == null ? null : x.sources[site]));
+    final status = switch (last?.state) {
+      SourceState.done || SourceState.more => 'Last search: ${last!.read} read.',
+      SourceState.blocked => 'Last search: it asked for a check. Open ${site.label} on Search to pass it.',
+      SourceState.skipped => 'Last search: not read (${last!.note}).',
+      _ => null,
+    };
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(connected ? Icons.link : Icons.link_off),
       title: Text(connected ? '${site.label}: connected' : 'Connect ${site.label}'),
       subtitle: Text(
-        connected
-            ? 'Since $since. Search reads ${site.label} as you, from this device only.'
-            : since != null
-            ? 'Signed out since you connected. Connect again to search as you.'
-            : 'Sign in on ${site.label}\'s own page here; the app never sees your password.',
+        [
+          connected
+              ? 'Since $since. Search reads ${site.label} as you, from this device only.'
+              : since != null
+              ? 'Signed out since you connected. Connect again to search as you.'
+              : 'Sign in on ${site.label}\'s own page here; the app never sees your password.',
+          ?status,
+          if (!connected) ?siteRisk(site),
+        ].join(' '),
       ),
       trailing: connected
           ? TextButton(

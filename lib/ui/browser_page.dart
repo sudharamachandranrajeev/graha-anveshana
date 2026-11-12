@@ -24,7 +24,8 @@ bool get hasWebView =>
 
 /// Called with the open page's HTML and its advert cards (cardsScript);
 /// returns what to tell the user.
-typedef PageReader = Future<String> Function(String html, String cards);
+/// [at] is the address the page is at now.
+typedef PageReader = Future<String> Function(String html, String cards, Uri at);
 
 /// Opens [url] inside the app, or in the system browser where this build
 /// has no web view. [read] adds a button that reads the page into the app;
@@ -72,6 +73,7 @@ Future<({String html, String cards})> loadHidden(
   Uri url, {
   Duration timeout = const Duration(seconds: 30),
   Duration settle = const Duration(seconds: 10),
+  int scrolls = 4,
 }) async {
   final loaded = Completer<void>();
   final view = HeadlessInAppWebView(
@@ -100,6 +102,21 @@ Future<({String html, String cards})> loadHidden(
       if (n > 0 && n == last) break;
       last = n;
       await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    // Sites with no next page add results as the list is scrolled: scroll
+    // to the end a few times, while it still brings more.
+    if (SourceId.ofUrl(url)?.scrollsForMore ?? false) {
+      for (var i = 0; i < scrolls; i++) {
+        await web.evaluateJavascript(source: 'window.scrollTo(0, document.body.scrollHeight)');
+        final before = '"id":'.allMatches(cards).length;
+        var after = before;
+        for (var wait = 0; wait < 4 && after == before; wait++) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+          cards = '${await web.evaluateJavascript(source: cardsScript) ?? '[]'}';
+          after = '"id":'.allMatches(cards).length;
+        }
+        if (after == before) break;
+      }
     }
     final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
     return (html: html, cards: cards);
@@ -177,7 +194,7 @@ class _BrowserPageState extends State<BrowserPage> {
           : '${await web.evaluateJavascript(source: widget.cardsScript!) ?? '[]'}';
       if (auto && !cards.contains('"id":')) return;
       final html = '${await web.evaluateJavascript(source: 'document.documentElement.outerHTML') ?? ''}';
-      final said = await read(html, cards);
+      final said = await read(html, cards, _at ?? widget.url);
       if (mounted) showMessage(context, said);
     } catch (e) {
       if (mounted && !auto) showError(context, e);

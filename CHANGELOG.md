@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.14.0
+
+Better Search, Shortlist and Dashboard, and fuller Facebook Marketplace reading.
+
+- **Facebook Marketplace.**
+  - The page is scrolled a few times before it is read, so more than the first screen of homes
+    comes in.
+  - A small town Marketplace names by a number is remembered once you open it there, and used
+    from then on.
+  - Cards give baths and the type of home where Facebook shows them.
+  - Connect shows when each site was last read, and a note on the risk to your Facebook account.
+    The Linux portable build says plainly that it cannot connect.
+- **OpenRent** adverts bring in every photo in their gallery (fixes #8).
+- **Search.**
+  - A result already on your Shortlist shows its stage ("Shortlist: Liked"), and saving it again
+    updates the one you have.
+  - Switching between rent and buy clears the prices, so a rent cap is not used as a house price.
+  - Requests that look misread (a £20,000 rent, a £1,500 house, a top price under the lowest)
+    show a line under the box with the likely meaning to tap.
+  - Rightmove's listing date, latest price cut and floor area show on the card: "On the market
+    11 days · Price cut 3 Nov", "738 sq ft".
+  - New: an "at least … sq ft" size (type "at least 700 sq ft" or "over 65 sqm"), and sorting by
+    price per square foot or newest.
+- **Shortlist.**
+  - Each home keeps its price each time Search shows it. Cards say "£50 less since 3 Nov", and a
+    home no search has shown for two weeks is marked "May be gone". The home's page lists the
+    price history.
+  - Marking a viewing done asks how it went (loved it, maybe, not for me), a rating and notes, and
+    can set the home aside.
+  - Viewings, day by day (in the More menu): booked viewings in time order, with a warning where two
+    overlap or leave too little time to travel between. Add a viewing to your calendar as an .ics
+    file, or through Google Calendar.
+  - Pick homes (the checklist button, or a long press) to move them, set them aside, add them to
+    a collection or compare them.
+  - Compare can include New homes, and shows floor area.
+  - Share the shortlist as text to copy or email. Agents, phone numbers and notes are left out.
+  - The list builds its cards as you scroll, so a long shortlist stays quick.
+- **Dashboard.**
+  - Your plan: set the most you will pay and the day you want to move by, for renting and buying
+    apart. The Dashboard counts the days left and checks your pace ("At this pace you will have
+    viewed about 8 homes by then").
+  - After viewings: what you thought of each home you viewed.
+  - The market, from your searches: price cuts this week, how long homes took to go, and homes
+    that may be gone.
+  - Tap a figure to see what it means. Empty figures say "none yet".
+
 ## 0.13.1
 
 Fixes found in a check of Search, the Shortlist and the Dashboard.

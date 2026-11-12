@@ -93,6 +93,7 @@ extension CatalogWrites on PropertyBook {
     String? imageHash,
     String notes = '',
     String? captured,
+    String? propertyId,
   }) async {
     final id = newId();
     final at = captured ?? _now();
@@ -124,6 +125,7 @@ extension CatalogWrites on PropertyBook {
           body: Value(body),
           imageHash: Value(imageHash),
           notes: Value(notes),
+          propertyId: Value(propertyId),
           captured: at,
         ),
         id,
@@ -253,6 +255,43 @@ extension CatalogWrites on PropertyBook {
     await save(db.researches, into.copyWith(notes: notes), into.id);
     await remove(db.researches, fromId);
   });
+
+  /// Adds Shortlist [homes] to [researchId]'s catalog, linked to them;
+  /// homes already in it are left. Returns how many were added.
+  Future<int> addHomes(String researchId, List<Property> homes) async {
+    final have = {
+      for (final i in await (db.select(
+        db.catalogItems,
+      )..where((i) => i.researchId.equals(researchId) & i.deleted.not())).get())
+        ?i.propertyId,
+    };
+    var n = 0;
+    for (final p in homes) {
+      if (have.contains(p.id)) continue;
+      await addItem(
+        researchId,
+        kind: 'link',
+        title: p.address,
+        url: p.url,
+        source: p.source,
+        sourceId: p.sourceId,
+        fields: ItemFields(
+          address: p.address,
+          postcode: p.postcode,
+          price: p.price,
+          period: p.kind == PropertyKind.rent.name ? 'pcm' : '',
+          beds: p.beds,
+          baths: p.baths,
+          availableFrom: p.availableFrom ?? '',
+          status: p.listingStatus,
+          furnished: p.furnished.toLowerCase(),
+        ),
+        propertyId: p.id,
+      );
+      n++;
+    }
+    return n;
+  }
 
   /// Adds the item to Shortlist (or refreshes the home it matches) and links them.
   Future<String> itemToHunt(CatalogItem item, {required bool rental}) async {

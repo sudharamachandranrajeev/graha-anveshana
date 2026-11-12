@@ -455,6 +455,7 @@ class ScoreRow extends StatelessWidget {
     this.onTap,
     this.leadWidth = 88,
     this.below,
+    this.explain,
   });
   final String lead;
   final String? detail;
@@ -468,6 +469,10 @@ class ScoreRow extends StatelessWidget {
 
   /// Shown under the row inside the same card (an opened row's details).
   final Widget? below;
+
+  /// What the figure means, shown when the row is tapped and does nothing
+  /// else.
+  final String? explain;
 
   @override
   Widget build(BuildContext context) {
@@ -513,7 +518,7 @@ class ScoreRow extends StatelessWidget {
               )
             : null,
         child: InkWell(
-          onTap: onTap,
+          onTap: onTap ?? (explain == null ? null : () => explainFigure(context, lead, explain!)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -562,11 +567,24 @@ class _Track extends StatelessWidget {
   }
 }
 
+/// A short note on what a figure means, for a tapped tile or row.
+Future<void> explainFigure(BuildContext context, String title, String text) => showDialog<void>(
+  context: context,
+  builder: (dialog) => AlertDialog(
+    title: Text(title),
+    content: Text(text),
+    actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('OK'))],
+  ),
+);
+
 /// A small labelled figure: PRESSURE 1014.7.
 class StatTile extends StatelessWidget {
-  const StatTile(this.label, this.value, {super.key, this.detail, this.alert = false});
+  const StatTile(this.label, this.value, {super.key, this.detail, this.alert = false, this.explain});
   final String label, value;
   final String? detail;
+
+  /// What the figure means, shown when the tile is tapped.
+  final String? explain;
 
   /// Something needs doing: the figure turns the warning colour.
   final bool alert;
@@ -575,26 +593,43 @@ class StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Eyebrow(label)),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: t.titleLarge
-                    ?.merge(tabular)
-                    .copyWith(fontWeight: FontWeight.w800, color: alert ? StatusColors.serious : null),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: explain == null ? null : () => explainFigure(context, label, explain!),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Eyebrow(label),
+                    if (explain != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.info_outline, size: 12, color: Tones.of(context).muted),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            if (detail != null)
-              Text(detail!, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ],
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: t.titleLarge
+                      ?.merge(tabular)
+                      .copyWith(fontWeight: FontWeight.w800, color: alert ? StatusColors.serious : null),
+                ),
+              ),
+              if (detail != null)
+                Text(detail!, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ),
     );

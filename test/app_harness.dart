@@ -80,13 +80,30 @@ class AppHarness {
   }
 
   Future<void> tap(Finder f) async {
+    await reveal(f);
     await tester.ensureVisible(f);
     await tester.pump();
     await tester.tap(f);
     await settle();
   }
 
-  Future<void> tapText(String text) => tap(find.text(text).last);
+  Future<void> tapText(String text) async {
+    await reveal(find.text(text));
+    await tap(find.text(text).last);
+  }
+
+  /// Lists that build as they scroll (the Shortlist) have not built what
+  /// is below the fold: scrolls the page down until [f] is built.
+  Future<void> reveal(Finder f) async {
+    if (f.tryEvaluate()) return;
+    await tester.scrollUntilVisible(
+      f,
+      300,
+      scrollable: find
+          .byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down)
+          .last,
+    );
+  }
 
   /// Types into the text field labelled [label].
   Future<void> enter(String label, String text) async {

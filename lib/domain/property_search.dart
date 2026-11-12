@@ -33,6 +33,22 @@ class FoundHome {
   String get text =>
       copies.map((c) => '${c.address}\n${c.style}\n${c.furnished}\n${c.description}').join('\n');
   bool get gone => copies.every((c) => c.status.contains('Agreed') || c.status == 'sold');
+
+  /// Floor area in square feet: what a site gives, else what the advert's
+  /// text says.
+  int? get sqft =>
+      copies.map((c) => c.sqft).nonNulls.firstOrNull ??
+      copies.map((c) => sqftIn(c.description)).nonNulls.firstOrNull;
+
+  /// Price per square foot, when both are known.
+  double? get perSqft => switch ((price, sqft)) {
+    (final p?, final a?) when a > 0 => p / a,
+    _ => null,
+  };
+
+  /// When a site first showed it (the earliest), and last cut its price.
+  String? get listedOn => (copies.map((c) => c.listedOn).nonNulls.toList()..sort()).firstOrNull;
+  String? get reducedOn => (copies.map((c) => c.reducedOn).nonNulls.toList()..sort()).lastOrNull;
 }
 
 /// One key per advert, so [sameHome]'s cleaned fields are kept with it.
@@ -90,6 +106,7 @@ bool meetsRequest(FoundHome h, SearchRequest q) {
   // A drawn area: a home with no map point cannot be placed, so it stays.
   if (q.shape.isNotEmpty && h.lat != null && !insideShape((lat: h.lat!, lon: h.lon!), q.shape)) return false;
   if (q.maxMinutes != null && h.minutes != null && h.minutes! > q.maxMinutes!) return false;
+  if (q.minSqft != null && (h.sqft ?? q.minSqft!) < q.minSqft!) return false;
   // Furnishing is a hard limit: asked furnished, an advert that says
   // unfurnished is left out, and the other way round.
   final furnishing = furnishingOf(h);
@@ -156,7 +173,9 @@ enum HomeSort {
   priceHigh('Price, highest first'),
   beds('Most bedrooms'),
   nearest('Nearest'),
-  soonest('Available soonest');
+  soonest('Available soonest'),
+  perSqft('£ per sq ft, lowest first'),
+  newest('Newest on the market');
 
   const HomeSort(this.label);
   final String label;
@@ -183,6 +202,8 @@ List<FoundHome> sortHomes(List<FoundHome> homes, HomeSort sort, {double Function
     HomeSort.beds => (a, b) => byKnown(a.beds, b.beds, descending: true),
     HomeSort.nearest => (a, b) => byKnown(a.km, b.km),
     HomeSort.soonest => (a, b) => byKnown(a.availableFrom, b.availableFrom),
+    HomeSort.perSqft => (a, b) => byKnown(a.perSqft, b.perSqft),
+    HomeSort.newest => (a, b) => byKnown(a.listedOn, b.listedOn, descending: true),
   };
   if (compare == null) return homes;
   final at = {for (final (i, h) in homes.indexed) h: i};
@@ -190,4 +211,24 @@ List<FoundHome> sortHomes(List<FoundHome> homes, HomeSort sort, {double Function
     final c = compare(a, b);
     return c != 0 ? c : at[a]!.compareTo(at[b]!);
   });
+}
+
+/// "On the market 41 days · Price cut 3 Nov" from a home's dates
+/// (yyyy-MM-dd), or null when neither is known.
+String? marketLine(String? listedOn, String? reducedOn, {required DateTime today}) {
+  final day = DateTime.utc(today.year, today.month, today.day);
+  int? days(String? d) => d == null ? null : day.difference(DateTime.parse('${d}T00:00:00Z')).inDays;
+  final listed = days(listedOn);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final cut = reducedOn == null ? null : DateTime.parse(reducedOn);
+  final parts = [
+    if (listed != null)
+      switch (listed) {
+        <= 0 => 'New today',
+        1 => 'On the market 1 day',
+        _ => 'On the market $listed days',
+      },
+    if (cut != null) 'Price cut ${cut.day} ${months[cut.month - 1]}',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
 }
