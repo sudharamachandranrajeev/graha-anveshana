@@ -195,7 +195,7 @@ jobs:
       - name: Build tools (Arch)
         if: matrix.variant == 'browser'
         run: |
-          pacman -Syu --noconfirm --needed git curl unzip xz which tar clang cmake ninja pkgconf gtk3 libsecret \
+          pacman -Syu --noconfirm --needed git curl jq unzip xz which tar clang cmake ninja pkgconf gtk3 libsecret \
             wpewebkit >/dev/null
           git config --global --add safe.directory '*'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
