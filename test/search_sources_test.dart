@@ -37,7 +37,10 @@ final _rightmove = _next({
             ],
             'letAvailableDate': '2027-01-01T00:00:00Z',
             'firstVisibleDate': '2026-11-01T10:00:00Z',
-            'listingUpdate': {'listingUpdateReason': 'price_reduced', 'listingUpdateDate': '2026-11-08T09:00:00Z'},
+            'listingUpdate': {
+              'listingUpdateReason': 'price_reduced',
+              'listingUpdateDate': '2026-11-08T09:00:00Z',
+            },
             'displaySize': '738 sq. ft.',
           },
           {
