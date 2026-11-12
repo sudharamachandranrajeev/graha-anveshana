@@ -141,7 +141,10 @@ Future<void> openSourcePage(BuildContext context, WidgetRef ref, SourceId s, Uri
     title: s.label,
     cardsScript: cardsScript,
     autoRead: true,
-    read: (html, cards) async {
+    read: (html, cards, at) async {
+      // The town the user picked on Marketplace is used for it next time.
+      final area = ref.read(searchProvider).request?.area ?? '';
+      if (s == SourceId.facebook) await rememberMarketplacePlace(ref, area, at);
       final page = readOpenPage(s, html, cards, rent: rent);
       final links = '"id":'.allMatches(cards).length;
       if (page.items.isEmpty) {
@@ -183,7 +186,7 @@ Future<void> connectSite(BuildContext context, WidgetRef ref, SourceId s) async 
     signIn.page,
     title: 'Connect ${s.label}',
     readLabel: "Done: I'm signed in",
-    read: (_, _) async {
+    read: (_, _, _) async {
       if (await isSignedIn(s) == false) {
         return 'Not signed in to ${s.label} yet. Sign in on this page first.';
       }
@@ -194,6 +197,14 @@ Future<void> connectSite(BuildContext context, WidgetRef ref, SourceId s) async 
   );
   await _retryIfBlocked(ref, s);
 }
+
+/// What the user should know before connecting [s], or null.
+String? siteRisk(SourceId s) => switch (s) {
+  SourceId.facebook =>
+    'Facebook does not allow apps to collect its pages. The app reads Marketplace only when you '
+        'search, as you, but Facebook may still ask you to confirm it is you, or limit your account.',
+  _ => null,
+};
 
 /// Disconnects [s]: signs out of it in the app and forgets the connection.
 Future<void> disconnectSite(WidgetRef ref, SourceId s) async {
@@ -1103,16 +1114,28 @@ class SiteConnectTile extends ConsumerWidget {
     final since = ref.watch(siteConnectionProvider(site)).value;
     final signedIn = ref.watch(_signedInProvider(site)).value;
     final connected = since != null && signedIn != false;
+    // How the site did in this session's last search.
+    final last = ref.watch(searchProvider.select((x) => x.request == null ? null : x.sources[site]));
+    final status = switch (last?.state) {
+      SourceState.done || SourceState.more => 'Last search: ${last!.read} read.',
+      SourceState.blocked => 'Last search: it asked for a check. Open ${site.label} on Search to pass it.',
+      SourceState.skipped => 'Last search: not read (${last!.note}).',
+      _ => null,
+    };
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(connected ? Icons.link : Icons.link_off),
       title: Text(connected ? '${site.label}: connected' : 'Connect ${site.label}'),
       subtitle: Text(
-        connected
-            ? 'Since $since. Search reads ${site.label} as you, from this device only.'
-            : since != null
-            ? 'Signed out since you connected. Connect again to search as you.'
-            : 'Sign in on ${site.label}\'s own page here; the app never sees your password.',
+        [
+          connected
+              ? 'Since $since. Search reads ${site.label} as you, from this device only.'
+              : since != null
+              ? 'Signed out since you connected. Connect again to search as you.'
+              : 'Sign in on ${site.label}\'s own page here; the app never sees your password.',
+          ?status,
+          if (!connected) ?siteRisk(site),
+        ].join(' '),
       ),
       trailing: connected
           ? TextButton(

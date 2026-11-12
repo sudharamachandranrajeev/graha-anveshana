@@ -165,6 +165,32 @@ final siteConnectionProvider = FutureProvider.family<String?, SourceId>((ref, s)
 Future<void> markConnected(AppDatabase db, SourceId s, String? date) =>
     db.setLocalSetting(_connectKey(s), date ?? '');
 
+/// Marketplace places the user picked on Facebook, by town
+/// ([marketplaceSlug]): Facebook names many towns by a number of its own.
+final marketplacePlacesProvider = FutureProvider<Map<String, String>>((ref) async {
+  ref.watch(revisionProvider);
+  final raw = await ref
+      .watch(sessionProvider)
+      .book
+      .pref<Map<String, Object?>>(PrefKeys.marketplacePlaces, const {});
+  return {
+    for (final MapEntry(:key, :value) in raw.entries)
+      if (value is String) key: value,
+  };
+});
+
+/// Remembers that [url], a Marketplace page the user has open, is the place
+/// for [area]. Nothing when it is not a property page, or is the town's
+/// own short name already.
+Future<void> rememberMarketplacePlace(WidgetRef ref, String area, Uri url) async {
+  final place = marketplacePlaceIn(url), slug = marketplaceSlug(area);
+  if (place == null || slug.isEmpty) return;
+  final all = await ref.read(marketplacePlacesProvider.future);
+  if ((all[slug] ?? slug) == place) return;
+  final next = {...all, slug: place}..removeWhere((k, v) => k == v);
+  await ref.mutate((s) => s.book.setPref(PrefKeys.marketplacePlaces, next));
+}
+
 /// A named point on the map: a postcode, a town, the user's work.
 typedef NamedPoint = ({double lat, double lon, String label});
 

@@ -24,6 +24,9 @@ abstract final class PrefKeys {
 
   /// Homes thrown out of Search, a JSON list (see TrashedHome).
   static const trash = 'anveshana.search.trash';
+
+  /// Marketplace places the user picked, by town: {slug: place}.
+  static const marketplacePlaces = 'anveshana.search.marketplacePlaces';
 }
 
 /// Where distances are measured from (the user's home or work).

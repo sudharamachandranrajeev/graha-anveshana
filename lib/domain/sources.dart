@@ -31,6 +31,13 @@ enum SourceId {
   /// wants a robot check or a sign-in.
   bool get readInBrowser => this == zoopla || this == facebook;
 
+  /// Sites that add results as the page is scrolled, with no next page.
+  bool get scrollsForMore => this == facebook;
+
+  /// The site [url] is on, or null.
+  static SourceId? ofUrl(Uri url) =>
+      values.where((s) => url.host == s.host || url.host.endsWith('.${s.host}')).firstOrNull;
+
   static SourceId? ofKey(String key) => values.where((s) => s.key == key).firstOrNull;
 }
 
@@ -316,16 +323,35 @@ String? _furnishing(SearchRequest q) =>
       _ => null,
     };
 
-/// Facebook Marketplace names towns by a short name ("leeds",
-/// "newcastleupontyne"). It does not know postcodes.
-String _marketplacePlace(SearchRequest q) => _slug(q.area).replaceAll('-', '');
+/// Facebook Marketplace names big towns by a short name ("leeds",
+/// "newcastleupontyne"), and others by a number of its own. It does not
+/// know postcodes. This is the short name for [area]; a number the user
+/// picked on Marketplace is remembered against it.
+String marketplaceSlug(String area) => _slug(area).replaceAll('-', '');
+
+/// The place a Marketplace property page is for: "leeds" in
+/// /marketplace/leeds/propertyrentals, or Facebook's own number. Null for
+/// other pages.
+String? marketplacePlaceIn(Uri url) => switch (url.pathSegments) {
+  ['marketplace', final place, 'propertyrentals' || 'propertyforsale', ...]
+      when RegExp(r'^[a-z0-9]+$').hasMatch(place) =>
+    place,
+  _ => null,
+};
 
 /// The results page [page] (0 first) of a [SourceId.readInBrowser] site for
-/// [q], with the request's filters, as a person would open it.
-Uri browserSearchUrl(SourceId source, SearchRequest q, {int page = 0}) => switch (source) {
+/// [q], with the request's filters, as a person would open it. [places]:
+/// Marketplace places the user picked, by [marketplaceSlug].
+Uri browserSearchUrl(
+  SourceId source,
+  SearchRequest q, {
+  int page = 0,
+  Map<String, String> places = const {},
+}) => switch (source) {
   SourceId.facebook => Uri.https(
     'www.facebook.com',
-    '/marketplace/${_marketplacePlace(q)}/${q.rent ? 'propertyrentals' : 'propertyforsale'}',
+    '/marketplace/${places[marketplaceSlug(q.area)] ?? marketplaceSlug(q.area)}/'
+        '${q.rent ? 'propertyrentals' : 'propertyforsale'}',
     {
       if (q.minPrice != null) 'minPrice': '${q.minPrice}',
       if (q.maxPrice != null) 'maxPrice': '${q.maxPrice}',

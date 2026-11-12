@@ -101,6 +101,16 @@ class ProfilePage extends ConsumerWidget {
                 for (final s in SourceId.values.where((s) => s.readInBrowser)) SiteConnectTile(s),
               ],
             ),
+          )
+        else
+          const SectionCard(
+            title: 'Site sign-ins',
+            hint: 'profile.signins',
+            child: Text(
+              'This copy of the app has no built-in browser (the portable Linux download leaves it out), '
+              'so it cannot sign in to Zoopla or Facebook Marketplace, and Search does not read them. '
+              'Search still reads the other sites. To use them, use the Android or Windows app.',
+            ),
           ),
         SectionCard(
           title: 'Trash',

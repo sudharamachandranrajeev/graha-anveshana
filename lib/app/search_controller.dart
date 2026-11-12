@@ -312,7 +312,7 @@ class SearchController extends Notifier<SearchState> {
   /// view. A page with no adverts is a robot check, a sign-in or an empty
   /// search: the user is offered the page to look at themselves.
   Future<SourcePage> _readInBrowser(SourceId s, SearchRequest q, int page) async {
-    final url = browserSearchUrl(s, q, page: page);
+    final url = browserSearchUrl(s, q, page: page, places: await ref.read(marketplacePlacesProvider.future));
     final load = ref.read(pageLoaderProvider);
     if (load == null) throw SourceBlocked(s, url);
     final ({String html, String cards}) got;
