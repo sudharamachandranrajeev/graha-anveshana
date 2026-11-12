@@ -14,6 +14,8 @@ import 'package:anveshana/domain/book.dart';
 import 'package:anveshana/domain/lettings.dart';
 import 'package:brahma_core/brahma_core.dart' show addDays, addMonths, today;
 
+import 'package:anveshana/ui/homes_map.dart';
+
 import 'app_harness.dart';
 
 /// Renders the main screens with the real fonts to PNG files, for checking
@@ -151,7 +153,7 @@ void main() {
         RepaintBoundary(
           key: key,
           child: ProviderScope(
-            overrides: anveshanaOverrides(app.session),
+            overrides: [...anveshanaOverrides(app.session), inlineMapsProvider.overrideWithValue(false)],
             retry: (_, _) => null,
             child: const AnveshanaApp(),
           ),
@@ -159,6 +161,8 @@ void main() {
       );
       await app.settle();
       final mode = dark ? 'dark' : 'light';
+      await shot('dashboard-$mode');
+      await app.dock('Shortlist');
       await shot('hunt-$mode');
       for (final page in ['Invest', 'Lettings']) {
         await app.dock(page);
@@ -183,13 +187,15 @@ void main() {
       RepaintBoundary(
         key: key,
         child: ProviderScope(
-          overrides: anveshanaOverrides(app.session),
+          overrides: [...anveshanaOverrides(app.session), inlineMapsProvider.overrideWithValue(false)],
           retry: (_, _) => null,
           child: const AnveshanaApp(),
         ),
       ),
     );
     await app.settle();
+    await shot('dashboard-desktop-light');
+    await app.go('Shortlist');
     await shot('hunt-desktop-light');
     await app.go('Lettings');
     await shot('lettings-desktop-light');

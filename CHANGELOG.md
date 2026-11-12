@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.13.0
+
+- **Dashboard**, the new first screen: your hunt so far. It shows:
+  - searches, homes saved, liked, enquired and viewed, and days hunting
+  - how far your homes got, from new to agreed
+  - the last 12 weeks of activity
+  - the rents or prices you have seen, against your last search's budget
+  - bedrooms, postcode districts, and the distance to your places, with a map
+  - how each agent replies: how many replied, how fast, and who has been silent for a week
+  - homes let or sold before you asked about them
+  - a few plain sentences on what it all says, and what to do next: follow-ups due, viewings
+    soon or without notes, and liked homes not asked about yet
+
+  You can switch between rent and buy, or look at one collection. Tap a step to see its homes.
+  The figures are worked out on your device, and nothing is sent anywhere.
+- **Feedback** at the top right of every screen: report a problem or suggest a feature. It
+  opens GitHub's new-issue page with your words, the app version and the screen filled in. You
+  sign in and choose Submit. Nothing is sent until you do.
+- The tour has a Dashboard step and says where Feedback is.
+
 ## 0.12.1
 
 - Windows: the app now shows in the Start menu as **Graha Anveshana**. Up to 0.12.0 its installer

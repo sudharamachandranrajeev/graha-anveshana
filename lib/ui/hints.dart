@@ -3,6 +3,7 @@
 /// screen once.
 const anveshanaHints = <String, String>{
   // Navigation
+  'nav.dashboard': 'Your hunt so far: what you have seen, asked about and viewed, and what to do next.',
   'nav.hunt': 'Homes you are looking at to rent or buy, from first sight to keys.',
   'nav.contacts': 'Agents, landlords, tenants, brokers, solicitors and trades.',
   'nav.search': 'Find homes to rent or buy across the property sites, in your own words.',
@@ -67,6 +68,10 @@ const anveshanaHints = <String, String>{
   'settings.watch':
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
+  'page.dashboard':
+      'Your hunt so far, worked out from what is on this device: homes saved and how far they got, '
+      'prices against your budget, where they are, how agents reply, and what to do next. Tap a row to '
+      'see its homes. Nothing here is sent anywhere.',
   'page.hunt':
       'Every home you are considering, from first sight to keys. Add one from Search or a link, then '
       'move it on: new, liked, enquired, viewing, applied, agreed. Calls and messages move it on '
