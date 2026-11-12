@@ -1,5 +1,7 @@
 import 'package:anveshana/domain/book.dart';
+import 'package:anveshana/domain/dashboard.dart';
 import 'package:anveshana/domain/listing.dart';
+import 'package:anveshana/domain/pipeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,6 +32,44 @@ void main() {
     // A step opens the homes behind it.
     await app.tap(find.text('Viewing').last);
     expect(find.text('Viewing · 1'), findsOneWidget);
+    await app.close();
+  });
+
+  testWidgets('the plan is set on the Dashboard; figures explain themselves', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    expect(find.text('Your plan'), findsOneWidget);
+    await app.tap(find.text('Set'));
+    await app.enter('Most rent a month', '950');
+    await app.tapText('Save');
+    expect(find.text('£950'), findsWidgets);
+    expect(find.text('Change'), findsOneWidget);
+    expect(
+      goalIn(await app.book.pref(PrefKeys.huntGoals, const <String, Object?>{}), PropertyKind.rent).budget,
+      950,
+    );
+
+    await app.tap(find.text('DAYS HUNTING'));
+    expect(find.textContaining('Days since you saved your first home'), findsOneWidget);
+    await app.tapText('OK');
+    await app.close();
+  });
+
+  testWidgets('a viewing marked done asks how it went', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seed);
+    await app.run();
+    await app.tap(find.textContaining('Viewing passed').first);
+    await app.tap(find.byTooltip('Booked, done or cancelled'));
+    await app.tapText('Done');
+    expect(find.text('How was the viewing?'), findsOneWidget);
+    await app.tapText('Loved it');
+    await app.enter('What you liked or did not', 'Bright rooms');
+    await app.tapText('Save');
+    final v = (await app.book.db.select(app.book.db.viewings).get()).single;
+    expect((v.status, Impression.of(v.rating), v.notes), ('done', Impression.loved, 'Bright rooms'));
+    expect(find.text('Loved it · Bright rooms'), findsOneWidget);
     await app.close();
   });
 

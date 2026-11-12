@@ -28,6 +28,9 @@ abstract final class PrefKeys {
 
   /// Marketplace places the user picked, by town: {slug: place}.
   static const marketplacePlaces = 'anveshana.search.marketplacePlaces';
+
+  /// The Dashboard's budget and move-by date for renting and buying.
+  static const huntGoals = 'anveshana.dashboard.goals';
 }
 
 /// Where distances are measured from (the user's home or work).
@@ -263,6 +266,29 @@ class PropertyBook {
   }
 
   /// Books a viewing and moves the property to Viewing.
+  /// Marks viewing [viewingId] done with what the user thought of the
+  /// home. [rating] (1 to 5) rates the home itself; [setAside] moves it to
+  /// "Not for us".
+  Future<void> recordViewing(
+    String viewingId, {
+    Impression? impression,
+    String notes = '',
+    int? rating,
+    bool setAside = false,
+  }) => db.transaction(() async {
+    final v = await (db.select(db.viewings)..where((v) => v.id.equals(viewingId))).getSingle();
+    await save(
+      db.viewings,
+      v.copyWith(status: 'done', rating: impression?.rating ?? 0, notes: notes.trim()),
+      v.id,
+    );
+    if (rating == null && !setAside) return;
+    await editProperty(
+      v.propertyId,
+      (p) => p.copyWith(rating: rating ?? p.rating, stage: setAside ? Stage.dropped.id : p.stage),
+    );
+  });
+
   Future<String> bookViewing(String propertyId, String at, {String notes = ''}) async {
     final id = newId();
     await save(

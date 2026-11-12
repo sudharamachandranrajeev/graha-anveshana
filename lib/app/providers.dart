@@ -66,6 +66,13 @@ final savedAdvertsProvider = FutureProvider<Map<String, Property>>(
   },
 );
 
+/// The budget and move-by date set on the Dashboard, for both kinds
+/// (see goalIn).
+final huntGoalsProvider = FutureProvider<Map<String, Object?>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.pref<Map<String, Object?>>(PrefKeys.huntGoals, const {});
+});
+
 final contactsProvider = _rows<$ContactsTable, Contact>(
   (db) => db.contacts,
   orderBy: [(c) => OrderingTerm(expression: c.name)],

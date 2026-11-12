@@ -215,10 +215,19 @@ class PropertyPage extends ConsumerWidget {
                           _ => Icons.event_outlined,
                         }),
                         title: Text(niceDateTime(v.at)),
-                        subtitle: v.notes.isEmpty ? null : Text(v.notes),
+                        subtitle: switch ([
+                          if (v.status == 'done') ?Impression.of(v.rating)?.label,
+                          if (v.notes.isNotEmpty) v.notes,
+                        ]) {
+                          [] => null,
+                          final lines => Text(lines.join(' · ')),
+                        },
+                        onTap: v.status == 'done' ? () => _viewingOutcome(context, ref, p, v) : null,
                         trailing: PopupMenuButton<String>(
-                          onSelected: (s) =>
-                              ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
+                          tooltip: 'Booked, done or cancelled',
+                          onSelected: (s) => s == 'done'
+                              ? _viewingOutcome(context, ref, p, v)
+                              : ref.mutate((x) => x.book.save(x.db.viewings, v.copyWith(status: s), v.id)),
                           itemBuilder: (_) => const [
                             PopupMenuItem(value: 'booked', child: Text('Booked')),
                             PopupMenuItem(value: 'done', child: Text('Done')),
@@ -364,6 +373,63 @@ class PropertyPage extends ConsumerWidget {
       fields: (_) => [Field(notes, 'Notes', lines: 5, autofocus: true)],
       onSave: () async {
         await ref.mutate((s) => s.book.editProperty(p.id, (q) => q.copyWith(notes: notes.text.trim())));
+        return null;
+      },
+    );
+  }
+
+  /// After a viewing: what the user thought, a rating for the home and
+  /// notes. The Dashboard sums these up.
+  Future<void> _viewingOutcome(BuildContext context, WidgetRef ref, Property p, Viewing v) {
+    var verdict = v.status == 'done' ? Impression.of(v.rating) : null;
+    var rating = p.rating;
+    var setAside = false;
+    final notes = TextEditingController(text: v.notes);
+    return showFormDialog(
+      context,
+      title: 'How was the viewing?',
+      fields: (setState) => [
+        SegmentedButton<Impression>(
+          emptySelectionAllowed: true,
+          segments: [for (final x in Impression.values) ButtonSegment(value: x, label: Text(x.label))],
+          selected: {?verdict},
+          onSelectionChanged: (s) => setState(() {
+            verdict = s.firstOrNull;
+            if (verdict != Impression.no) setAside = false;
+          }),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text('Rate the home'),
+            for (var i = 1; i <= 5; i++)
+              IconButton(
+                tooltip: '$i of 5',
+                icon: Icon(i <= rating ? Icons.star : Icons.star_border, color: lime),
+                onPressed: () => setState(() => rating = i == rating ? 0 : i),
+              ),
+          ],
+        ),
+        Field(notes, 'What you liked or did not', lines: 3),
+        if (verdict == Impression.no && Stage.of(p.stage) != Stage.dropped)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: setAside,
+            title: Text('Move it to ${Stage.dropped.label(PropertyKind.of(p.kind))}'),
+            onChanged: (x) => setState(() => setAside = x ?? false),
+          ),
+      ],
+      onSave: () async {
+        await ref.mutate(
+          (s) => s.book.recordViewing(
+            v.id,
+            impression: verdict,
+            notes: notes.text,
+            rating: rating == p.rating ? null : rating,
+            setAside: setAside,
+          ),
+        );
         return null;
       },
     );

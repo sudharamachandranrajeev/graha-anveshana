@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../app/providers.dart';
 import '../app/search_memory.dart';
 import '../db/database.dart';
+import '../domain/book.dart' show PrefKeys;
 import '../domain/dashboard.dart';
 import '../domain/pipeline.dart';
 import 'common.dart';
@@ -47,6 +48,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final saved = ref.watch(savedSearchesProvider).value ?? const [];
     final home = ref.watch(homeProvider).value;
     final places = ref.watch(profilePlacesProvider).value ?? const <NamedPoint>[];
+    final goals = ref.watch(huntGoalsProvider).value ?? const <String, Object?>{};
 
     return PageScaffold(
       title: 'Dashboard',
@@ -59,6 +61,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             final buy = all.where((p) => p.kind == PropertyKind.buy.name).length;
             final kind = _kind ?? (buy > rent ? PropertyKind.buy : PropertyKind.rent);
             final research = researches.where((r) => r.id == _research).firstOrNull;
+            final goal = goalIn(goals, kind);
+            final lastBudget = history
+                .where((q) => q.rent == (kind == PropertyKind.rent) && (q.maxPrice ?? 0) > 0)
+                .firstOrNull
+                ?.maxPrice;
             final s = summarise(
               kind: kind,
               properties: all,
@@ -72,10 +79,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       for (final i in items)
                         if (i.researchId == research.id && i.propertyId != null) i.propertyId!,
                     },
-              budget: history
-                  .where((q) => q.rent == (kind == PropertyKind.rent) && (q.maxPrice ?? 0) > 0)
-                  .firstOrNull
-                  ?.maxPrice,
+              budget: goal.budget ?? lastBudget,
+              moveBy: goal.moveBy,
               places: [
                 if (home != null)
                   (lat: home.lat, lon: home.lon, label: home.label.isEmpty ? 'Home' : home.label),
@@ -87,6 +92,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               children: [
                 _filters(context, kind, researches, research),
                 const SizedBox(height: 12),
+                _Plan(kind: kind, goal: goal, lastBudget: lastBudget, pace: s.pace, all: goals),
                 if (s.isEmpty && history.isEmpty)
                   EmptyState(
                     icon: Icons.space_dashboard_outlined,
@@ -97,7 +103,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         'and viewed, prices against your budget, and what to do next.',
                   )
                 else
-                  ..._body(context, s, kind, searches: history.length, saved: saved.length, home: home),
+                  ..._body(
+                    context,
+                    s,
+                    kind,
+                    searches: history.length,
+                    saved: saved.length,
+                    home: home,
+                    budgetSet: goal.budget != null,
+                  ),
               ],
             );
           },
@@ -144,6 +158,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     required int searches,
     required int saved,
     required ({double lat, double lon, String label})? home,
+    required bool budgetSet,
   }) {
     String? week(int n) => n == 0 ? null : '+$n new';
     final insights = s.insights;
@@ -152,16 +167,49 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final maxBeds = s.beds.map((b) => b.count).fold(1, (a, b) => a > b ? a : b);
     final maxDistrict = s.districts.map((d) => d.count).fold(1, (a, b) => a > b ? a : b);
     final first = s.funnel.first.count;
+    final viewed = s.funnel[Stage.viewing.index].count;
+    final rent = kind == PropertyKind.rent;
+    String count(int n) => n == 0 ? 'none yet' : '$n';
     return [
       StatStrip([
-        StatTile('Searches', '$searches', detail: saved == 0 ? null : '$saved saved'),
-        StatTile('Homes saved', '${s.homes.length}', detail: week(s.addedThisWeek)),
-        StatTile('Liked', '${s.liked.length}'),
+        StatTile(
+          'Searches',
+          count(searches),
+          detail: saved == 0 ? null : '$saved saved',
+          explain:
+              'Searches you ran on this device, and how many you saved to run again. '
+              '"+N new" under a figure means this week.',
+        ),
+        StatTile(
+          'Homes saved',
+          count(s.homes.length),
+          detail: week(s.addedThisWeek),
+          explain: 'Homes ${rent ? 'to rent' : 'to buy'} in your Shortlist, at any stage.',
+        ),
+        StatTile(
+          'Liked',
+          count(s.liked.length),
+          explain: 'Homes you marked Liked, or took further: asked about, viewed, applied or agreed.',
+        ),
       ]),
       StatStrip([
-        StatTile('Enquiries', '${s.enquired.length}', detail: week(s.enquiriesThisWeek)),
-        StatTile('Viewings', '${s.funnel[Stage.viewing.index].count}', detail: week(s.viewingsThisWeek)),
-        StatTile('Days hunting', s.daysHunting == null ? '–' : '${s.daysHunting}'),
+        StatTile(
+          'Enquiries',
+          count(s.enquired.length),
+          detail: week(s.enquiriesThisWeek),
+          explain: 'Homes you asked an agent or landlord about: a message logged, or the stage says so.',
+        ),
+        StatTile(
+          'Viewings',
+          count(viewed),
+          detail: week(s.viewingsThisWeek),
+          explain: 'Homes with a viewing booked or done. Cancelled viewings do not count.',
+        ),
+        StatTile(
+          'Days hunting',
+          s.daysHunting == null ? 'none yet' : '${s.daysHunting}',
+          explain: 'Days since you saved your first home ${rent ? 'to rent' : 'to buy'}.',
+        ),
       ]),
       if (insights.isNotEmpty)
         SectionCard(
@@ -219,6 +267,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ? null
                 : '${(f.count / first * 100).round()}% of homes',
             onTap: f.homes.isEmpty ? null : () => _list(context, f.stage.label(kind), f.homes),
+            explain:
+                'No home has reached ${f.stage.label(kind)} yet. Each row counts homes that got this far.',
           ),
       if (s.dropped.isNotEmpty)
         ScoreRow(
@@ -250,7 +300,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               FigureRow('Highest', gbp(p.high)),
               if (p.likedMedian != null) FigureRow('Middle of the ones you like', gbp(p.likedMedian!)),
               if (p.budget != null)
-                FigureRow('Your budget (last search)', '${gbp(p.budget!)} · ${p.overBudget} over'),
+                FigureRow(
+                  budgetSet ? 'Your budget' : 'Your budget (last search)',
+                  '${gbp(p.budget!)} · ${p.overBudget} over',
+                ),
               if (p.bins.length > 1) ...[
                 const SizedBox(height: 12),
                 for (final b in p.bins)
@@ -335,6 +388,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           onTap: () => _list(context, 'Gone', s.gone),
         ),
       ],
+      if (s.verdicts.isNotEmpty) ...[
+        RowsHeading('After viewings'),
+        for (final v in s.verdicts)
+          ScoreRow(
+            lead: v.verdict.label,
+            leadWidth: 100,
+            best: v.verdict == Impression.loved,
+            detail: [
+              v.home.address,
+              if (v.notes.isNotEmpty) v.notes,
+              'viewed ${niceDate(v.at.substring(0, 10))}',
+            ].join(' · '),
+            value: v.home.rating == 0 ? '' : '${v.home.rating}★',
+            onTap: () => _open(context, v.home.id),
+          ),
+      ],
       if (!s.pulse.isEmpty) ...[
         RowsHeading('The market, from your searches'),
         if (s.pulse.cutThisWeek.isNotEmpty)
@@ -349,6 +418,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             lead: kind == PropertyKind.rent ? 'Time to let' : 'Time to sell',
             value: '${s.pulse.daysToGo} days',
             detail: 'at the middle, from first listed to last seen; ${s.pulse.goneFast} within two weeks',
+            explain:
+                'For homes you saved that went ${rent ? 'let' : 'sold'}: the days from when a site first listed '
+                'them to the last time Search showed them. Half went faster, half slower.',
           ),
         if (s.pulse.mayBeGone.isNotEmpty)
           ScoreRow(
@@ -399,6 +471,113 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
     ),
   );
+}
+
+/// The budget and the day to move by, set here for renting and buying
+/// apart, with the days left.
+class _Plan extends ConsumerWidget {
+  const _Plan({
+    required this.kind,
+    required this.goal,
+    required this.lastBudget,
+    required this.pace,
+    required this.all,
+  });
+  final PropertyKind kind;
+  final HuntGoal goal;
+  final int? lastBudget;
+  final Pace? pace;
+  final Map<String, Object?> all;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final left = pace?.daysLeft;
+    return SectionCard(
+      title: 'Your plan',
+      trailing: TextButton.icon(
+        onPressed: () => _edit(context, ref),
+        icon: const Icon(Icons.edit_outlined),
+        label: Text(goal.budget == null && goal.moveBy == null ? 'Set' : 'Change'),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FigureRow(kind == PropertyKind.rent ? 'Most rent a month' : 'Most to pay', switch ((
+            goal.budget,
+            lastBudget,
+          )) {
+            (final b?, _) => gbp(b),
+            (null, final b?) => 'not set (last search ${gbp(b)})',
+            _ => 'not set',
+          }),
+          FigureRow(
+            'Move by',
+            goal.moveBy == null
+                ? 'not set'
+                : '${niceDate(goal.moveBy!)}${switch (left) {
+                    null => '',
+                    < 0 => ' (passed)',
+                    0 => ' (today)',
+                    1 => ' (1 day left)',
+                    final n => ' ($n days left)',
+                  }}',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final budget = TextEditingController(text: goal.budget?.toString() ?? '');
+    var moveBy = goal.moveBy;
+    await showFormDialog(
+      context,
+      title: 'Your plan ${kind == PropertyKind.rent ? 'to rent' : 'to buy'}',
+      fields: (setState) => [
+        Field(
+          budget,
+          kind == PropertyKind.rent ? 'Most rent a month' : 'Most to pay',
+          prefix: '£',
+          number: true,
+          helper: 'Leave empty to use your last search\'s top price.',
+        ),
+        Row(
+          children: [
+            Expanded(child: Text(moveBy == null ? 'Move by: not set' : 'Move by: ${niceDate(moveBy!)}')),
+            if (moveBy != null)
+              IconButton(
+                tooltip: 'Clear the date',
+                icon: const Icon(Icons.clear),
+                onPressed: () => setState(() => moveBy = null),
+              ),
+            TextButton(
+              onPressed: () async {
+                final now = DateTime.now();
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: moveBy == null ? now.add(const Duration(days: 30)) : DateTime.parse(moveBy!),
+                  firstDate: now.subtract(const Duration(days: 365)),
+                  lastDate: now.add(const Duration(days: 730)),
+                );
+                if (d != null) setState(() => moveBy = isoDate(d));
+              },
+              child: const Text('Pick a date'),
+            ),
+          ],
+        ),
+      ],
+      onSave: () async {
+        final b = intIn(budget);
+        if (budget.text.trim().isNotEmpty && (b == null || b <= 0)) {
+          return 'Give the budget as a number of pounds.';
+        }
+        await ref.mutate(
+          (s) => s.book.setPref(PrefKeys.huntGoals, withGoal(all, kind, (budget: b, moveBy: moveBy))),
+        );
+        return null;
+      },
+    );
+  }
 }
 
 /// One series by week: a label, the total and a bar per week, oldest first.
