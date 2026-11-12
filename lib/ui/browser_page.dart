@@ -51,8 +51,7 @@ Future<void> openInApp(
         title: const Text('No in-app browser in this build'),
         content: Text(
           'This copy of Graha Anveshana was built without the in-app browser, so it cannot open '
-          '${url.host} or read Zoopla and Facebook. Install WPE WebKit (Arch: pacman -S wpewebkit; '
-          'Fedora: dnf install wpewebkit) and the Linux release with the in-app browser.',
+          '${url.host} or read Zoopla and Facebook. Install WPE WebKit (Arch: pacman -S wpewebkit) and the Linux release with the in-app browser.',
         ),
         actions: [
           TextButton(

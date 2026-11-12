@@ -178,8 +178,7 @@ jobs:
         include:
           # The main Linux build: the in-app browser (WPE WebKit), so sites,
           # sign-ins and robot checks all stay inside the app. Built on Arch
-          # (WPE WebKit 2.40+); runs where WPE WebKit is installed (Arch,
-          # Fedora). The in-app updater installs this one.
+          # (WPE WebKit 2.40+); runs where WPE WebKit is installed (Arch). The in-app updater installs this one.
           - variant: browser
             runs-on: ubuntu-latest
             container: archlinux:latest
@@ -229,11 +228,11 @@ jobs:
           cp branding/anveshana-512.png "$dir/anveshana.png"
           cp scripts/install-linux.sh "$dir/install.sh"
           if [[ ${{ matrix.variant }} == browser ]]; then
-            needs='GTK 3, libsecret, WPE WebKit (Arch: pacman -S wpewebkit; Fedora: dnf install wpewebkit)'
+            needs='GTK 3, libsecret, WPE WebKit (Arch: pacman -S wpewebkit)'
             extra='Sites, sign-ins and robot checks open in the app'"'"'s own browser.'
           else
             needs='GTK 3 and libsecret'
-            extra='This build has no in-app browser (for systems without WPE WebKit, such as Ubuntu).'
+            extra='This build has no in-app browser (for systems without WPE WebKit, such as Ubuntu and Fedora).'
           fi
           cat > "$dir/README.txt" <<EOF
           Graha Anveshana for Linux (x86-64). Needs $needs and a running keyring
@@ -295,7 +294,7 @@ jobs:
       matrix:
         include:
           - { image: "ubuntu:24.04", variant: portable }
-          - { image: "fedora:latest", variant: browser }
+          - { image: "fedora:latest", variant: portable }
           - { image: "archlinux:latest", variant: browser }
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -310,7 +309,7 @@ jobs:
               libgl1-mesa-dri libegl1 libgles2 xvfb xauth >/dev/null
           elif command -v dnf >/dev/null; then
             dnf install -y -q gtk3 libsecret gnome-keyring dbus-daemon dbus-tools mesa-dri-drivers mesa-libEGL libglvnd-gles \
-              xorg-x11-server-Xvfb xorg-x11-xauth util-linux wpewebkit
+              xorg-x11-server-Xvfb xorg-x11-xauth util-linux
           else
             pacman -Syu --noconfirm --needed gtk3 libsecret gnome-keyring dbus mesa xorg-server-xvfb xorg-xauth \
               wpewebkit >/dev/null
