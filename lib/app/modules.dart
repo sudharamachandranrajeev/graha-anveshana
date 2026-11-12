@@ -2,6 +2,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 
 import '../ui/contacts_page.dart';
+import '../ui/dashboard_page.dart';
 import '../ui/hunt_page.dart';
 import '../ui/invest_page.dart';
 import '../ui/lettings_page.dart';
@@ -15,6 +16,14 @@ final propertyModule = AppModule(
   id: 'property',
   name: 'Property',
   destinations: [
+    Destination(
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: Icons.space_dashboard_outlined,
+      selectedIcon: Icons.space_dashboard,
+      primary: true,
+      page: (_) => const DashboardPage(),
+    ),
     Destination(
       id: 'search',
       label: 'Search',

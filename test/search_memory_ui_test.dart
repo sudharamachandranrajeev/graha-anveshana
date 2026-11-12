@@ -34,6 +34,8 @@ void main() {
             : (html: '<html>Log in to Facebook</html>', cards: '[]');
       },
     );
+    // The app opens on the Dashboard.
+    await app.go('Search');
     await tester.enterText(find.byType(TextField).first, '2 bed to rent in Leeds under £900');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await app.settle();
@@ -77,6 +79,8 @@ void main() {
     await app.run(
       overrides: [searchHttpProvider.overrideWithValue(MockClient((r) async => http.Response('', 404)))],
     );
+    // The app opens on the Dashboard.
+    await app.go('Search');
     expect(find.text('Carry on: 2 bed to rent in Leeds under £900'), findsOneWidget);
     expect(find.text('York houses'), findsOneWidget);
     expect(find.text('house for sale in York'), findsOneWidget);

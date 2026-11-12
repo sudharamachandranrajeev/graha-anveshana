@@ -34,6 +34,11 @@ not advice.
 
 ## ✨ What it does
 
+- 📊 **Your hunt so far, at a glance** – the **Dashboard** is the first screen. It shows how
+  many homes you have saved, liked, asked about and viewed, and how far each one got. It also
+  shows prices against your budget, where the homes are, which agents reply and how fast, and
+  the homes that went before you asked. A short list says what to do next. It is worked out on
+  your device and nothing is sent anywhere.
 - 🔎 **Search in your own words** – type "2 bed to rent in Leeds under £900 within 3 miles with
   parking, no students". The app reads Rightmove, Zoopla, OnTheMarket, OpenRent, PropertyPal and
   Facebook Marketplace for you and shows every home that answers in one list. Sort by best
@@ -99,7 +104,7 @@ not advice.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/hunt-light.png" alt="Hunt" width="220"><br><sub>Hunt</sub></td>
+    <td align="center"><img src="docs/screenshots/dashboard-light.png" alt="Dashboard: your hunt so far" width="220"><br><sub>Dashboard</sub></td>
     <td align="center"><img src="docs/screenshots/invest-light.png" alt="Invest, buy-to-let sums" width="220"><br><sub>Invest (buy-to-let)</sub></td>
     <td align="center"><img src="docs/screenshots/lettings-dark.png" alt="Lettings in dark mode" width="220"><br><sub>Lettings (dark)</sub></td>
   </tr>
@@ -177,7 +182,8 @@ Newer versions install over the top and keep your data.
 
 ### Step 3 – First launch
 
-The app opens on **Search** and offers a one-minute tour. Tap **Not now** to skip it; you can
+The app opens on the **Dashboard** and offers a one-minute tour. The Dashboard fills in as you
+search and save homes. Tap **Not now** to skip it; you can
 take it later from **Settings → Hints and help → Take the tour**. Every screen works empty, so there
 is nothing to fill in first.
 
@@ -190,6 +196,9 @@ is nothing to fill in first.
    filters you can tap to change. Under them, each site shows how many adverts it gave.
 4. **Open a home** to see it in full, then tap **Add to Shortlist** (or **Add to a collection**).
 5. **Contact the agent** from the home's page on **Shortlist**. The home moves to the next stage by itself.
+6. **Tell us what you think**: the speech bubble at the top right of every screen opens a short
+   form for a problem or an idea. It opens GitHub with your words filled in. You sign in there and
+   choose **Submit**. Issues on GitHub are public, so leave out anything private.
 
 > [!NOTE]
 > The next release opens with a short welcome. It asks where your data should live: on this

@@ -10,6 +10,13 @@ const anveshanaTour = <TourStep>[
         'This tour takes a minute. Skip it at any step.',
   ),
   TourStep(
+    title: 'Your hunt so far',
+    body:
+        'The Dashboard sums up your hunt: homes saved and how far each got, prices against your budget, '
+        'agents who have not replied, and what to do next. It fills in as you search and save homes.',
+    target: 'nav.dashboard',
+  ),
+  TourStep(
     title: 'Search in your own words',
     body:
         'Type what you want, e.g. "2 bed to rent in Leeds under £900 within 3 miles with parking". The app '
@@ -51,7 +58,8 @@ const anveshanaTour = <TourStep>[
     title: 'Settings',
     body:
         'Your details for enquiries, the home point distances are measured from, which sites Search reads, '
-        'and sync. Take this tour again under Hints and help.',
+        'and sync. Take this tour again under Hints and help. The speech bubble at the top right of every '
+        'screen sends us a problem or an idea.',
     target: 'nav.settings',
   ),
 ];

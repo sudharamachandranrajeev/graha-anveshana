@@ -71,7 +71,17 @@ void main() {
     );
   }
 
-  const pages = ['Search', 'Invest', 'Collections', 'Areas', 'Lettings', 'Contacts', 'Settings', 'Shortlist'];
+  const pages = [
+    'Dashboard',
+    'Search',
+    'Invest',
+    'Collections',
+    'Areas',
+    'Lettings',
+    'Contacts',
+    'Settings',
+    'Shortlist',
+  ];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {
@@ -163,6 +173,8 @@ void main() {
       ],
       maps: true,
     );
+    // The app opens on the Dashboard.
+    await app.go('Search');
     // Search is the first screen.
     expect(find.text('Try'), findsOneWidget);
     await tester.enterText(
@@ -219,6 +231,8 @@ void main() {
         ),
       ],
     );
+    // The app opens on the Dashboard.
+    await app.go('Search');
     Future<void> search() async {
       await tester.enterText(find.byType(TextField).first, '2 bed to rent in Exampletown under £800');
       await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -256,6 +270,8 @@ void main() {
     expect(find.text('Take the tour'), findsOneWidget);
     await app.tapText('Take the tour');
     expect(find.text('Step 1 of ${anveshanaTour.length}'), findsOneWidget);
+    await app.tapText('Next');
+    expect(find.text('Your hunt so far'), findsOneWidget);
     await app.tapText('Next');
     expect(find.text('Search in your own words'), findsOneWidget);
     await app.tapText('Skip tour');
